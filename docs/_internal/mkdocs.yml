@@ -1,0 +1,111 @@
+site_name: AqStream Documentation
+site_description: Документация платформы управления мероприятиями AqStream
+site_url: https://docs.aqstream.com
+repo_url: https://github.com/aqstream/aqstream
+repo_name: aqstream/aqstream
+
+theme:
+  name: material
+  language: ru
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Тёмная тема
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Светлая тема
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search:
+      lang: ru
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: README.md
+  
+  - Архитектура:
+    - Обзор: architecture/overview.md
+    - Топология сервисов: architecture/service-topology.md
+    - Архитектура данных: architecture/data-architecture.md
+  
+  - Бизнес:
+    - Видение: business/vision.md
+    - User Journeys: business/user-journeys.md
+    - Требования: business/functional-requirements.md
+    - Roadmap: business/roadmap.md
+  
+  - Данные:
+    - Domain Model: data/domain-model.md
+    - Миграции: data/migrations.md
+  
+  - Tech Stack:
+    - Обзор: tech-stack/overview.md
+    - Инструменты: tech-stack/tooling.md
+    - Backend:
+      - Архитектура: tech-stack/backend/architecture.md
+      - API Guidelines: tech-stack/backend/api-guidelines.md
+      - Common Library: tech-stack/backend/common-library.md
+      - Service Template: tech-stack/backend/service-template.md
+      - API Documentation: tech-stack/backend/api/README.md
+      - Сервисы:
+        - Gateway: tech-stack/backend/services/gateway.md
+        - User Service: tech-stack/backend/services/user-service.md
+        - Event Service: tech-stack/backend/services/event-service.md
+        - Payment Service: tech-stack/backend/services/payment-service.md
+        - Notification Service: tech-stack/backend/services/notification-service.md
+        - Media Service: tech-stack/backend/services/media-service.md
+        - Analytics Service: tech-stack/backend/services/analytics-service.md
+    - Frontend:
+      - Архитектура: tech-stack/frontend/architecture.md
+      - Компоненты: tech-stack/frontend/components.md
+    - QA:
+      - Тестирование: tech-stack/qa/testing-strategy.md
+  
+  - Operations:
+    - Окружения: operations/environments.md
+    - Деплой: operations/deploy.md
+    - CI/CD: operations/ci-cd.md
+    - Observability: operations/observability.md
+    - Runbooks:
+      - Service Restart: operations/runbooks/service-restart.md
+      - Incident Response: operations/runbooks/incident-response.md
+      - Backup & Restore: operations/runbooks/backup-restore.md
+  
+  - Community:
+    - Безопасность: experience/security.md
+    - Contributing: experience/contributing.md
+    - Сообщество: experience/community.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/aqstream/aqstream
+    - icon: fontawesome/brands/telegram
+      link: https://t.me/aqstream
