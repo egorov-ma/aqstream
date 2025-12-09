@@ -71,11 +71,17 @@
         <module name="UnusedImports"/>
 
         <!-- Naming -->
-        <module name="ConstantName"/>
+        <module name="ConstantName">
+            <!-- Разрешаем log, logger для SLF4J -->
+            <property name="format" value="^log(ger)?$|^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
         <module name="LocalFinalVariableName"/>
         <module name="LocalVariableName"/>
         <module name="MemberName"/>
-        <module name="MethodName"/>
+        <module name="MethodName">
+            <!-- Разрешаем underscore в тестовых методах -->
+            <property name="format" value="^[a-z][a-zA-Z0-9_]*$"/>
+        </module>
         <module name="PackageName"/>
         <module name="ParameterName"/>
         <module name="StaticVariableName"/>

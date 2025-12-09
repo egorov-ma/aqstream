@@ -12,6 +12,7 @@ dependencyManagement {
 
 dependencies {
     api(project(":common:common-api"))
+    implementation(project(":common:common-security"))
 
     api("org.springframework.boot:spring-boot-starter-data-jpa")
     api("org.springframework.boot:spring-boot-starter-validation")

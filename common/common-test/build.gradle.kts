@@ -12,6 +12,7 @@ dependencyManagement {
 
 dependencies {
     api(project(":common:common-api"))
+    api(project(":common:common-security"))
 
     api("org.springframework.boot:spring-boot-starter-test")
     api("org.springframework.security:spring-security-test")
