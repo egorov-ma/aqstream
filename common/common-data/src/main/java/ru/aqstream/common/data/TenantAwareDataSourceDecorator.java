@@ -35,15 +35,39 @@ public class TenantAwareDataSourceDecorator implements DataSource {
     @Override
     public Connection getConnection() throws SQLException {
         Connection connection = delegate.getConnection();
-        setTenantIdOnConnection(connection);
-        return connection;
+        try {
+            setTenantIdOnConnection(connection);
+            return connection;
+        } catch (SQLException e) {
+            // Закрываем соединение при ошибке установки tenant_id
+            closeQuietly(connection);
+            throw e;
+        }
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
         Connection connection = delegate.getConnection(username, password);
-        setTenantIdOnConnection(connection);
-        return connection;
+        try {
+            setTenantIdOnConnection(connection);
+            return connection;
+        } catch (SQLException e) {
+            closeQuietly(connection);
+            throw e;
+        }
+    }
+
+    /**
+     * Закрывает соединение без выброса исключения.
+     */
+    private void closeQuietly(Connection connection) {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            log.warn("Ошибка при закрытии соединения: {}", e.getMessage());
+        }
     }
 
     /**

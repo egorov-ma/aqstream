@@ -94,7 +94,7 @@ AqStream — multi-tenant платформа, где каждая организ
 | Java | `common/common-data/.../TenantAwareDataSourceConfig.java` | Автоконфигурация |
 | Liquibase | `event-service-db/.../db.changelog-master.xml` | Master changelog |
 | Liquibase | `event-service-db/.../001-create-events-table.xml` | Таблица events с RLS |
-| Test | `common/common-data/.../RlsIsolationTest.java` | Интеграционные тесты RLS |
+| Test | `common/common-data/.../TenantAwareDataSourceDecoratorTest.java` | Unit тесты декоратора |
 
 ### Ключевые компоненты
 

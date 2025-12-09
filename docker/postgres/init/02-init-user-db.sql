@@ -51,7 +51,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Роль для приложения
+-- Роль для приложения (без superuser привилегий, подчиняется RLS)
+-- ВАЖНО: В production использовать безопасный пароль через environment variable
+-- или создавать роль через отдельный защищённый скрипт
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'aqstream_app') THEN

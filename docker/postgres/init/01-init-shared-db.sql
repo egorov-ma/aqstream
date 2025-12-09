@@ -63,6 +63,8 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION create_tenant_rls_policies(TEXT, TEXT) IS 'Создаёт стандартные RLS политики для таблицы с tenant_id';
 
 -- Роль для приложения (без superuser привилегий, подчиняется RLS)
+-- ВАЖНО: В production использовать безопасный пароль через environment variable
+-- или создавать роль через отдельный защищённый скрипт
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'aqstream_app') THEN

@@ -1,11 +1,14 @@
 package ru.aqstream.common.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 import javax.sql.DataSource;
@@ -85,5 +88,19 @@ class TenantAwareDataSourceDecoratorTest {
         // Then
         assertThat(result).isEqualTo(connection);
         verify(delegate).getConnection(username, password);
+    }
+
+    @Test
+    @DisplayName("При ошибке установки tenant_id соединение закрывается")
+    void getConnection_WhenSetTenantIdFails_ClosesConnection() throws Exception {
+        // Given
+        when(statement.execute(anyString())).thenThrow(new SQLException("Test error"));
+
+        // When / Then
+        assertThatThrownBy(() -> decorator.getConnection())
+            .isInstanceOf(SQLException.class)
+            .hasMessage("Test error");
+
+        verify(connection).close();
     }
 }

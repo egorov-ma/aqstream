@@ -106,27 +106,7 @@ CREATE POLICY tenant_isolation_events ON event_service.events
 
 ### Tenant Context в приложении
 
-Для автоматической установки `app.tenant_id` используется `TenantAwareDataSourceDecorator`:
-
-```java
-// TenantAwareDataSourceDecorator автоматически устанавливает session variable
-// при получении соединения из пула
-
-@Override
-public Connection getConnection() throws SQLException {
-    Connection connection = delegate.getConnection();
-
-    UUID tenantId = TenantContext.getTenantIdOptional().orElse(null);
-    try (Statement stmt = connection.createStatement()) {
-        if (tenantId != null) {
-            stmt.execute(String.format("SET app.tenant_id = '%s'", tenantId));
-        } else {
-            stmt.execute("RESET app.tenant_id");
-        }
-    }
-    return connection;
-}
-```
+Для автоматической установки `app.tenant_id` используется `TenantAwareDataSourceDecorator` из модуля `common-data`.
 
 Активация в `application.yml`:
 
