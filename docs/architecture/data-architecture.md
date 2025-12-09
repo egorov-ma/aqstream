@@ -86,34 +86,55 @@ CREATE SCHEMA analytics_service;
 Изоляция данных организаций на уровне PostgreSQL:
 
 ```sql
--- Включение RLS
+-- Функция для получения tenant_id из session variable
+CREATE OR REPLACE FUNCTION current_tenant_id() RETURNS UUID AS $$
+BEGIN
+    RETURN NULLIF(current_setting('app.tenant_id', true), '')::UUID;
+EXCEPTION
+    WHEN OTHERS THEN RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Включение RLS на таблице
 ALTER TABLE event_service.events ENABLE ROW LEVEL SECURITY;
 
 -- Политика изоляции
-CREATE POLICY tenant_isolation ON event_service.events
+CREATE POLICY tenant_isolation_events ON event_service.events
     FOR ALL
-    USING (tenant_id = current_setting('app.tenant_id')::uuid);
-
--- Установка tenant context
-SET app.tenant_id = '550e8400-e29b-41d4-a716-446655440000';
+    USING (tenant_id = current_tenant_id());
 ```
 
 ### Tenant Context в приложении
 
+Для автоматической установки `app.tenant_id` используется `TenantAwareDataSourceDecorator`:
+
 ```java
-// Установка tenant context перед запросами
-@Component
-public class TenantConnectionProvider implements ConnectionProvider {
-    
-    @Override
-    public Connection getConnection() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute("SET app.tenant_id = '" + TenantContext.getTenantId() + "'");
+// TenantAwareDataSourceDecorator автоматически устанавливает session variable
+// при получении соединения из пула
+
+@Override
+public Connection getConnection() throws SQLException {
+    Connection connection = delegate.getConnection();
+
+    UUID tenantId = TenantContext.getTenantIdOptional().orElse(null);
+    try (Statement stmt = connection.createStatement()) {
+        if (tenantId != null) {
+            stmt.execute(String.format("SET app.tenant_id = '%s'", tenantId));
+        } else {
+            stmt.execute("RESET app.tenant_id");
         }
-        return connection;
     }
+    return connection;
 }
+```
+
+Активация в `application.yml`:
+
+```yaml
+aqstream:
+  multitenancy:
+    rls:
+      enabled: true
 ```
 
 ### Таблицы без tenant_id

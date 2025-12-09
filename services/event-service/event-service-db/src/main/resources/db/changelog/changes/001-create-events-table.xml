@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы events с поддержкой RLS -->
+
+    <changeSet id="001-1" author="aqstream">
+        <comment>Создание таблицы events</comment>
+
+        <createTable tableName="events" schemaName="event_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_events"/>
+            </column>
+
+            <!-- Multi-tenancy -->
+            <column name="tenant_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Business fields -->
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="slug" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="status" type="varchar(50)" defaultValue="DRAFT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="starts_at" type="timestamptz">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ends_at" type="timestamptz"/>
+            <column name="timezone" type="varchar(50)" defaultValue="UTC">
+                <constraints nullable="false"/>
+            </column>
+            <column name="location_type" type="varchar(50)" defaultValue="ONLINE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="location_address" type="text"/>
+            <column name="online_url" type="text"/>
+            <column name="max_capacity" type="integer"/>
+            <column name="registration_opens_at" type="timestamptz"/>
+            <column name="registration_closes_at" type="timestamptz"/>
+            <column name="is_public" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Audit fields -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="timestamptz"/>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="events" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="001-2" author="aqstream">
+        <comment>Индексы для таблицы events</comment>
+
+        <!-- Индекс на tenant_id для RLS -->
+        <createIndex indexName="idx_events_tenant_id" tableName="events" schemaName="event_service">
+            <column name="tenant_id"/>
+        </createIndex>
+
+        <!-- Уникальный индекс на slug в рамках tenant -->
+        <createIndex indexName="idx_events_tenant_slug" tableName="events" schemaName="event_service" unique="true">
+            <column name="tenant_id"/>
+            <column name="slug"/>
+            <column name="deleted_at"/>
+        </createIndex>
+
+        <!-- Индекс для поиска по статусу -->
+        <createIndex indexName="idx_events_status" tableName="events" schemaName="event_service">
+            <column name="status"/>
+        </createIndex>
+
+        <!-- Индекс для сортировки по дате начала -->
+        <createIndex indexName="idx_events_starts_at" tableName="events" schemaName="event_service">
+            <column name="starts_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_events_starts_at" tableName="events" schemaName="event_service"/>
+            <dropIndex indexName="idx_events_status" tableName="events" schemaName="event_service"/>
+            <dropIndex indexName="idx_events_tenant_slug" tableName="events" schemaName="event_service"/>
+            <dropIndex indexName="idx_events_tenant_id" tableName="events" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="001-3" author="aqstream">
+        <comment>Включение Row Level Security для events</comment>
+
+        <sql>
+            -- Включаем RLS
+            ALTER TABLE event_service.events ENABLE ROW LEVEL SECURITY;
+
+            -- Политика: пользователь видит только данные своего tenant
+            CREATE POLICY tenant_isolation_events ON event_service.events
+                FOR ALL
+                USING (tenant_id = current_tenant_id());
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_events ON event_service.events;
+                ALTER TABLE event_service.events DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
