@@ -53,7 +53,7 @@ flowchart LR
 
 - [x] Структура Gradle multi-module проекта
 - [x] Common modules (api, security, data, messaging, web, test)
-- [ ] API Gateway
+- [x] API Gateway
 - [ ] PostgreSQL с multi-tenancy (RLS)
 - [ ] RabbitMQ setup
 
@@ -251,7 +251,7 @@ flowchart LR
 
 | Фаза | Статус | Прогресс |
 |------|--------|----------|
-| Phase 1: Foundation | 🟡 В работе | Монорепозиторий и Docker Compose готовы |
+| Phase 1: Foundation | 🟡 В работе | Монорепозиторий, Docker Compose, common modules, API Gateway готовы |
 | Phase 2: Core | ⚪ Не начата | — |
 | Phase 3: Growth | ⚪ Не начата | — |
 | Phase 4: Scale | ⚪ Не начата | — |

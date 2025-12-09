@@ -13,18 +13,21 @@ dependencyManagement {
 dependencies {
     implementation(project(":common:common-api"))
 
-    // Spring Cloud Gateway (WebFlux-based - единственное исключение из правила Spring MVC)
+    // Spring Cloud Gateway (WebFlux-based — единственное исключение из правила Spring MVC)
     implementation("org.springframework.cloud:spring-cloud-starter-gateway")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // Redis для rate limiting
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
-    // Security
-    implementation("org.springframework.boot:spring-boot-starter-security")
+    // JWT — прямая зависимость, т.к. common-security использует servlet stack
+    val jjwtVersion: String by project
+    implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
 
-    testImplementation(project(":common:common-test"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.projectreactor:reactor-test")
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
