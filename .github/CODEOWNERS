@@ -1,0 +1,33 @@
+# CODEOWNERS for AqStream
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @aqstream/core-team
+
+# Backend services
+/services/gateway/ @aqstream/backend-team
+/services/user-service/ @aqstream/backend-team
+/services/event-service/ @aqstream/backend-team
+/services/payment-service/ @aqstream/backend-team
+/services/notification-service/ @aqstream/backend-team
+/services/media-service/ @aqstream/backend-team
+/services/analytics-service/ @aqstream/backend-team
+
+# Common modules
+/common/ @aqstream/backend-team
+
+# Frontend
+/frontend/ @aqstream/frontend-team
+
+# Infrastructure
+/.github/ @aqstream/devops-team
+/docker/ @aqstream/devops-team
+/docker-compose*.yml @aqstream/devops-team
+
+# Documentation
+/docs/ @aqstream/core-team
+
+# Build configuration
+/build.gradle.kts @aqstream/backend-team
+/settings.gradle.kts @aqstream/backend-team
+/gradle.properties @aqstream/backend-team

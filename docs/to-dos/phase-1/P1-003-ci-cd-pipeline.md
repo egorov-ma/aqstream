@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 1: Foundation |
-| Статус | `backlog` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Инфраструктура](../../business/roadmap.md#фаза-1-foundation) |
 
@@ -46,34 +46,34 @@
 - [x] Acceptance Criteria определены
 - [x] Технические детали проработаны
 - [x] Зависимости определены и разрешены
-- [ ] P1-001 завершена (структура репозитория)
+- [x] P1-001 завершена (структура репозитория)
 
 ## Acceptance Criteria
 
-- [ ] Создан `.github/workflows/ci.yml` для проверок на PR
-- [ ] CI workflow включает:
-  - [ ] Backend lint (checkstyle)
-  - [ ] Backend unit tests
-  - [ ] Frontend lint (eslint)
-  - [ ] Frontend type check
-  - [ ] Frontend tests
-  - [ ] Frontend build
-- [ ] Создан `.github/workflows/deploy-staging.yml` для деплоя на staging
-- [ ] Создан `.github/workflows/deploy-production.yml` для деплоя на production
-- [ ] Настроен caching для Gradle и pnpm
-- [ ] Настроены GitHub secrets (документация)
-- [ ] Branch protection rules задокументированы
-- [ ] Документация в `docs/operations/ci-cd.md` обновлена
+- [x] Создан `.github/workflows/ci.yml` для проверок на PR
+- [x] CI workflow включает:
+  - [x] Backend lint (checkstyle)
+  - [x] Backend unit tests
+  - [x] Frontend lint (eslint)
+  - [x] Frontend type check
+  - [x] Frontend tests
+  - [x] Frontend build
+- [x] Создан `.github/workflows/deploy-staging.yml` для деплоя на staging
+- [x] Создан `.github/workflows/deploy-production.yml` для деплоя на production
+- [x] Настроен caching для Gradle и pnpm
+- [x] Настроены GitHub secrets (документация)
+- [x] Branch protection rules задокументированы
+- [x] Документация в `docs/operations/ci-cd.md` обновлена
 
 ## Definition of Done (DoD)
 
 Задача считается выполненной, когда:
 
-- [ ] Все Acceptance Criteria выполнены
+- [x] Все Acceptance Criteria выполнены
 - [ ] CI workflow успешно проходит на тестовом PR
-- [ ] Workflows соответствуют best practices GitHub Actions
-- [ ] Code review пройден
-- [ ] Чеклист в roadmap обновлён
+- [x] Workflows соответствуют best practices GitHub Actions
+- [x] Code review пройден
+- [x] Чеклист в roadmap обновлён
 
 ## Технические детали
 
