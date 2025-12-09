@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 1: Foundation |
-| Статус | `backlog` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Backend Foundation](../../business/roadmap.md#фаза-1-foundation) |
 
@@ -48,34 +48,34 @@ Common модули:
 - [x] Acceptance Criteria определены
 - [x] Технические детали проработаны
 - [x] Зависимости определены и разрешены
-- [ ] P1-001 завершена
+- [x] P1-001 завершена
 
 ## Acceptance Criteria
 
-- [ ] Создана структура директорий для всех сервисов и модулей
-- [ ] `settings.gradle.kts` включает все модули
-- [ ] Корневой `build.gradle.kts` содержит:
-  - [ ] Общие плагины (Spring Boot, Spring Dependency Management)
-  - [ ] Общие зависимости (Lombok, MapStruct)
-  - [ ] Конфигурацию subprojects
-- [ ] `gradle.properties` содержит версии всех зависимостей
-- [ ] Каждый common модуль имеет базовый `build.gradle.kts`
-- [ ] Каждый сервис имеет структуру подмодулей (api, service, db)
-- [ ] Checkstyle plugin настроен
-- [ ] JaCoCo для coverage настроен
-- [ ] Команда `./gradlew build` успешно компилируется
-- [ ] Команда `./gradlew test` проходит (пустые тесты)
+- [x] Создана структура директорий для всех сервисов и модулей
+- [x] `settings.gradle.kts` включает все модули
+- [x] Корневой `build.gradle.kts` содержит:
+  - [x] Общие плагины (Spring Boot, Spring Dependency Management)
+  - [x] Общие зависимости (Lombok, MapStruct)
+  - [x] Конфигурацию subprojects
+- [x] `gradle.properties` содержит версии всех зависимостей
+- [x] Каждый common модуль имеет базовый `build.gradle.kts`
+- [x] Каждый сервис имеет структуру подмодулей (api, service, db)
+- [x] Checkstyle plugin настроен
+- [x] JaCoCo для coverage настроен
+- [x] Команда `./gradlew build` успешно компилируется
+- [x] Команда `./gradlew test` проходит (пустые тесты)
 
 ## Definition of Done (DoD)
 
 Задача считается выполненной, когда:
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Структура соответствует документации `docs/tech-stack/backend/architecture.md`
-- [ ] Gradle conventions применены консистентно
-- [ ] Code review пройден
+- [x] Все Acceptance Criteria выполнены
+- [x] Структура соответствует документации `docs/tech-stack/backend/architecture.md`
+- [x] Gradle conventions применены консистентно
+- [x] Code review пройден
 - [ ] CI pipeline проходит
-- [ ] Чеклист в roadmap обновлён
+- [x] Чеклист в roadmap обновлён
 
 ## Технические детали
 

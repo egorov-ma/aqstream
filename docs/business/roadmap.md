@@ -51,7 +51,7 @@ flowchart LR
 
 ### Backend Foundation
 
-- [ ] Структура Gradle multi-module проекта
+- [x] Структура Gradle multi-module проекта
 - [ ] Common modules (api, security, data, messaging, web, test)
 - [ ] API Gateway
 - [ ] PostgreSQL с multi-tenancy (RLS)

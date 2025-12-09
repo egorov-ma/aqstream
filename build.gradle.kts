@@ -3,6 +3,7 @@ plugins {
     id("org.springframework.boot") version "3.5.8" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("checkstyle")
+    id("jacoco")
 }
 
 group = "ru.aqstream"
@@ -23,6 +24,10 @@ allprojects {
 subprojects {
     apply(plugin = "java")
     apply(plugin = "checkstyle")
+    apply(plugin = "jacoco")
+
+    group = rootProject.group
+    version = rootProject.version
 
     java {
         toolchain {
@@ -37,11 +42,53 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+        finalizedBy(tasks.named("jacocoTestReport"))
+    }
+
+    tasks.named<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.named("test"))
+        reports {
+            xml.required = true
+            html.required = true
+        }
     }
 
     checkstyle {
         toolVersion = "10.21.1"
         configFile = rootProject.file("config/checkstyle/checkstyle.xml")
         isIgnoreFailures = false
+    }
+
+    val lombokVersion: String by project
+    val junitVersion: String by project
+
+    dependencies {
+        "compileOnly"("org.projectlombok:lombok:$lombokVersion")
+        "annotationProcessor"("org.projectlombok:lombok:$lombokVersion")
+
+        "testCompileOnly"("org.projectlombok:lombok:$lombokVersion")
+        "testAnnotationProcessor"("org.projectlombok:lombok:$lombokVersion")
+
+        "testImplementation"("org.junit.jupiter:junit-jupiter:$junitVersion")
+        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+    }
+}
+
+// Корневой отчёт JaCoCo для всех модулей
+tasks.register<JacocoReport>("jacocoRootReport") {
+    dependsOn(subprojects.map { it.tasks.named("test") })
+
+    additionalSourceDirs.setFrom(subprojects.flatMap { it.sourceSets.main.get().allSource.srcDirs })
+    sourceDirectories.setFrom(subprojects.flatMap { it.sourceSets.main.get().allSource.srcDirs })
+    classDirectories.setFrom(subprojects.flatMap { it.sourceSets.main.get().output })
+    executionData.setFrom(subprojects.mapNotNull {
+        val file = it.layout.buildDirectory.file("jacoco/test.exec").get().asFile
+        if (file.exists()) file else null
+    })
+
+    reports {
+        xml.required = true
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir("reports/jacoco/html")
     }
 }
