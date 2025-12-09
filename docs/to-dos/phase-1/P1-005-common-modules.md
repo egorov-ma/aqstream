@@ -103,7 +103,7 @@ Common modules — фундамент для всех микросервисов
 - [x] Unit тесты написаны (JwtTokenProvider)
 - [x] Javadoc для публичных классов
 - [x] Code review пройден
-- [ ] CI pipeline проходит
+- [x] CI pipeline проходит
 - [x] Чеклист в roadmap обновлён
 
 ## Технические детали

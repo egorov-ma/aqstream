@@ -74,7 +74,7 @@ Common модули:
 - [x] Структура соответствует документации `docs/tech-stack/backend/architecture.md`
 - [x] Gradle conventions применены консистентно
 - [x] Code review пройден
-- [ ] CI pipeline проходит
+- [x] CI pipeline проходит
 - [x] Чеклист в roadmap обновлён
 
 ## Технические детали
@@ -147,183 +147,31 @@ aqstream/
 └── gradle.properties
 ```
 
-### gradle.properties
+### Реализованные модули
 
-```properties
-# Project
-group=ru.aqstream
-version=0.1.0-SNAPSHOT
+| Тип | Количество | Примеры |
+|-----|------------|---------|
+| Common | 6 | common-api, common-security, common-data, common-messaging, common-web, common-test |
+| Gateway | 1 | services/gateway (WebFlux) |
+| Service modules | 18 | user-service/{api,service,db}, event-service/{api,service,db}, ... |
+| Client modules | 1 | user-service-client |
 
-# Java
-javaVersion=25
+### Паттерны build.gradle.kts
 
-# Spring
-springBootVersion=3.5.8
-springCloudVersion=2025.0.0
+| Тип модуля | Plugin | Основные зависимости |
+|------------|--------|---------------------|
+| `*-api` | `java-library` | `api(project(":common:common-api"))` |
+| `*-service` | `spring-boot` + `dependency-management` | api + db + common-* + MapStruct |
+| `*-db` | `java-library` + `dependency-management` | common-data + JPA + Liquibase + Testcontainers |
+| `*-client` | `java-library` | api + OpenFeign |
 
-# Dependencies
-lombokVersion=1.18.36
-mapstructVersion=1.6.3
-liquibaseVersion=4.31.0
-springdocVersion=2.8.0
-testcontainersVersion=1.20.4
-junitVersion=5.12.0
+### Конфигурация Gradle
 
-# Gradle
-org.gradle.parallel=true
-org.gradle.caching=true
-org.gradle.jvmargs=-Xmx2g -XX:+HeapDumpOnOutOfMemoryError
-```
-
-### build.gradle.kts (корневой)
-
-```kotlin
-plugins {
-    java
-    id("org.springframework.boot") version "${springBootVersion}" apply false
-    id("io.spring.dependency-management") version "1.1.7" apply false
-    id("checkstyle")
-    id("jacoco")
-}
-
-allprojects {
-    group = "${group}"
-    version = "${version}"
-
-    repositories {
-        mavenCentral()
-    }
-}
-
-subprojects {
-    apply(plugin = "java")
-    apply(plugin = "checkstyle")
-    apply(plugin = "jacoco")
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_25
-        targetCompatibility = JavaVersion.VERSION_25
-    }
-
-    checkstyle {
-        toolVersion = "10.21.1"
-        configFile = rootProject.file("config/checkstyle/checkstyle.xml")
-    }
-
-    tasks.withType<JavaCompile> {
-        options.encoding = "UTF-8"
-        options.compilerArgs.addAll(listOf("-parameters"))
-    }
-
-    tasks.withType<Test> {
-        useJUnitPlatform()
-    }
-
-    dependencies {
-        compileOnly("org.projectlombok:lombok:${lombokVersion}")
-        annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
-
-        testImplementation("org.junit.jupiter:junit-jupiter:${junitVersion}")
-        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    }
-}
-```
-
-### settings.gradle.kts
-
-```kotlin
-rootProject.name = "aqstream"
-
-// Common modules
-include("common:common-api")
-include("common:common-security")
-include("common:common-data")
-include("common:common-messaging")
-include("common:common-web")
-include("common:common-test")
-
-// Gateway (single module)
-include("services:gateway")
-
-// User Service
-include("services:user-service:user-service-api")
-include("services:user-service:user-service-service")
-include("services:user-service:user-service-db")
-include("services:user-service:user-service-client")
-
-// Event Service
-include("services:event-service:event-service-api")
-include("services:event-service:event-service-service")
-include("services:event-service:event-service-db")
-
-// Payment Service
-include("services:payment-service:payment-service-api")
-include("services:payment-service:payment-service-service")
-include("services:payment-service:payment-service-db")
-
-// Notification Service
-include("services:notification-service:notification-service-api")
-include("services:notification-service:notification-service-service")
-include("services:notification-service:notification-service-db")
-
-// Media Service
-include("services:media-service:media-service-api")
-include("services:media-service:media-service-service")
-include("services:media-service:media-service-db")
-
-// Analytics Service
-include("services:analytics-service:analytics-service-api")
-include("services:analytics-service:analytics-service-service")
-include("services:analytics-service:analytics-service-db")
-```
-
-### Пример common-api/build.gradle.kts
-
-```kotlin
-plugins {
-    id("java-library")
-}
-
-dependencies {
-    api("jakarta.validation:jakarta.validation-api")
-    api("com.fasterxml.jackson.core:jackson-annotations")
-}
-```
-
-### Пример service-api/build.gradle.kts
-
-```kotlin
-plugins {
-    id("java-library")
-}
-
-dependencies {
-    api(project(":common:common-api"))
-}
-```
-
-### Пример service-service/build.gradle.kts
-
-```kotlin
-plugins {
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
-}
-
-dependencies {
-    implementation(project(":common:common-security"))
-    implementation(project(":common:common-web"))
-    implementation(project(":common:common-messaging"))
-    implementation(project(":services:event-service:event-service-api"))
-    implementation(project(":services:event-service:event-service-db"))
-
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-
-    testImplementation(project(":common:common-test"))
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-}
-```
+| Файл | Содержимое |
+|------|-----------|
+| `settings.gradle.kts` | pluginManagement + 25 модулей |
+| `build.gradle.kts` | subprojects: checkstyle, jacoco, lombok, junit |
+| `gradle.properties` | Версии: Spring Boot 3.5.8, Java 25, Lombok 1.18.42 |
 
 ## Зависимости
 
@@ -346,8 +194,7 @@ dependencies {
 
 ## Заметки
 
-- Gateway не имеет подмодулей (единственный сервис на WebFlux)
-- client модуль создаётся только если сервис предоставляет API для других сервисов
-- Используем `java-library` plugin для библиотечных модулей (api vs implementation)
-- MapStruct processors будут добавлены в service модули
-- Spring Dependency Management обеспечивает консистентные версии Spring зависимостей
+- Gateway — единственный WebFlux сервис (без подмодулей)
+- `java-library` plugin для api/db модулей (`api()` vs `implementation()`)
+- MapStruct processors в service модулях
+- Версии централизованы в gradle.properties + pluginManagement

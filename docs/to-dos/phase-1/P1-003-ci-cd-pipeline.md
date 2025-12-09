@@ -70,9 +70,10 @@
 Задача считается выполненной, когда:
 
 - [x] Все Acceptance Criteria выполнены
-- [ ] CI workflow успешно проходит на тестовом PR
+- [x] CI workflow успешно проходит
 - [x] Workflows соответствуют best practices GitHub Actions
 - [x] Code review пройден
+- [x] CI pipeline проходит
 - [x] Чеклист в roadmap обновлён
 
 ## Технические детали
@@ -95,170 +96,34 @@
 └── CODEOWNERS                 # Code owners для review
 ```
 
-### ci.yml (структура)
+### Реализованные файлы
 
-```yaml
-name: CI
+| Файл | Описание |
+|------|----------|
+| `.github/workflows/ci.yml` | Backend lint/test/build + Frontend lint/test/build |
+| `.github/workflows/deploy-staging.yml` | Build images → Push GHCR → Deploy |
+| `.github/workflows/deploy-production.yml` | Manual workflow с подтверждением |
 
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+### CI Jobs
 
-jobs:
-  backend-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-      - name: Run Checkstyle
-        run: ./gradlew checkstyleMain checkstyleTest
+| Job | Описание | Services |
+|-----|----------|----------|
+| `backend-lint` | Checkstyle | — |
+| `backend-test` | JUnit 5 | PostgreSQL 16, Redis 7 |
+| `backend-build` | Gradle build | — |
+| `frontend-lint` | ESLint + TypeCheck | — |
+| `frontend-test` | Vitest | — |
+| `frontend-build` | Next.js build | — |
 
-  backend-test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-      - name: Run Tests
-        run: ./gradlew test
+### Особенности реализации
 
-  frontend-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-      - run: cd frontend && pnpm install
-      - run: cd frontend && pnpm lint
-      - run: cd frontend && pnpm typecheck
-
-  frontend-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-      - run: cd frontend && pnpm install
-      - run: cd frontend && pnpm test
-      - run: cd frontend && pnpm build
-```
-
-### deploy-staging.yml (структура)
-
-```yaml
-name: Deploy Staging
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build and push images
-        run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          # Build and push logic
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to staging
-        run: |
-          # SSH and deploy logic
-```
-
-### deploy-production.yml (структура)
-
-```yaml
-name: Deploy Production
-
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to deploy'
-        required: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: production  # Requires approval
-    steps:
-      - name: Deploy to production
-        run: |
-          # Deploy logic
-```
-
-### GitHub Secrets (документация)
-
-| Secret | Описание |
-|--------|----------|
-| `STAGING_SSH_KEY` | SSH ключ для staging сервера |
-| `PRODUCTION_SSH_KEY` | SSH ключ для production сервера |
-| `SLACK_WEBHOOK` | Webhook для уведомлений |
-| `CODECOV_TOKEN` | Токен для coverage reports |
-
-### Branch Protection Rules
-
-Для ветки `main`:
-- Require pull request reviews (1 approval)
-- Require status checks to pass
-- Require branches to be up to date
-- Include administrators
-
-### Caching Strategy
-
-```yaml
-# Gradle caching
-- name: Setup Gradle
-  uses: gradle/actions/setup-gradle@v3
-  # Автоматически кеширует ~/.gradle
-
-# pnpm caching
-- uses: actions/setup-node@v4
-  with:
-    cache: 'pnpm'
-    cache-dependency-path: frontend/pnpm-lock.yaml
-```
+| Feature | Реализация |
+|---------|-----------|
+| Concurrency | `cancel-in-progress: true` для CI |
+| Frontend check | Проверка наличия `package.json` |
+| Caching | `gradle/actions/setup-gradle@v4`, `actions/setup-node@v4` |
+| Versioning | Commit SHA (7 символов) |
+| Production safety | Input `confirm: deploy` + environment approval |
 
 ## Зависимости
 
@@ -279,8 +144,7 @@ jobs:
 
 ## Заметки
 
-- Используем GitHub Actions v4 для checkout и setup actions
-- Gradle wrapper должен быть закоммичен в репозиторий
-- pnpm version должна быть фиксированной для воспроизводимости
-- Secrets никогда не логируются в workflow
-- Для staging деплоя используем SSH (не показываем детали в этой задаче)
+- GitHub Actions v4 для всех actions
+- Frontend jobs умно пропускаются если `package.json` не существует
+- `continue-on-error: true` для сервисов без Dockerfile (до их создания)
+- Документация в `docs/operations/ci-cd.md` с troubleshooting

@@ -80,7 +80,7 @@ Gateway — **единственный** сервис на WebFlux/reactive stac
 - [x] Routing работает (можно проверить с mock downstream)
 - [x] Rate limiting работает
 - [x] Code review пройден
-- [ ] CI pipeline проходит
+- [x] CI pipeline проходит
 - [x] Чеклист в roadmap обновлён
 
 ## Технические детали

@@ -66,7 +66,7 @@ AqStream — микросервисная платформа с 7 backend-сер
 - [x] Код написан согласно code style проекта
 - [x] Структура соответствует документации в `docs/`
 - [x] Code review пройден
-- [ ] CI pipeline проходит (если настроен)
+- [x] CI pipeline проходит
 - [x] Чеклист в roadmap обновлён
 
 ## Технические детали
@@ -111,52 +111,26 @@ aqstream/
 └── README.md
 ```
 
-### Ключевые версии
+### Реализованные файлы
+
+| Файл | Описание |
+|------|----------|
+| `settings.gradle.kts` | pluginManagement + включение всех модулей |
+| `build.gradle.kts` | Java 25, checkstyle, jacoco, lombok |
+| `gradle.properties` | Централизованные версии зависимостей |
+| `Makefile` | build, test, clean, infra-*, health, dev |
+| `.gitignore` | IDE, Java, Gradle, Node, secrets |
+| `.editorconfig` | Code style по типам файлов |
+| `config/checkstyle/checkstyle.xml` | Google Style с модификациями |
+
+### Ключевые версии (реализованные)
 
 | Компонент | Версия |
 |-----------|--------|
-| Java | 25 (LTS) |
-| Gradle | 9.2.x |
-| Spring Boot | 3.5.x |
-| Kotlin DSL | для Gradle scripts |
-
-### settings.gradle.kts (пример)
-
-```kotlin
-rootProject.name = "aqstream"
-
-// Common modules
-include("common:common-api")
-include("common:common-security")
-include("common:common-data")
-include("common:common-messaging")
-include("common:common-web")
-include("common:common-test")
-
-// Services
-include("services:gateway")
-include("services:user-service")
-include("services:event-service")
-include("services:payment-service")
-include("services:notification-service")
-include("services:media-service")
-include("services:analytics-service")
-```
-
-### Makefile команды
-
-```makefile
-.PHONY: build test clean
-
-build:
-	./gradlew build
-
-test:
-	./gradlew test
-
-clean:
-	./gradlew clean
-```
+| Java | 25 |
+| Gradle | 9.2.1 |
+| Spring Boot | 3.5.8 |
+| Spring Cloud | 2025.0.0 |
 
 ## Зависимости
 
@@ -181,5 +155,5 @@ clean:
 ## Заметки
 
 - Используем Kotlin DSL для Gradle (`.kts`) как более type-safe альтернативу Groovy
-- Checkstyle конфигурация будет добавлена в `config/checkstyle/`
-- README.md в корне должен содержать quick start инструкции
+- Версии плагинов централизованы через `pluginManagement` в settings.gradle.kts
+- Makefile расширен командами для инфраструктуры и health checks

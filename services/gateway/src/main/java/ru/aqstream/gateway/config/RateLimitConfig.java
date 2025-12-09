@@ -1,5 +1,7 @@
 package ru.aqstream.gateway.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,8 @@ import ru.aqstream.gateway.security.JwtTokenValidator;
  */
 @Configuration
 public class RateLimitConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(RateLimitConfig.class);
 
     private final JwtTokenValidator tokenValidator;
 
@@ -48,6 +52,7 @@ public class RateLimitConfig {
                     return Mono.just("user:" + tokenInfo.userId().toString());
                 } catch (Exception e) {
                     // Невалидный токен — используем IP
+                    log.trace("Невалидный токен для rate limiting, используем IP: {}", e.getMessage());
                 }
             }
 

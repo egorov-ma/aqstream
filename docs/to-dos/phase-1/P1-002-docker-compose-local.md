@@ -71,6 +71,7 @@
 - [x] Все health checks проходят
 - [x] Данные сохраняются между перезапусками
 - [x] Code review пройден
+- [x] CI pipeline проходит
 - [x] Чеклист в roadmap обновлён
 
 ## Технические детали
@@ -111,135 +112,31 @@ aqstream/
 | MinIO API | 9000 | S3-compatible API |
 | MinIO Console | 9001 | UI |
 
-### docker-compose.yml (структура)
+### Реализованные файлы
 
-```yaml
-version: '3.8'
+| Файл | Описание |
+|------|----------|
+| `docker-compose.yml` | PostgreSQL×3, Redis, RabbitMQ, MinIO, Gateway |
+| `docker-compose.override.yml` | Verbose logging для development |
+| `docker-compose.override.example.yml` | Шаблон override файла |
+| `.env.example` | Переменные окружения с defaults |
+| `docker/postgres/init/01-init-shared-db.sql` | Схемы: event, notification, media |
+| `docker/postgres/init/02-init-user-db.sql` | Схема: user_service |
+| `docker/postgres/init/03-init-payment-db.sql` | Схема: payment_service |
+| `docker/rabbitmq/definitions.json` | Exchanges, queues, bindings |
+| `docker/rabbitmq/rabbitmq.conf` | Конфигурация RabbitMQ |
 
-services:
-  postgres-shared:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: aqstream
-      POSTGRES_PASSWORD: aqstream
-      POSTGRES_DB: shared_services_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-shared-data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aqstream"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+### Реализованные сервисы
 
-  postgres-user:
-    image: postgres:16-alpine
-    # ... аналогично
-
-  postgres-payment:
-    image: postgres:16-alpine
-    # ... аналогично
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
-
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio-data:/data
-
-volumes:
-  postgres-shared-data:
-  postgres-user-data:
-  postgres-payment-data:
-  redis-data:
-  rabbitmq-data:
-  minio-data:
-```
-
-### PostgreSQL init script
-
-```sql
--- docker/postgres/init/01-init-databases.sql
-
--- Создание схем для shared database
-CREATE SCHEMA IF NOT EXISTS event_service;
-CREATE SCHEMA IF NOT EXISTS notification_service;
-CREATE SCHEMA IF NOT EXISTS media_service;
-
--- Настройка search_path
-ALTER DATABASE shared_services_db SET search_path TO public, event_service, notification_service, media_service;
-```
-
-### Makefile команды
-
-```makefile
-.PHONY: infra-up infra-down infra-logs infra-ps
-
-infra-up:
-	docker compose up -d postgres-shared postgres-user postgres-payment redis rabbitmq minio
-
-infra-down:
-	docker compose down
-
-infra-logs:
-	docker compose logs -f
-
-infra-ps:
-	docker compose ps
-```
-
-### .env.example
-
-```bash
-# PostgreSQL
-POSTGRES_USER=aqstream
-POSTGRES_PASSWORD=aqstream
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# RabbitMQ
-RABBITMQ_HOST=localhost
-RABBITMQ_PORT=5672
-RABBITMQ_USER=guest
-RABBITMQ_PASSWORD=guest
-
-# MinIO
-MINIO_ENDPOINT=http://localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=aqstream-media
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-```
+| Сервис | Image | Health Check |
+|--------|-------|--------------|
+| postgres-shared | postgres:16-alpine | pg_isready |
+| postgres-user | postgres:16-alpine | pg_isready |
+| postgres-payment | postgres:16-alpine | pg_isready |
+| redis | redis:7-alpine | redis-cli ping |
+| rabbitmq | rabbitmq:3.13-management-alpine | rabbitmq-diagnostics |
+| minio | minio/minio:latest | curl /minio/health/live |
+| minio-init | minio/mc:latest | Создание bucket |
 
 ## Зависимости
 
@@ -261,8 +158,8 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 
 ## Заметки
 
-- Используем Alpine образы для минимального размера
-- Health checks критичны для правильного порядка запуска
-- MinIO используется как локальная замена S3/R2
-- RabbitMQ Management UI полезен для отладки очередей
-- Volumes именованные для удобства управления
+- Alpine образы для минимального размера
+- Health checks с `start_period` для корректного порядка запуска
+- MinIO bucket создаётся автоматически через `minio-init` контейнер
+- RabbitMQ definitions.json загружает exchanges/queues при старте
+- Именованные volumes с префиксом `aqstream-` для удобства управления
