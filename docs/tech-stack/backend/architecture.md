@@ -367,7 +367,7 @@ log.info("Пользователь вошёл: userId={}", userId); // ✅
 class EventServiceIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
 
     @Autowired
     private EventService eventService;

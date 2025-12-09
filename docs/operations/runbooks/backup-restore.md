@@ -156,7 +156,7 @@ echo "Бэкап завершён: $DATE"
 
 ```bash
 # 1. Поднять тестовый PostgreSQL
-docker run -d --name postgres-test -e POSTGRES_PASSWORD=test postgres:15
+docker run -d --name postgres-test -e POSTGRES_PASSWORD=test postgres:16
 
 # 2. Восстановить бэкап
 docker exec -i postgres-test psql -U postgres -c "CREATE DATABASE test_restore;"

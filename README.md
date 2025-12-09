@@ -1,8 +1,8 @@
 # AqStream
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 
@@ -133,15 +133,15 @@ AqStream построен на микросервисной архитектур
 
 | Технология | Версия | Назначение |
 |------------|--------|------------|
-| **Java** | 21 LTS | Основной язык, virtual threads |
-| **Spring Boot** | 3.3 | Framework (Spring MVC, servlet-based) |
-| **Spring Security** | 6.x | Аутентификация, авторизация |
-| **Spring Data JPA** | 3.x | ORM, работа с базой данных |
-| **PostgreSQL** | 15+ | Основная СУБД, Row Level Security |
+| **Java** | 25 LTS | Основной язык, virtual threads |
+| **Spring Boot** | 3.5 | Framework (Spring MVC, servlet-based) |
+| **Spring Security** | 6.5.x | Аутентификация, авторизация |
+| **Spring Data JPA** | 2025.0.x | ORM, работа с базой данных |
+| **PostgreSQL** | 16+ | Основная СУБД, Row Level Security |
 | **Redis** | 7.x | Кэширование, сессии, rate limiting |
-| **RabbitMQ** | 3.12+ | Message broker, event bus |
-| **Liquibase** | 4.x | Миграции базы данных |
-| **MapStruct** | 1.5 | DTO mapping |
+| **RabbitMQ** | 3.13+ | Message broker, event bus |
+| **Liquibase** | 4.31 | Миграции базы данных |
+| **MapStruct** | 1.6 | DTO mapping |
 
 **Почему Spring MVC, а не WebFlux:**  
 Осознанный выбор в пользу классического blocking I/O для простоты отладки, предсказуемого поведения и лучшей совместимости с JPA. Производительности Spring MVC достаточно для целевой нагрузки платформы.

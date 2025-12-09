@@ -323,7 +323,7 @@ public @interface IntegrationTest {}
 // PostgresTestContainer.java
 public class PostgresTestContainer {
     private static final PostgreSQLContainer<?> POSTGRES =
-        new PostgreSQLContainer<>("postgres:15-alpine")
+        new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("test_db")
             .withUsername("test")
             .withPassword("test");

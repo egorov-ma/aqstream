@@ -69,7 +69,7 @@ backlog → ready → in_progress → review → done
 
 | Фаза | Всего задач | Готово | В работе |
 |------|-------------|--------|----------|
-| Phase 1: Foundation | 13 | 0 | 0 |
+| Phase 1: Foundation | 13 | 1 | 0 |
 | Phase 2: Core | — | — | — |
 | Phase 3: Growth | — | — | — |
 | Phase 4: Scale | — | — | — |
@@ -78,7 +78,7 @@ backlog → ready → in_progress → review → done
 
 | ID | Название | Приоритет | Статус | Зависит от |
 |----|----------|-----------|--------|------------|
-| [P1-001](./phase-1/P1-001-monorepo-setup.md) | Настройка монорепозитория | critical | backlog | — |
+| [P1-001](./phase-1/P1-001-monorepo-setup.md) | Настройка монорепозитория | critical | done | — |
 | [P1-002](./phase-1/P1-002-docker-compose-local.md) | Docker Compose для локальной разработки | critical | backlog | P1-001 |
 | [P1-003](./phase-1/P1-003-ci-cd-pipeline.md) | CI/CD Pipeline (GitHub Actions) | critical | backlog | P1-001 |
 | [P1-004](./phase-1/P1-004-gradle-multimodule.md) | Gradle Multi-Module структура | critical | backlog | P1-001 |

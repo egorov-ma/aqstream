@@ -79,13 +79,13 @@ class EventServiceTest {
 class EventServiceIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
         .withDatabaseName("test_db")
         .withUsername("test")
         .withPassword("test");
 
     @Container
-    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.12");
+    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

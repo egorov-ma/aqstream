@@ -155,19 +155,19 @@ group=ru.aqstream
 version=0.1.0-SNAPSHOT
 
 # Java
-javaVersion=21
+javaVersion=25
 
 # Spring
-springBootVersion=3.3.0
-springCloudVersion=2023.0.0
+springBootVersion=3.5.8
+springCloudVersion=2025.0.0
 
 # Dependencies
-lombokVersion=1.18.30
-mapstructVersion=1.5.5.Final
-liquibaseVersion=4.25.1
-springdocVersion=2.3.0
-testcontainersVersion=1.19.3
-junitVersion=5.10.1
+lombokVersion=1.18.36
+mapstructVersion=1.6.3
+liquibaseVersion=4.31.0
+springdocVersion=2.8.0
+testcontainersVersion=1.20.4
+junitVersion=5.12.0
 
 # Gradle
 org.gradle.parallel=true
@@ -181,7 +181,7 @@ org.gradle.jvmargs=-Xmx2g -XX:+HeapDumpOnOutOfMemoryError
 plugins {
     java
     id("org.springframework.boot") version "${springBootVersion}" apply false
-    id("io.spring.dependency-management") version "1.1.4" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
     id("checkstyle")
     id("jacoco")
 }
@@ -201,12 +201,12 @@ subprojects {
     apply(plugin = "jacoco")
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
 
     checkstyle {
-        toolVersion = "10.12.5"
+        toolVersion = "10.21.1"
         configFile = rootProject.file("config/checkstyle/checkstyle.xml")
     }
 

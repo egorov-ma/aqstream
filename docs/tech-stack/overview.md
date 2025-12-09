@@ -19,11 +19,11 @@ flowchart TB
     end
     
     subgraph Services["Service Layer"]
-        Java["Java 21 + Spring Boot 3.3"]
+        Java["Java 25 + Spring Boot 3.5"]
     end
-    
+
     subgraph Data["Data Layer"]
-        PG["PostgreSQL 15"]
+        PG["PostgreSQL 16"]
         Redis["Redis 7"]
         RMQ["RabbitMQ 3.12"]
         MinIO["MinIO"]
@@ -38,11 +38,11 @@ flowchart TB
 
 | Технология | Версия | Назначение |
 |------------|--------|------------|
-| Java | 21 LTS | Язык программирования |
-| Spring Boot | 3.3.x | Application framework |
+| Java | 25 LTS | Язык программирования |
+| Spring Boot | 3.5.x | Application framework |
 | Spring MVC | — | Web framework (servlet-based) |
-| Spring Security | 6.x | Security framework |
-| Spring Data JPA | 3.x | Data access |
+| Spring Security | 6.5.x | Security framework |
+| Spring Data JPA | 2025.0.x | Data access |
 
 **Важно:** Используем классический **Spring MVC** (servlet-based, blocking I/O), не WebFlux. Исключение — API Gateway.
 
@@ -50,9 +50,9 @@ flowchart TB
 
 | Технология | Версия | Назначение |
 |------------|--------|------------|
-| PostgreSQL | 15+ | Основная СУБД |
-| Liquibase | 4.x | Миграции схемы |
-| HikariCP | 5.x | Connection pooling |
+| PostgreSQL | 16+ | Основная СУБД |
+| Liquibase | 4.31.x | Миграции схемы |
+| HikariCP | 6.x | Connection pooling |
 
 ### Messaging
 
@@ -237,7 +237,7 @@ testImplementation("io.rest-assured:rest-assured")
 
 ### Поддержка
 
-LTS версии где возможно (Java 21 LTS). Версии с активной поддержкой.
+LTS версии где возможно (Java 25 LTS). Версии с активной поддержкой.
 
 ## Дальнейшее чтение
 

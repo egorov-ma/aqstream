@@ -21,9 +21,9 @@
 ### Технический контекст
 
 Инфраструктурные зависимости платформы:
-- PostgreSQL 15+ (3 инстанса: shared, user, payment)
+- PostgreSQL 16+ (3 инстанса: shared, user, payment)
 - Redis 7+
-- RabbitMQ 3.12+
+- RabbitMQ 3.13+
 - MinIO (S3-compatible storage)
 
 Требования:
@@ -118,7 +118,7 @@ version: '3.8'
 
 services:
   postgres-shared:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: aqstream
       POSTGRES_PASSWORD: aqstream
@@ -135,11 +135,11 @@ services:
       retries: 5
 
   postgres-user:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     # ... аналогично
 
   postgres-payment:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     # ... аналогично
 
   redis:

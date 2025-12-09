@@ -20,7 +20,7 @@ flowchart LR
 
 ```dockerfile
 # services/event-service/Dockerfile
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
@@ -35,13 +35,13 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 ```dockerfile
 # Build stage
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 WORKDIR /app
 COPY . .
 RUN ./gradlew :services:event-service:bootJar -x test
 
 # Runtime stage
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 COPY --from=build /app/services/event-service/build/libs/*.jar app.jar
 EXPOSE 8082
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_PASSWORD: test
         ports:
@@ -85,7 +85,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
       - name: Run tests
         run: ./gradlew test

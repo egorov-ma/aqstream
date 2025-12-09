@@ -224,7 +224,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 services:
   # Databases
   postgres-shared:
-    image: postgres:15
+    image: postgres:16
     environment:
       POSTGRES_USER: aqstream
       POSTGRES_PASSWORD: aqstream
@@ -235,7 +235,7 @@ services:
       - postgres-shared-data:/var/lib/postgresql/data
 
   postgres-user:
-    image: postgres:15
+    image: postgres:16
     environment:
       POSTGRES_USER: aqstream
       POSTGRES_PASSWORD: aqstream
@@ -246,7 +246,7 @@ services:
       - postgres-user-data:/var/lib/postgresql/data
 
   postgres-payment:
-    image: postgres:15
+    image: postgres:16
     environment:
       POSTGRES_USER: aqstream
       POSTGRES_PASSWORD: aqstream

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 1: Foundation |
-| Статус | `backlog` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Инфраструктура](../../business/roadmap.md#фаза-1-foundation) |
 
@@ -52,7 +52,7 @@ AqStream — микросервисная платформа с 7 backend-сер
 - [ ] Настроен корневой `settings.gradle.kts` с включением всех модулей
 - [ ] Настроен корневой `build.gradle.kts` с общими зависимостями и плагинами
 - [ ] Создан `gradle.properties` с версиями зависимостей
-- [ ] Gradle wrapper настроен на актуальную версию (8.5+)
+- [x] Gradle wrapper настроен на актуальную версию (9.2+)
 - [ ] Создан `.gitignore` для Java/Gradle/Node проектов
 - [ ] Создан `.editorconfig` для единого стиля
 - [ ] Создан `Makefile` с базовыми командами (build, test, clean)
@@ -115,9 +115,9 @@ aqstream/
 
 | Компонент | Версия |
 |-----------|--------|
-| Java | 21 |
-| Gradle | 8.5+ |
-| Spring Boot | 3.3.x |
+| Java | 25 (LTS) |
+| Gradle | 9.2.x |
+| Spring Boot | 3.5.x |
 | Kotlin DSL | для Gradle scripts |
 
 ### settings.gradle.kts (пример)
