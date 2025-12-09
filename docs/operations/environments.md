@@ -15,7 +15,7 @@
 ### Требования
 
 - Docker 24+ и Docker Compose v2
-- JDK 21
+- JDK 25
 - Node.js 20 LTS
 - pnpm 8+
 - 16 GB RAM (рекомендуется)
@@ -83,15 +83,44 @@ Backend: Spring DevTools (автоматический restart при измен
 
 Frontend: Next.js Fast Refresh.
 
+### Управление инфраструктурой
+
+```bash
+# Запустить инфраструктуру
+make infra-up
+
+# Остановить инфраструктуру
+make infra-down
+
+# Посмотреть логи
+make infra-logs
+
+# Статус контейнеров
+make infra-ps
+
+# Проверить health сервисов
+make health
+
+# Полный сброс (удаление данных)
+make infra-reset
+```
+
+### Docker Compose файлы
+
+| Файл | Назначение |
+|------|-----------|
+| `docker-compose.yml` | Основная конфигурация инфраструктуры |
+| `docker-compose.override.yml` | Dev-специфичные настройки (verbose logging) |
+
 ### Полезные URL
 
-| URL | Описание |
-|-----|----------|
-| http://localhost:3000 | Frontend |
-| http://localhost:8080/swagger-ui.html | API Docs (Gateway) |
-| http://localhost:8082/swagger-ui.html | Event Service API |
-| http://localhost:15672 | RabbitMQ Management |
-| http://localhost:9001 | MinIO Console |
+| URL | Описание | Credentials |
+|-----|----------|-------------|
+| http://localhost:3000 | Frontend | — |
+| http://localhost:8080/swagger-ui.html | API Docs (Gateway) | — |
+| http://localhost:8082/swagger-ui.html | Event Service API | — |
+| http://localhost:15672 | RabbitMQ Management | guest/guest |
+| http://localhost:9001 | MinIO Console | minioadmin/minioadmin |
 
 ## Staging
 

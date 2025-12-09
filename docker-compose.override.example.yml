@@ -1,0 +1,30 @@
+# Docker Compose override для локальной разработки
+# Автоматически применяется вместе с docker-compose.yml
+# Содержит настройки специфичные для development режима
+
+services:
+  postgres-shared:
+    # Более подробное логирование для разработки
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_duration=on
+      -c log_min_duration_statement=100
+
+  postgres-user:
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_duration=on
+      -c log_min_duration_statement=100
+
+  postgres-payment:
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_duration=on
+      -c log_min_duration_statement=100
+
+  redis:
+    # Более подробное логирование
+    command: redis-server --appendonly yes --loglevel verbose

@@ -1,0 +1,143 @@
+{
+  "rabbit_version": "3.13.0",
+  "users": [
+    {
+      "name": "guest",
+      "password_hash": "9/1i+jKFRpbTRV1PtRnzFFYibT3cEpP92JeZ8YKGtflf4e/u",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator"]
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "guest",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "topic_permissions": [],
+  "parameters": [],
+  "global_parameters": [],
+  "policies": [],
+  "queues": [
+    {
+      "name": "aqstream.events.user-registered",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.events.event-created",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.events.registration-created",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.events.payment-completed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.notifications.email",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.notifications.telegram",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "aqstream.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.notifications",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "aqstream.events",
+      "vhost": "/",
+      "destination": "aqstream.events.user-registered",
+      "destination_type": "queue",
+      "routing_key": "user.registered",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.events",
+      "vhost": "/",
+      "destination": "aqstream.events.event-created",
+      "destination_type": "queue",
+      "routing_key": "event.created",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.events",
+      "vhost": "/",
+      "destination": "aqstream.events.registration-created",
+      "destination_type": "queue",
+      "routing_key": "registration.created",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.events",
+      "vhost": "/",
+      "destination": "aqstream.events.payment-completed",
+      "destination_type": "queue",
+      "routing_key": "payment.completed",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.notifications",
+      "vhost": "/",
+      "destination": "aqstream.notifications.email",
+      "destination_type": "queue",
+      "routing_key": "email",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.notifications",
+      "vhost": "/",
+      "destination": "aqstream.notifications.telegram",
+      "destination_type": "queue",
+      "routing_key": "telegram",
+      "arguments": {}
+    }
+  ]
+}

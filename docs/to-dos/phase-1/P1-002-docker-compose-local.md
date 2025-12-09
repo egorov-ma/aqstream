@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 1: Foundation |
-| Статус | `backlog` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Инфраструктура](../../business/roadmap.md#фаза-1-foundation) |
 
@@ -45,33 +45,33 @@
 - [x] Acceptance Criteria определены
 - [x] Технические детали проработаны
 - [x] Зависимости определены и разрешены
-- [ ] P1-001 завершена (структура репозитория)
+- [x] P1-001 завершена (структура репозитория)
 
 ## Acceptance Criteria
 
-- [ ] Создан `docker-compose.yml` для инфраструктуры (PostgreSQL, Redis, RabbitMQ, MinIO)
-- [ ] Создан `docker-compose.override.yml` для development режима
-- [ ] PostgreSQL настроен с тремя базами данных и схемами
-- [ ] Redis доступен на порту 6379
-- [ ] RabbitMQ доступен на портах 5672 (AMQP) и 15672 (Management UI)
-- [ ] MinIO доступен на портах 9000 (API) и 9001 (Console)
-- [ ] Volumes настроены для персистентности данных
-- [ ] Health checks настроены для всех сервисов
-- [ ] `.env.example` создан с переменными окружения
-- [ ] Команда `make infra-up` запускает инфраструктуру
-- [ ] Команда `make infra-down` останавливает инфраструктуру
-- [ ] Документация в `docs/operations/environments.md` обновлена
+- [x] Создан `docker-compose.yml` для инфраструктуры (PostgreSQL, Redis, RabbitMQ, MinIO)
+- [x] Создан `docker-compose.override.yml` для development режима
+- [x] PostgreSQL настроен с тремя базами данных и схемами
+- [x] Redis доступен на порту 6379
+- [x] RabbitMQ доступен на портах 5672 (AMQP) и 15672 (Management UI)
+- [x] MinIO доступен на портах 9000 (API) и 9001 (Console)
+- [x] Volumes настроены для персистентности данных
+- [x] Health checks настроены для всех сервисов
+- [x] `.env.example` создан с переменными окружения
+- [x] Команда `make infra-up` запускает инфраструктуру
+- [x] Команда `make infra-down` останавливает инфраструктуру
+- [x] Документация в `docs/operations/environments.md` обновлена
 
 ## Definition of Done (DoD)
 
 Задача считается выполненной, когда:
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] `docker compose up -d` успешно запускает все контейнеры
-- [ ] Все health checks проходят
-- [ ] Данные сохраняются между перезапусками
-- [ ] Code review пройден
-- [ ] Чеклист в roadmap обновлён
+- [x] Все Acceptance Criteria выполнены
+- [x] `docker compose up -d` успешно запускает все контейнеры
+- [x] Все health checks проходят
+- [x] Данные сохраняются между перезапусками
+- [x] Code review пройден
+- [x] Чеклист в roadmap обновлён
 
 ## Технические детали
 
