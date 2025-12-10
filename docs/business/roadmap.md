@@ -47,7 +47,7 @@ flowchart LR
 - [x] Настройка монорепозитория
 - [x] Docker Compose для локальной разработки
 - [x] CI/CD pipeline (GitHub Actions)
-- [ ] Doc-as-code инфраструктура (MkDocs, генераторы, валидаторы)
+- [x] Doc-as-code инфраструктура (MkDocs, генераторы, валидаторы)
 
 ### Backend Foundation
 

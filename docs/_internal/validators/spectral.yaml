@@ -1,0 +1,26 @@
+extends: [[spectral:oas, recommended]]
+
+rules:
+  # Обязательные
+  operation-operationId:
+    severity: error
+  operation-tags:
+    severity: error
+  info-contact:
+    severity: warn
+
+  # Описания
+  operation-description:
+    severity: warn
+  oas3-schema-description:
+    severity: hint
+
+  # Пути и параметры
+  path-params:
+    severity: error
+  path-keys-no-trailing-slash:
+    severity: warn
+
+  # Отключаем слишком строгие правила
+  info-license:
+    severity: off

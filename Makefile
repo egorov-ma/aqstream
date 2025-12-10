@@ -1,4 +1,4 @@
-.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset
+.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset docs-serve docs-build docs-validate docs-openapi docs-redoc
 
 # Цвета для вывода
 CYAN := \033[36m
@@ -106,3 +106,26 @@ health: ## Проверить health всех сервисов
 	@docker compose exec -T redis redis-cli ping || echo "redis: недоступен"
 	@echo "$(CYAN)Проверка RabbitMQ...$(RESET)"
 	@docker compose exec -T rabbitmq rabbitmq-diagnostics check_running || echo "rabbitmq: недоступен"
+
+# === Documentation ===
+
+docs-serve: ## Запустить локальный сервер документации
+	@echo "$(CYAN)Запуск MkDocs на http://localhost:8000$(RESET)"
+	cd docs/_internal && python3 -m mkdocs serve
+
+docs-build: ## Собрать документацию
+	@echo "$(CYAN)Сборка документации...$(RESET)"
+	cd docs/_internal && python3 -m mkdocs build -d ../../site
+	@echo "$(GREEN)Документация собрана в site/$(RESET)"
+
+docs-validate: ## Валидация документации
+	@echo "$(CYAN)Валидация Markdown...$(RESET)"
+	./docs/_internal/validators/validate-markdown.sh
+	@echo "$(CYAN)Валидация OpenAPI...$(RESET)"
+	./docs/_internal/validators/validate-openapi.sh
+
+docs-openapi: ## Скачать OpenAPI спецификации из сервисов
+	./docs/_internal/generators/generate-openapi.sh
+
+docs-redoc: ## Сгенерировать ReDoc HTML
+	./docs/_internal/generators/generate-redoc.sh

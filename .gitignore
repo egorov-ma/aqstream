@@ -61,6 +61,7 @@ playwright-report/
 dist/
 target/
 *.egg-info/
+site/
 
 # ---- Logs ----
 logs/

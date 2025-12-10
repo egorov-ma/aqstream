@@ -3,6 +3,7 @@ site_description: Документация платформы управлени
 site_url: https://docs.aqstream.com
 repo_url: https://github.com/aqstream/aqstream
 repo_name: aqstream/aqstream
+docs_dir: ..
 
 theme:
   name: material
@@ -25,8 +26,11 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.indexes
     - search.highlight
+    - search.suggest
     - content.code.copy
+    - content.tabs.link
 
 plugins:
   - search:
@@ -35,6 +39,10 @@ plugins:
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -42,10 +50,15 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.details
+  - pymdownx.mark
   - admonition
   - tables
+  - attr_list
+  - md_in_html
   - toc:
       permalink: true
+      toc_depth: 3
 
 nav:
   - Home: README.md

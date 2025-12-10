@@ -1,0 +1,83 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+      - '.markdownlint.json'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.markdownlint.json'
+
+jobs:
+  validate:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate Markdown
+        run: |
+          npx markdownlint-cli2 "docs/**/*.md" \
+            --ignore "docs/_internal/**" \
+            --ignore "docs/to-dos/**" \
+            --ignore "**/node_modules/**"
+        continue-on-error: true
+
+      - name: Validate OpenAPI (if specs exist)
+        run: |
+          if [ -d "docs/tech-stack/backend/api/specs" ] && [ -n "$(ls -A docs/tech-stack/backend/api/specs/*.yaml 2>/dev/null)" ]; then
+            npx @stoplight/spectral-cli lint "docs/tech-stack/backend/api/specs/*.yaml" \
+              --ruleset "docs/_internal/validators/spectral.yaml"
+          else
+            echo "No OpenAPI specs to validate"
+          fi
+        continue-on-error: true
+
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r docs/_internal/doc-as-code/requirements.txt
+
+      - name: Build documentation
+        run: |
+          cd docs/_internal && mkdocs build -d ../../site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
