@@ -25,18 +25,19 @@ frontend/
 │   │   ├── login/
 │   │   └── register/
 │   ├── (dashboard)/          # Protected pages
-│   │   ├── events/
-│   │   ├── organizations/
-│   │   └── settings/
+│   │   └── dashboard/        # /dashboard/*
+│   │       ├── events/
+│   │       ├── registrations/
+│   │       ├── analytics/
+│   │       └── settings/
 │   ├── (public)/             # Public pages
 │   │   └── events/[slug]/
-│   ├── api/                  # API routes (если нужны)
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/
 │   ├── ui/                   # shadcn/ui primitives
+│   ├── layout/               # Layout components (Header, Sidebar, etc.)
 │   ├── forms/                # Form compositions
-│   ├── layout/               # Layout components
 │   └── features/             # Feature components
 ├── lib/
 │   ├── api/                  # API client
@@ -55,15 +56,20 @@ frontend/
 app/
 ├── (auth)/                   # Без layout dashboard
 │   ├── layout.tsx            # Auth layout (минимальный)
-│   ├── login/page.tsx
-│   └── register/page.tsx
+│   ├── login/page.tsx        # /login
+│   └── register/page.tsx     # /register
 ├── (dashboard)/              # С sidebar и header
 │   ├── layout.tsx            # Dashboard layout
-│   ├── page.tsx              # /dashboard
-│   └── events/
-│       ├── page.tsx          # /events
-│       ├── new/page.tsx      # /events/new
-│       └── [id]/page.tsx     # /events/:id
+│   └── dashboard/
+│       ├── page.tsx          # /dashboard
+│       ├── events/
+│       │   ├── page.tsx      # /dashboard/events
+│       │   ├── new/page.tsx  # /dashboard/events/new
+│       │   └── [id]/page.tsx # /dashboard/events/:id
+│       ├── registrations/
+│       │   └── page.tsx      # /dashboard/registrations
+│       └── settings/
+│           └── page.tsx      # /dashboard/settings
 └── (public)/                 # Публичные страницы
     └── events/
         └── [slug]/page.tsx   # /events/:slug (public event page)

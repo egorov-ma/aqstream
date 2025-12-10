@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
   return (
@@ -8,18 +9,12 @@ export default function HomePage() {
         <p className="mb-8 text-xl text-muted-foreground">Платформа для управления мероприятиями</p>
 
         <div className="flex justify-center gap-4">
-          <Link
-            href="/login"
-            className="rounded-md bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
-          >
-            Войти
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-md border border-input px-6 py-3 hover:bg-accent hover:text-accent-foreground"
-          >
-            Регистрация
-          </Link>
+          <Button size="lg" asChild>
+            <Link href="/login">Войти</Link>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <Link href="/register">Регистрация</Link>
+          </Button>
         </div>
       </div>
     </main>

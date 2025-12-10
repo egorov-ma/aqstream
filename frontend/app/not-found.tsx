@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
@@ -9,12 +10,9 @@ export default function NotFound() {
         <p className="mb-8 text-muted-foreground">
           Запрошенная страница не существует или была удалена.
         </p>
-        <Link
-          href="/"
-          className="rounded-md bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
-        >
-          На главную
-        </Link>
+        <Button size="lg" asChild>
+          <Link href="/">На главную</Link>
+        </Button>
       </div>
     </main>
   );

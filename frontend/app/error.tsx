@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -20,12 +21,9 @@ export default function Error({ error, reset }: ErrorProps) {
         <p className="mb-8 text-muted-foreground">
           Произошла непредвиденная ошибка. Попробуйте обновить страницу.
         </p>
-        <button
-          onClick={reset}
-          className="rounded-md bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
-        >
+        <Button size="lg" onClick={reset}>
           Попробовать снова
-        </button>
+        </Button>
       </div>
     </main>
   );
