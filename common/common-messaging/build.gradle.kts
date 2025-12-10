@@ -19,6 +19,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.amqp:spring-rabbit-test")
+    testImplementation("org.awaitility:awaitility:4.2.2")
 
     // Testcontainers
     val testcontainersVersion: String by project

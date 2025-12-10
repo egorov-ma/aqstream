@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы outbox_messages для Outbox Pattern -->
+    <!-- Обеспечивает reliable event publishing через RabbitMQ -->
+
+    <changeSet id="002-1" author="aqstream">
+        <comment>Создание таблицы outbox_messages для Outbox Pattern</comment>
+
+        <createTable tableName="outbox_messages" schemaName="event_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_outbox_messages"/>
+            </column>
+
+            <!-- Aggregate reference -->
+            <column name="aggregate_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_type" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Event data -->
+            <column name="event_type" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Processing status -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="processed_at" type="timestamptz"/>
+            <column name="retry_count" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_error" type="varchar(1000)"/>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="outbox_messages" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-2" author="aqstream">
+        <comment>Индексы для таблицы outbox_messages</comment>
+
+        <!-- Индекс для поиска необработанных сообщений -->
+        <createIndex indexName="idx_outbox_unprocessed" tableName="outbox_messages" schemaName="event_service">
+            <column name="processed_at"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <!-- Индекс для поиска по агрегату (ordering guarantee) -->
+        <createIndex indexName="idx_outbox_aggregate" tableName="outbox_messages" schemaName="event_service">
+            <column name="aggregate_id"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <!-- Индекс для очистки старых записей -->
+        <createIndex indexName="idx_outbox_processed_at" tableName="outbox_messages" schemaName="event_service">
+            <column name="processed_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_outbox_processed_at" tableName="outbox_messages" schemaName="event_service"/>
+            <dropIndex indexName="idx_outbox_aggregate" tableName="outbox_messages" schemaName="event_service"/>
+            <dropIndex indexName="idx_outbox_unprocessed" tableName="outbox_messages" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

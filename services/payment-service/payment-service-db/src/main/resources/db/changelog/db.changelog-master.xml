@@ -5,10 +5,9 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
 
-    <!-- Event Service Database Migrations -->
-    <!-- Схема: event_service в shared_services_db -->
+    <!-- Payment Service Database Migrations -->
+    <!-- Схема: payment_service в payment_service_db -->
 
-    <include file="db/changelog/changes/001-create-events-table.xml"/>
-    <include file="db/changelog/changes/002-create-outbox-table.xml"/>
+    <include file="db/changelog/changes/001-create-outbox-table.xml"/>
 
 </databaseChangeLog>

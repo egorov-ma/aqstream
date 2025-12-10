@@ -55,7 +55,7 @@ flowchart LR
 - [x] Common modules (api, security, data, messaging, web, test)
 - [x] API Gateway
 - [ ] PostgreSQL с multi-tenancy (RLS)
-- [ ] RabbitMQ setup
+- [x] RabbitMQ setup
 
 ### Frontend Foundation
 

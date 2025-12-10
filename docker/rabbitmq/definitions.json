@@ -26,30 +26,68 @@
   "parameters": [],
   "global_parameters": [],
   "policies": [],
+  "exchanges": [
+    {
+      "name": "aqstream.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.events.dlx",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "aqstream.notifications",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
   "queues": [
     {
-      "name": "aqstream.events.user-registered",
+      "name": "notification.queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
-      "arguments": {}
+      "arguments": {
+        "x-dead-letter-exchange": "aqstream.events.dlx",
+        "x-dead-letter-routing-key": "notification.dlx"
+      }
     },
     {
-      "name": "aqstream.events.event-created",
+      "name": "analytics.queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
-      "arguments": {}
+      "arguments": {
+        "x-dead-letter-exchange": "aqstream.events.dlx",
+        "x-dead-letter-routing-key": "analytics.dlx"
+      }
     },
     {
-      "name": "aqstream.events.registration-created",
+      "name": "event-service.queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
-      "arguments": {}
+      "arguments": {
+        "x-dead-letter-exchange": "aqstream.events.dlx",
+        "x-dead-letter-routing-key": "event-service.dlx"
+      }
     },
     {
-      "name": "aqstream.events.payment-completed",
+      "name": "dlx.queue",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
@@ -70,57 +108,53 @@
       "arguments": {}
     }
   ],
-  "exchanges": [
-    {
-      "name": "aqstream.events",
-      "vhost": "/",
-      "type": "topic",
-      "durable": true,
-      "auto_delete": false,
-      "internal": false,
-      "arguments": {}
-    },
-    {
-      "name": "aqstream.notifications",
-      "vhost": "/",
-      "type": "direct",
-      "durable": true,
-      "auto_delete": false,
-      "internal": false,
-      "arguments": {}
-    }
-  ],
   "bindings": [
     {
       "source": "aqstream.events",
       "vhost": "/",
-      "destination": "aqstream.events.user-registered",
+      "destination": "notification.queue",
       "destination_type": "queue",
-      "routing_key": "user.registered",
+      "routing_key": "notification.#",
       "arguments": {}
     },
     {
       "source": "aqstream.events",
       "vhost": "/",
-      "destination": "aqstream.events.event-created",
+      "destination": "notification.queue",
       "destination_type": "queue",
-      "routing_key": "event.created",
+      "routing_key": "registration.#",
       "arguments": {}
     },
     {
       "source": "aqstream.events",
       "vhost": "/",
-      "destination": "aqstream.events.registration-created",
+      "destination": "notification.queue",
       "destination_type": "queue",
-      "routing_key": "registration.created",
+      "routing_key": "event.#",
       "arguments": {}
     },
     {
       "source": "aqstream.events",
       "vhost": "/",
-      "destination": "aqstream.events.payment-completed",
+      "destination": "analytics.queue",
       "destination_type": "queue",
-      "routing_key": "payment.completed",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.events",
+      "vhost": "/",
+      "destination": "event-service.queue",
+      "destination_type": "queue",
+      "routing_key": "payment.#",
+      "arguments": {}
+    },
+    {
+      "source": "aqstream.events.dlx",
+      "vhost": "/",
+      "destination": "dlx.queue",
+      "destination_type": "queue",
+      "routing_key": "#",
       "arguments": {}
     },
     {
