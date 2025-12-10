@@ -59,7 +59,7 @@ flowchart LR
 
 ### Frontend Foundation
 
-- [ ] Next.js 14 проект
+- [x] Next.js 14 проект
 - [ ] shadcn/ui компоненты
 - [ ] Базовая структура страниц
 - [ ] API client setup
