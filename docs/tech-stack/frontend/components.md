@@ -7,6 +7,7 @@
 ```
 components/
 ├── ui/                   # shadcn/ui primitives (не трогаем)
+├── theme-provider.tsx    # Провайдер темы (next-themes)
 ├── forms/                # Формы
 ├── layout/               # Layout компоненты
 └── features/             # Feature-specific компоненты
@@ -31,7 +32,7 @@ components/
 | Select | Выпадающие списки |
 | Table | Таблицы |
 | Tabs | Табы |
-| Toast | Уведомления |
+| Sonner | Toast уведомления (адаптируется к теме) |
 | Badge | Бейджи |
 | Avatar | Аватары |
 | Dropdown Menu | Выпадающие меню |

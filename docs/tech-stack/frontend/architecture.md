@@ -10,6 +10,7 @@
 | Language | TypeScript 5 |
 | Styling | Tailwind CSS 3 |
 | UI Components | shadcn/ui |
+| Theming | next-themes |
 | Server State | TanStack Query 5 |
 | Client State | Zustand 4 |
 | Forms | React Hook Form + Zod |
@@ -112,6 +113,80 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@chakra-ui/react';
 import { Button } from '@mui/material';
 ```
+
+## Темизация (Theming)
+
+Приложение поддерживает светлую и тёмную темы через `next-themes`.
+
+### Конфигурация
+
+```tsx
+// app/layout.tsx
+import { ThemeProvider } from '@/components/theme-provider';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ru" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### Использование темы
+
+```tsx
+'use client';
+
+import { useTheme } from 'next-themes';
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+      Переключить тему
+    </button>
+  );
+}
+```
+
+### Доступные темы
+
+| Тема | Описание |
+|------|----------|
+| `light` | Светлая тема |
+| `dark` | Тёмная тема |
+| `system` | Системная (по умолчанию) |
+
+### CSS Variables
+
+Цвета определены в `styles/globals.css` через CSS variables:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  /* ... */
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  /* ... */
+}
+```
+
+shadcn/ui компоненты автоматически используют эти переменные.
 
 ### Feature Components
 

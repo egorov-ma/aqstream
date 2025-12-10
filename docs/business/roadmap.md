@@ -60,7 +60,7 @@ flowchart LR
 ### Frontend Foundation
 
 - [x] Next.js 14 проект
-- [ ] shadcn/ui компоненты
+- [x] shadcn/ui компоненты
 - [ ] Базовая структура страниц
 - [ ] API client setup
 
@@ -251,7 +251,7 @@ flowchart LR
 
 | Фаза | Статус | Прогресс |
 |------|--------|----------|
-| Phase 1: Foundation | 🟡 В работе | Монорепозиторий, Docker Compose, common modules, API Gateway готовы |
+| Phase 1: Foundation | 🟡 В работе | Монорепозиторий, Docker Compose, common modules, API Gateway, Next.js, shadcn/ui готовы |
 | Phase 2: Core | ⚪ Не начата | — |
 | Phase 3: Growth | ⚪ Не начата | — |
 | Phase 4: Scale | ⚪ Не начата | — |
