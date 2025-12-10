@@ -62,7 +62,7 @@ flowchart LR
 - [x] Next.js 14 проект
 - [x] shadcn/ui компоненты
 - [x] Базовая структура страниц
-- [ ] API client setup
+- [x] API client setup
 
 ### Критерии завершения
 
