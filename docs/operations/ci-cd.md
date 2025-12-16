@@ -15,7 +15,7 @@ flowchart LR
 
 | Файл | Триггер | Действие |
 |------|---------|----------|
-| `.github/workflows/ci.yml` | PR, Push to main, Manual | Lint, Test, Build |
+| `.github/workflows/ci.yml` (Build & Test) | PR, Push to main, Manual | Lint, Test, Build |
 | `.github/workflows/deploy-production.yml` | Push to main, Manual | Build images, Deploy production |
 | `.github/workflows/docs.yml` | Push to main (docs/**), Manual | Validate, Build, Deploy docs |
 
@@ -137,11 +137,9 @@ jobs:
 | Secret | Description | Required For |
 |--------|-------------|--------------|
 | `GITHUB_TOKEN` | Автоматически предоставляется | GHCR push |
-| `PRODUCTION_SSH_KEY` | SSH ключ для production | deploy-production |
-| `PRODUCTION_HOST` | Адрес production сервера | deploy-production |
-| `SSH_KEY` | SSH ключ для деплоя docs | docs |
-| `SSH_HOST` | Адрес сервера docs | docs |
-| `SSH_USER` | Пользователь SSH | docs |
+| `SSH_HOST` | IP-адрес или домен сервера | deploy-production, docs |
+| `SSH_USER` | Пользователь SSH | deploy-production, docs |
+| `SSH_KEY` | Приватный SSH ключ | deploy-production, docs |
 | `CODECOV_TOKEN` | Токен Codecov | Coverage reports |
 
 ## Branch Protection Rules
