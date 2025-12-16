@@ -132,6 +132,7 @@ jobs:
           echo "Version: ${{ needs.build.outputs.version }}"
           echo "URL: https://aqstream.ru"
           echo "API: https://api.aqstream.ru"
+          echo "Health: https://api.aqstream.ru/actuator/health"
           echo "=========================================="
 
       - name: Notify on Failure

@@ -69,7 +69,7 @@ jobs:
 
   deploy:
     name: Deploy to docs.aqstream.ru
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     needs: build
     environment:
@@ -82,13 +82,32 @@ jobs:
           name: docs-site
           path: site
 
-      - name: Deploy to server
-        uses: appleboy/scp-action@v0.1.7
+      - name: Debug artifact
+        run: |
+          echo "Contents of site/:"
+          ls -la site/
+          echo "Total files:"
+          find site/ -type f | wc -l
+
+      - name: Deploy via rsync
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            site/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/docs.aqstream.ru/
+          rm ~/.ssh/deploy_key
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "site/*"
-          target: "/var/www/docs.aqstream.ru"
-          strip_components: 1
-          rm: true
+          script: |
+            echo "Files deployed:"
+            ls -la /var/www/docs.aqstream.ru/ | head -20
+            chmod -R 755 /var/www/docs.aqstream.ru
+            echo "Documentation deployed successfully"
