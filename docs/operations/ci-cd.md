@@ -86,8 +86,8 @@ concurrency:
 ### Build Job
 
 1. **Build JARs** — `./gradlew bootJar`
-2. **Build Docker images** — для каждого сервиса
-3. **Push to GHCR** — `ghcr.io/<repo>/<service>:<sha>`
+2. **Build Docker image** — Gateway (остальные сервисы будут добавлены позже)
+3. **Push to GHCR** — `ghcr.io/<repo>/gateway:<sha>`
 
 ### Deploy Job
 
@@ -108,8 +108,9 @@ ghcr.io/egorov-ma/aqstream/gateway:latest
 Автоматический деплой документации при изменениях в `docs/`:
 
 1. **Trigger** — push to main с изменениями в `docs/**`
-2. **Build** — `make docs-build` (MkDocs + Material theme)
-3. **Deploy** — SCP на production сервер в `/var/www/docs.aqstream.ru`
+2. **Validate** — Markdownlint, OpenAPI Spectral (не блокирует деплой)
+3. **Build** — MkDocs + Material theme
+4. **Deploy** — rsync на production сервер в `/var/www/docs.aqstream.ru`
 
 ```yaml
 on:
@@ -118,16 +119,16 @@ on:
     paths: ['docs/**']
 
 jobs:
-  deploy:
+  validate:
+    # Markdownlint + Spectral (continue-on-error: true)
+  build:
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - run: pip install -r docs/_internal/doc-as-code/requirements.txt
-      - run: make docs-build
-      - uses: appleboy/scp-action@master
-        with:
-          source: "site/*"
-          target: "/var/www/docs.aqstream.ru"
+      - run: mkdocs build
+  deploy:
+    steps:
+      - run: rsync -avz --delete site/ $SSH_USER@$SSH_HOST:/var/www/docs.aqstream.ru/
 ```
 
 См. полный пример в [Server Setup](./server-setup.md).
@@ -140,7 +141,6 @@ jobs:
 | `SSH_HOST` | IP-адрес или домен сервера | deploy-production, docs |
 | `SSH_USER` | Пользователь SSH | deploy-production, docs |
 | `SSH_KEY` | Приватный SSH ключ | deploy-production, docs |
-| `CODECOV_TOKEN` | Токен Codecov | Coverage reports |
 
 ## Branch Protection Rules
 

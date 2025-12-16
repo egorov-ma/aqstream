@@ -10,7 +10,7 @@
 | Docker Compose | 2.x | Локальная оркестрация |
 | JDK | 25 | Java runtime |
 | Node.js | 20 LTS | Frontend runtime |
-| pnpm | 8+ | Package manager |
+| pnpm | 9+ | Package manager |
 | Git | 2.40+ | Version control |
 
 ## IDE

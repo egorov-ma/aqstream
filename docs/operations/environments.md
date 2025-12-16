@@ -21,7 +21,7 @@
 - Docker 24+ и Docker Compose v2
 - JDK 25
 - Node.js 20 LTS
-- pnpm 8+
+- pnpm 9+
 - 16 GB RAM (рекомендуется)
 
 ### Быстрый старт
@@ -149,10 +149,18 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - name: Deploy to production
-        run: |
-          ssh deploy@aqstream.ru "cd /app && docker compose pull && docker compose up -d"
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /app
+            docker compose pull
+            docker compose up -d
 ```
 
 ## Конфигурация

@@ -115,7 +115,7 @@ flowchart TB
 
 | Технология | Версия | Назначение |
 |------------|--------|------------|
-| pnpm | 8.x | Package manager |
+| pnpm | 9.x | Package manager |
 | ESLint | 8.x | Linting |
 | Prettier | 3.x | Formatting |
 

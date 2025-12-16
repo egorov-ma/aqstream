@@ -121,7 +121,6 @@ jobs:
           done
           echo "❌ Health check failed after 30 attempts"
           exit 1
-        continue-on-error: true
 
       - name: Notify on Success
         if: success()

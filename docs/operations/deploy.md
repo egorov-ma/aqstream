@@ -92,9 +92,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -116,28 +116,51 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - run: ./gradlew bootJar
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./services/gateway
+          push: true
+          tags: ghcr.io/${{ github.repository }}/gateway:${{ github.sha }}
 
-      - name: Build and push images
-        run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose -f docker-compose.prod.yml build
-          docker compose -f docker-compose.prod.yml push
-
-      - name: Deploy to production
-        run: |
-          ssh deploy@aqstream.ru "cd /app && docker compose pull && docker compose up -d"
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /app
+            docker compose pull
+            docker compose up -d
 ```
 
 ## Deployment Strategy
 
 ### Rolling Update
 
+> **TODO:** Rolling update будет настроен после добавления всех сервисов в production pipeline.
+
 ```yaml
-# docker-compose.prod.yml
+# Пример конфигурации для Docker Swarm / Compose deploy
 services:
   event-service:
     image: ghcr.io/aqstream/event-service:${VERSION}
