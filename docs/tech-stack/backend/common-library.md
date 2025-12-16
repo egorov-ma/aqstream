@@ -2,6 +2,50 @@
 
 Общие модули для всех микросервисов AqStream.
 
+## Диаграмма зависимостей
+
+```mermaid
+graph LR
+    subgraph common["Common Modules"]
+        API[common-api]
+        SEC[common-security]
+        DATA[common-data]
+        MSG[common-messaging]
+        WEB[common-web]
+        TEST[common-test]
+    end
+
+    subgraph services["Services"]
+        GW[gateway]
+        US[user-service]
+        ES[event-service]
+        PS[payment-service]
+    end
+
+    SEC --> API
+    DATA --> API
+    DATA --> SEC
+    MSG --> API
+    MSG --> DATA
+    WEB --> API
+    WEB --> SEC
+    TEST --> API
+
+    GW --> API
+    GW --> SEC
+    US --> API
+    US --> SEC
+    US --> DATA
+    US --> WEB
+    ES --> API
+    ES --> DATA
+    ES --> MSG
+    ES --> WEB
+    PS --> API
+    PS --> DATA
+    PS --> MSG
+```
+
 ## Структура модулей
 
 ```
@@ -26,6 +70,7 @@ common/
 | `AqStreamException` | Базовое исключение |
 | `EntityNotFoundException` | 404 для сущностей |
 | `ValidationException` | 400 для валидации |
+| `ConflictException` | 409 для конфликтов |
 
 ## common-security
 
@@ -36,7 +81,8 @@ common/
 | `TenantContext` | ThreadLocal для tenant_id |
 | `UserPrincipal` | Данные пользователя из JWT |
 | `JwtTokenProvider` | Генерация/парсинг JWT |
-| `JwtAuthenticationFilter` | Spring Security фильтр |
+| `SecurityContext` | Получение текущего пользователя |
+| `JwtAuthenticationException` | Исключение аутентификации |
 
 **TenantContext API:**
 ```java
@@ -47,15 +93,17 @@ TenantContext.clear();             // Очистить (в finally)
 
 ## common-data
 
-Базовые entity.
+Базовые entity и конфигурация данных.
 
-| Класс | Поля | Наследование |
-|-------|------|--------------|
-| `BaseEntity` | id, createdAt, updatedAt | — |
-| `TenantAwareEntity` | + tenantId | BaseEntity |
-| `SoftDeletableEntity` | + deletedAt | TenantAwareEntity |
-
-`TenantAwareEntity` автоматически заполняет `tenantId` из `TenantContext` при persist.
+| Класс | Назначение |
+|-------|------------|
+| `BaseEntity` | id, createdAt, updatedAt |
+| `TenantAwareEntity` | + tenantId (extends BaseEntity) |
+| `SoftDeletableEntity` | + deletedAt (extends TenantAwareEntity) |
+| `TenantEntityListener` | Автозаполнение tenantId из TenantContext |
+| `AuditingConfig` | Конфигурация аудита JPA |
+| `TenantAwareDataSourceConfig` | Конфигурация multi-tenant DataSource |
+| `TenantAwareDataSourceDecorator` | Декоратор для RLS |
 
 ## common-messaging
 
@@ -64,8 +112,12 @@ Outbox pattern для reliable event publishing.
 | Класс | Назначение |
 |-------|------------|
 | `OutboxMessage` | Entity для outbox таблицы |
-| `EventPublisher` | Сохраняет событие в outbox (в той же транзакции) |
+| `EventPublisher` | Сохраняет событие в outbox |
 | `OutboxProcessor` | Scheduled job — публикует в RabbitMQ |
+| `OutboxRepository` | Repository для outbox сообщений |
+| `OutboxSchedulingConfig` | Конфигурация планировщика |
+| `RabbitMQConfig` | Конфигурация RabbitMQ |
+| `EventPublishingException` | Исключение публикации |
 
 **Использование:**
 ```java
@@ -85,6 +137,7 @@ Web-слой.
 |-------|------------|
 | `CorrelationIdFilter` | X-Correlation-ID в MDC |
 | `TenantContextFilter` | TenantContext из JWT |
+| `RequestLoggingFilter` | Логирование запросов |
 | `GlobalExceptionHandler` | Преобразует exceptions → ErrorResponse |
 
 ## common-test
@@ -93,6 +146,8 @@ Web-слой.
 |-------|------------|
 | `@IntegrationTest` | Composite annotation для интеграционных тестов |
 | `PostgresTestContainer` | Singleton контейнер PostgreSQL |
+| `RabbitMQTestContainer` | Singleton контейнер RabbitMQ |
+| `TestFixtures` | Хелперы для тестовых данных |
 
 ## Подключение
 

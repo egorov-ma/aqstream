@@ -124,6 +124,7 @@ aqstream:
 | Таблица | Причина |
 |---------|---------|
 | users | Пользователь может быть в нескольких организациях |
+| organization_requests | Запросы на создание организаций (рассматривает админ) |
 | notification_templates | Системные шаблоны |
 | analytics_events | Глобальные метрики |
 
@@ -285,7 +286,7 @@ flowchart TB
 | WAL archiving | Continuous | 7 дней |
 | Point-in-time recovery | — | До 7 дней назад |
 
-Подробнее: [Backup & Restore](../operations/runbooks/backup-restore.md)
+Подробнее: [Runbook](../operations/runbook.md)
 
 ## Дальнейшее чтение
 

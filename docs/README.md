@@ -2,6 +2,47 @@
 
 Добро пожаловать в техническую документацию платформы AqStream.
 
+## Быстрые ссылки по ролям
+
+### Разработчик
+
+| Задача | Документ |
+|--------|----------|
+| Начать разработку | [Environments](./operations/environments.md) |
+| Создать новый сервис | [Service Template](./tech-stack/backend/service-template.md) |
+| Написать тесты | [Testing Strategy](./tech-stack/qa/testing-strategy.md) |
+| Понять API conventions | [API Guidelines](./tech-stack/backend/api-guidelines.md) |
+
+### QA
+
+| Задача | Документ |
+|--------|----------|
+| Стратегия тестирования | [Testing Strategy](./tech-stack/qa/testing-strategy.md) |
+| API документация | [API Documentation](./tech-stack/backend/api/README.md) |
+| Окружения | [Environments](./operations/environments.md) |
+
+### DevOps / Operations
+
+| Задача | Документ |
+|--------|----------|
+| Настройка сервера | [Server Setup](./operations/server-setup.md) |
+| Настроить CI/CD | [CI/CD](./operations/ci-cd.md) |
+| Деплой | [Deploy](./operations/deploy.md) |
+| Мониторинг | [Observability](./operations/observability.md) |
+| Runbook | [Runbook](./operations/runbook.md) |
+
+### Business / Product
+
+| Задача | Документ |
+|--------|----------|
+| Видение продукта | [Vision](./business/vision.md) |
+| Ролевая модель | [Role Model](./business/role-model.md) |
+| План развития | [Roadmap](./business/roadmap.md) |
+| Требования | [Functional Requirements](./business/functional-requirements.md) |
+| Сценарии использования | [User Journeys](./business/user-journeys.md) |
+
+---
+
 ## Навигация
 
 ### Архитектура
@@ -17,6 +58,7 @@
 | Документ | Описание |
 |----------|----------|
 | [Vision](./business/vision.md) | Видение продукта и цели |
+| [Role Model](./business/role-model.md) | Ролевая модель платформы |
 | [User Journeys](./business/user-journeys.md) | Сценарии использования |
 | [Functional Requirements](./business/functional-requirements.md) | Функциональные требования |
 | [Roadmap](./business/roadmap.md) | План развития |
@@ -75,40 +117,23 @@
 | Документ | Описание |
 |----------|----------|
 | [Environments](./operations/environments.md) | Окружения |
+| [Server Setup](./operations/server-setup.md) | Настройка сервера |
 | [Deploy](./operations/deploy.md) | Деплой |
 | [CI/CD](./operations/ci-cd.md) | Пайплайны |
 | [Observability](./operations/observability.md) | Мониторинг и логирование |
 
-**Runbooks:**
-
-| Документ | Описание |
-|----------|----------|
-| [Service Restart](./operations/runbooks/service-restart.md) | Перезапуск сервисов |
-| [Incident Response](./operations/runbooks/incident-response.md) | Реагирование на инциденты |
-| [Backup & Restore](./operations/runbooks/backup-restore.md) | Бэкапы |
+| [Runbook](./operations/runbook.md) | Операционные процедуры |
 
 ### Experience
 
 | Документ | Описание |
 |----------|----------|
 | [Security](./experience/security.md) | Безопасность |
-| [Contributing](./experience/contributing.md) | Как контрибьютить |
-| [Community](./experience/community.md) | Сообщество |
+| [Community](./experience/community.md) | Контакты, лицензия |
 
 ### Задачи (To-Dos)
 
-| Директория | Описание |
-|------------|----------|
-| [to-dos/](./to-dos/) | Задачи проекта |
-| [to-dos/_template.md](./to-dos/_template.md) | Шаблон задачи |
-| [to-dos/phase-1/](./to-dos/phase-1/) | Задачи Phase 1: Foundation |
-| [to-dos/phase-2/](./to-dos/phase-2/) | Задачи Phase 2: Core |
-| [to-dos/phase-3/](./to-dos/phase-3/) | Задачи Phase 3: Growth |
-| [to-dos/phase-4/](./to-dos/phase-4/) | Задачи Phase 4: Scale |
-
-## Быстрые ссылки
-
-- **Начать разработку:** [Environments](./operations/environments.md)
-- **Создать сервис:** [Service Template](./tech-stack/backend/service-template.md)
-- **Понять архитектуру:** [Overview](./architecture/overview.md)
-- **Написать тесты:** [Testing Strategy](./tech-stack/qa/testing-strategy.md)
+| Документ | Описание |
+|----------|----------|
+| [To-Dos](./to-dos/README.md) | Задачи проекта |
+| [Template](./to-dos/_template.md) | Шаблон задачи |

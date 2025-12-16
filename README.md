@@ -8,277 +8,134 @@
 
 **Open-source платформа для организации и управления мероприятиями.**
 
-AqStream — это современная event management система, которая помогает организаторам создавать, продвигать и проводить мероприятия любого масштаба: от небольших митапов до крупных конференций.
+Любые события — онлайн и офлайн, рабочие и неформальные. AqStream помогает организаторам создавать события, управлять регистрациями, принимать платежи и анализировать результаты.
 
-## Для кого этот проект
+## Возможности
 
-**Организаторы мероприятий** получают инструменты для:
-- Создания страниц событий с гибкими типами билетов
-- Управления регистрациями и листами ожидания
-- Приёма платежей через популярные платёжные системы
-- Рассылки уведомлений участникам
-- Анализа статистики и эффективности
-
-**Участники** получают:
-- Удобный поиск и открытие мероприятий
-- Простую регистрацию и оплату
-- Персональный кабинет с историей
-- Уведомления о важных обновлениях
-
-**Разработчики** найдут:
-- Чистую микросервисную архитектуру
-- Современный стек технологий
-- Подробную документацию
-- Примеры best practices
-
-## Ключевые возможности
-
-### Управление событиями
-- Полный жизненный цикл события: черновик → публикация → проведение → архив
-- Гибкие типы билетов с лимитами и периодами продаж
-- Промокоды и скидки
-- Групповые регистрации
-- Листы ожидания с автоматическим оповещением
-
-### Платежи
-- Интеграция со Stripe и ЮKassa
-- Полный и частичный возврат средств
-- Отложенные платежи
-- Финансовая отчётность
-
-### Коммуникации
-- Email-уведомления (подтверждения, напоминания, изменения)
-- Telegram-бот для участников
-- Push-уведомления (roadmap)
-
-### Аналитика
-- Дашборды для организаторов
-- Воронка регистраций
-- Финансовые отчёты
-- Экспорт данных
-
-### Корпоративные возможности
-- Multi-tenancy: полная изоляция данных организаций
-- Роли и права доступа
-- Брендирование страниц событий
-- API для интеграций
+| Модуль | Описание |
+|--------|----------|
+| **События** | Полный жизненный цикл, гибкие типы билетов, листы ожидания |
+| **Платежи** | Интеграция с платёжными провайдерами, возвраты, финансовая отчётность |
+| **Уведомления** | Telegram-бот, автоматические напоминания |
+| **Аналитика** | Дашборды, воронки регистраций, экспорт |
+| **Multi-tenancy** | Изоляция данных организаций, роли и права |
 
 ## Архитектура
 
-AqStream построен на микросервисной архитектуре с event-driven коммуникацией:
+```mermaid
+graph TB
+    subgraph Clients
+        WEB[Web App<br/>aqstream.ru]
+        API_CLIENT[External APIs<br/>api.aqstream.ru]
+    end
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                          Clients                                  │
-│              (Web App, Mobile App, External APIs)                 │
-└─────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                         Nginx                                     │
-│              (TLS termination, static files, routing)             │
-└─────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    API Gateway                                    │
-│         (Authentication, Rate Limiting, Request Routing)          │
-└───┬─────────┬─────────┬─────────┬─────────┬─────────┬────────────┘
-    │         │         │         │         │         │
-    ▼         ▼         ▼         ▼         ▼         ▼
-┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐
-│ User  │ │ Event │ │Payment│ │Notif- │ │ Media │ │Analy- │
-│Service│ │Service│ │Service│ │ication│ │Service│ │tics   │
-└───┬───┘ └───┬───┘ └───┬───┘ └───┬───┘ └───┬───┘ └───┬───┘
-    │         │         │         │         │         │
-    └─────────┴─────────┴────┬────┴─────────┴─────────┘
-                             │
-                             ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                        RabbitMQ                                   │
-│              (Event Bus, Async Communication)                     │
-└──────────────────────────────────────────────────────────────────┘
-                             │
-    ┌────────────────────────┼────────────────────────┐
-    │                        │                        │
-    ▼                        ▼                        ▼
-┌───────┐              ┌───────┐              ┌───────┐
-│ Post- │              │ Redis │              │ MinIO │
-│ greSQL│              │       │              │       │
-└───────┘              └───────┘              └───────┘
+    subgraph Edge["Reverse Proxy"]
+        NGINX[Nginx<br/>TLS termination]
+    end
+
+    subgraph Gateway
+        GW[API Gateway :8080]
+    end
+
+    subgraph Services
+        US[User Service]
+        ES[Event Service]
+        PS[Payment Service]
+        NS[Notification Service]
+        MS[Media Service]
+        AS[Analytics Service]
+    end
+
+    subgraph Infrastructure
+        PG[(PostgreSQL)]
+        RMQ[RabbitMQ]
+        REDIS[(Redis)]
+        MINIO[(MinIO)]
+    end
+
+    WEB --> NGINX
+    API_CLIENT --> NGINX
+    NGINX --> GW
+    GW --> US & ES & PS & NS & MS & AS
+    US & ES & PS --> PG
+    US & ES & PS --> RMQ
+    GW & US & ES --> REDIS
+    MS --> MINIO
 ```
 
-### Сервисы
-
-| Сервис | Назначение |
-|--------|------------|
-| **API Gateway** | Точка входа, аутентификация, rate limiting, маршрутизация |
-| **User Service** | Пользователи, организации, роли, авторизация |
-| **Event Service** | События, типы билетов, регистрации, check-in |
-| **Payment Service** | Платежи, возвраты, финансовые отчёты |
-| **Notification Service** | Email, Telegram, шаблоны сообщений |
-| **Media Service** | Загрузка и обработка изображений |
-| **Analytics Service** | Сбор метрик, дашборды, отчёты |
-
-### Принципы архитектуры
-
-- **Автономность сервисов** — каждый сервис независим и имеет собственную базу данных
-- **Event-driven** — асинхронная коммуникация через RabbitMQ с гарантией доставки (Outbox pattern)
-- **Multi-tenancy** — изоляция данных на уровне БД через Row Level Security
-- **API-first** — все взаимодействия через REST API с OpenAPI документацией
-
-## Технологический стек
-
-### Backend
-
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| **Java** | 25 LTS | Основной язык, virtual threads |
-| **Spring Boot** | 3.5 | Framework (Spring MVC, servlet-based) |
-| **Spring Security** | 6.5.x | Аутентификация, авторизация |
-| **Spring Data JPA** | 2025.0.x | ORM, работа с базой данных |
-| **PostgreSQL** | 16+ | Основная СУБД, Row Level Security |
-| **Redis** | 7.x | Кэширование, сессии, rate limiting |
-| **RabbitMQ** | 3.13+ | Message broker, event bus |
-| **Liquibase** | 4.31 | Миграции базы данных |
-| **MapStruct** | 1.6 | DTO mapping |
-
-**Почему Spring MVC, а не WebFlux:**  
-Осознанный выбор в пользу классического blocking I/O для простоты отладки, предсказуемого поведения и лучшей совместимости с JPA. Производительности Spring MVC достаточно для целевой нагрузки платформы.
-
-### Frontend
-
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| **Next.js** | 14 | React framework, App Router, SSR |
-| **TypeScript** | 5.x | Типизация |
-| **Tailwind CSS** | 3.x | Utility-first CSS |
-| **shadcn/ui** | — | UI компоненты (единственная UI библиотека) |
-| **TanStack Query** | 5.x | Server state management |
-| **Zustand** | 4.x | Client state management |
-| **React Hook Form** | 7.x | Формы |
-| **Zod** | 3.x | Валидация |
-
-**Почему shadcn/ui:**  
-Компоненты копируются в проект и полностью контролируются. Это обеспечивает консистентный UI и позволяет кастомизировать без борьбы с библиотекой.
-
-### Infrastructure
-
-| Технология | Назначение |
-|------------|------------|
-| **Docker Compose** | Локальная оркестрация |
-| **Nginx** | Reverse proxy, TLS, static files |
-| **MinIO** | S3-compatible хранилище файлов |
-| **Prometheus** | Сбор метрик |
-| **Grafana** | Визуализация, дашборды |
-| **Loki** | Агрегация логов |
+**Принципы:** микросервисы, event-driven (Outbox pattern), multi-tenant (Row Level Security), API-first.
 
 ## Быстрый старт
 
-### Требования
-
-- Docker 24+ и Docker Compose v2
-- 16 GB RAM (рекомендуется)
-- 50 GB свободного места
-
-### Запуск
+### Локальная разработка
 
 ```bash
-# Клонировать репозиторий
-git clone https://github.com/aqstream/aqstream.git
-cd aqstream
-
-# Скопировать конфигурацию
+git clone https://github.com/egorov-ma/aqstream.git && cd aqstream
 cp .env.example .env
-
-# Запустить платформу
-make up
-
-# Проверить статус
-make status
+make infra-up     # Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)
 ```
 
-После запуска:
-- **Frontend**: http://localhost:3000
-- **API**: http://localhost:8080
-- **API Docs (Swagger)**: http://localhost:8080/swagger-ui.html
-- **API Docs (ReDoc)**: http://localhost:8080/redoc
-- **RabbitMQ UI**: http://localhost:15672 (guest/guest)
-- **Grafana**: http://localhost:3001
+| URL | Описание |
+|-----|----------|
+| http://localhost:3000 | Frontend |
+| http://localhost:8080/swagger-ui.html | API Docs (Gateway) |
+| http://localhost:15672 | RabbitMQ Management (guest/guest) |
+| http://localhost:9001 | MinIO Console (minioadmin/minioadmin) |
+
+### Production
+
+| URL | Описание |
+|-----|----------|
+| https://aqstream.ru | Frontend |
+| https://api.aqstream.ru | API Gateway |
+| https://docs.aqstream.ru | Документация |
+
+## Технологии
+
+| Backend | Frontend | Infrastructure |
+|---------|----------|----------------|
+| Java 25, Spring Boot 3.5 | Next.js 14, TypeScript 5 | Docker Compose |
+| PostgreSQL 16, Redis 7 | Tailwind CSS, shadcn/ui | Nginx, MinIO |
+| RabbitMQ, Liquibase | TanStack Query, Zustand | Prometheus, Grafana |
+
+## Сервисы
+
+| Сервис | Порт | Описание |
+|--------|------|----------|
+| Gateway | 8080 | API Gateway, JWT validation, rate limiting |
+| User Service | 8081 | Пользователи, организации, роли |
+| Event Service | 8082 | События, билеты, регистрации |
+| Payment Service | 8083 | Платежи, возвраты |
+| Notification Service | 8084 | Telegram-уведомления |
+| Media Service | 8085 | Файлы, изображения |
+| Analytics Service | 8086 | Метрики, отчёты |
+
+## Полезные команды
+
+```bash
+make help           # Все доступные команды
+make infra-up       # Запустить инфраструктуру
+make infra-down     # Остановить инфраструктуру
+make health         # Проверить доступность сервисов
+make test           # Запустить тесты
+make lint           # Проверка кода
+```
 
 ## Документация
 
-Полная документация находится в директории [`/docs`](docs1/README.md):
+Полная документация: [`/docs`](docs/README.md)
 
 | Раздел | Описание |
 |--------|----------|
-| [Architecture](docs1/architecture/) | Микросервисная архитектура, топология, данные |
-| [Business](docs1/business/) | Видение продукта, user journeys, требования |
-| [Tech Stack](docs1/tech-stack/) | Backend, Frontend, API, тестирование |
-| [Operations](docs1/operations/) | Окружения, деплой, CI/CD, мониторинг |
-| [Experience](docs1/experience/) | Безопасность, contributing, community |
-
-## Разработка
-
-```bash
-# Установить pre-commit hooks
-make setup
-
-# Запустить только инфраструктуру (PostgreSQL, Redis, RabbitMQ)
-make infra-up
-
-# Backend: запустить сервис
-./gradlew :event-service:bootRun
-
-# Frontend: запустить dev server
-cd frontend && pnpm dev
-
-# Запустить тесты
-make test
-
-# Проверить код
-make lint
-```
-
-### Структура репозитория
-
-```
-aqstream/
-├── services/           # Backend микросервисы
-│   ├── gateway/
-│   ├── user-service/
-│   ├── event-service/
-│   ├── payment-service/
-│   ├── notification-service/
-│   ├── media-service/
-│   └── analytics-service/
-├── common/             # Общие модули (DTO, security, data)
-├── frontend/           # Next.js приложение
-├── docs/               # Документация
-├── docker/             # Docker конфигурации
-└── config/             # Общие конфигурации (checkstyle, etc.)
-```
-
-Подробнее в [документации для разработчиков](docs1/operations/environments.md).
-
-## Contributing
-
-Мы приветствуем вклад в развитие проекта!
-
-1. Прочитайте [Contributing Guide](docs1/experience/contributing.md)
-2. Изучите [архитектуру](docs1/architecture/overview.md)
-3. Посмотрите [открытые issues](https://github.com/aqstream/aqstream/issues)
-4. Найдите задачи с меткой `good first issue`
+| [Architecture](docs/architecture/) | Микросервисы, топология, данные |
+| [Tech Stack](docs/tech-stack/) | Backend, Frontend, API, тесты |
+| [Operations](docs/operations/) | Окружения, деплой, CI/CD |
+| [Server Setup](docs/operations/server-setup.md) | Подготовка сервера |
 
 ## Лицензия
 
-Проект распространяется под лицензией [MIT](./LICENSE).
-
-## Контакты
-
-- **Issues**: [GitHub Issues](https://github.com/aqstream/aqstream/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/aqstream/aqstream/discussions)
+[MIT](./LICENSE)
 
 ---
 
-<p align="center">Made with ❤️ by AqStream Community</p>
+<p align="center">Made with ❤️ by AqStream</p>

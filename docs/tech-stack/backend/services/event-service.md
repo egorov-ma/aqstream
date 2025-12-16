@@ -14,10 +14,119 @@ Event Service отвечает за события, билеты и регист
 
 - CRUD событий
 - Управление жизненным циклом события
+- Видимость участников (CLOSED / OPEN)
+- Приватные события (привязка к группе)
 - Типы билетов и лимиты
+- Бронирование билетов (с таймером)
 - Регистрации участников
 - Check-in
 - Листы ожидания
+
+## ERD
+
+```mermaid
+erDiagram
+    EVENT ||--o{ TICKET_TYPE : has
+    EVENT ||--o{ REGISTRATION : has
+    TICKET_TYPE ||--o{ REGISTRATION : "linked to"
+    REGISTRATION ||--o| CHECK_IN : has
+    EVENT ||--o{ WAITLIST_ENTRY : has
+
+    EVENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid organizer_id FK
+        uuid group_id FK
+        string title
+        text description
+        string slug UK
+        string status
+        string participants_visibility
+        timestamp starts_at
+        timestamp ends_at
+        string timezone
+        string location_type
+        string location_address
+        string location_url
+        uuid cover_image_id FK
+        jsonb settings
+        timestamp published_at
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    TICKET_TYPE {
+        uuid id PK
+        uuid event_id FK
+        string name
+        text description
+        int price_cents
+        string currency
+        int quantity
+        int sold_count
+        int reserved_count
+        int reservation_minutes
+        int prepayment_percent
+        timestamp sales_start
+        timestamp sales_end
+        int sort_order
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    REGISTRATION {
+        uuid id PK
+        uuid tenant_id FK
+        uuid event_id FK
+        uuid ticket_type_id FK
+        uuid user_id FK
+        string email
+        string first_name
+        string last_name
+        string confirmation_code UK
+        string status
+        jsonb custom_fields
+        timestamp expires_at
+        timestamp cancelled_at
+        string cancellation_reason
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CHECK_IN {
+        uuid id PK
+        uuid registration_id FK
+        uuid checked_in_by FK
+        string method
+        timestamp checked_in_at
+    }
+
+    WAITLIST_ENTRY {
+        uuid id PK
+        uuid event_id FK
+        uuid ticket_type_id FK
+        uuid user_id FK
+        string email
+        string status
+        timestamp notified_at
+        timestamp expires_at
+        timestamp created_at
+    }
+```
+
+**Видимость участников (participants_visibility):**
+- **CLOSED** — участник видит только свою регистрацию (по умолчанию)
+- **OPEN** — участники видят список зарегистрированных с распределением по типам билетов (для турниров)
+
+**Статусы регистрации:**
+- `RESERVED` — забронировано, ожидает оплаты (с таймером)
+- `PENDING` — ожидает оплаты (без таймера)
+- `CONFIRMED` — подтверждена
+- `CANCELLED` — отменена
+- `CHECKED_IN` — участник пришёл
+- `EXPIRED` — бронь истекла
 
 ## API Endpoints
 
@@ -201,6 +310,7 @@ public CheckInDto checkIn(UUID registrationId, CheckInRequest request) {
 | `event.completed` | Событие завершено |
 | `registration.created` | Регистрация создана |
 | `registration.cancelled` | Регистрация отменена |
+| `reservation.expired` | Бронь истекла |
 | `checkin.completed` | Check-in выполнен |
 
 ### Потребляемые
@@ -210,6 +320,7 @@ public CheckInDto checkIn(UUID registrationId, CheckInRequest request) {
 | `payment.completed` | Подтверждение регистрации |
 | `payment.failed` | Отмена регистрации |
 | `payment.refunded` | Отмена регистрации |
+| `group.member.added` | Доступ к приватным событиям группы |
 
 ## Лист ожидания
 

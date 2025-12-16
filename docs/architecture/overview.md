@@ -9,45 +9,70 @@
 AqStream построен как набор слабосвязанных сервисов, каждый из которых отвечает за свой домен:
 
 ```mermaid
+graph TB
+    subgraph Clients
+        WEB[Web App<br/>aqstream.ru]
+        API_CLIENT[External APIs<br/>api.aqstream.ru]
+    end
+
+    subgraph Edge["Reverse Proxy"]
+        NGINX[Nginx<br/>TLS termination]
+    end
+
+    subgraph Gateway
+        GW[API Gateway :8080]
+    end
+
+    subgraph Services
+        US[User Service]
+        ES[Event Service]
+        PS[Payment Service]
+        NS[Notification Service]
+        MS[Media Service]
+        AS[Analytics Service]
+    end
+
+    subgraph Infrastructure
+        PG[(PostgreSQL)]
+        RMQ[RabbitMQ]
+        REDIS[(Redis)]
+        MINIO[(MinIO)]
+    end
+
+    WEB --> NGINX
+    API_CLIENT --> NGINX
+    NGINX --> GW
+    GW --> US & ES & PS & NS & MS & AS
+    US & ES & PS --> PG
+    US & ES & PS --> RMQ
+    GW & US & ES --> REDIS
+    MS --> MINIO
+```
+
+### C4 Context Diagram
+
+Система в контексте внешних пользователей и сервисов:
+
+```mermaid
 flowchart TB
-    subgraph Clients["Клиенты"]
-        Web["Web App"]
-        Mobile["Mobile App"]
-        API["External API"]
+    subgraph Users["Пользователи"]
+        Org["👤 Организатор"]
+        Part["👤 Участник"]
     end
-    
-    subgraph Edge["Edge Layer"]
-        Nginx["Nginx"]
+
+    subgraph System["AqStream Platform"]
+        AQ["🎯 AqStream<br/>Платформа управления мероприятиями"]
     end
-    
-    subgraph Gateway["API Gateway"]
-        GW["Spring Cloud Gateway"]
+
+    subgraph External["Внешние сервисы"]
+        PAY["💳 Payment Providers"]
+        TG["📱 Telegram"]
     end
-    
-    subgraph Services["Business Services"]
-        US["User Service"]
-        ES["Event Service"]
-        PS["Payment Service"]
-        NS["Notification Service"]
-        MS["Media Service"]
-        AS["Analytics Service"]
-    end
-    
-    subgraph Messaging["Message Broker"]
-        RMQ["RabbitMQ"]
-    end
-    
-    subgraph Data["Data Stores"]
-        PG["PostgreSQL"]
-        Redis["Redis"]
-        MinIO["MinIO"]
-    end
-    
-    Clients --> Edge
-    Edge --> Gateway
-    Gateway --> Services
-    Services --> Messaging
-    Services --> Data
+
+    Org -->|"Создаёт события"| AQ
+    Part -->|"Регистрируется"| AQ
+    AQ -->|"Платежи"| PAY
+    AQ -->|"Уведомления"| TG
 ```
 
 ### Ключевые принципы
@@ -80,6 +105,25 @@ flowchart TB
 - OpenAPI спецификации для всех endpoints
 - Версионирование API (`/api/v1/`)
 
+**Security-First**
+
+- JWT токены для аутентификации
+- Row Level Security на уровне БД
+- Валидация на всех уровнях
+- Secrets через environment variables
+
+**Idempotency**
+
+- `X-Idempotency-Key` для критических операций
+- Защита от дублирования платежей и регистраций
+- Идемпотентные endpoints
+
+**Soft Delete**
+
+- Бизнес-данные не удаляются физически
+- `deleted_at` timestamp для восстановления
+- Аудит и compliance
+
 ## Слои системы
 
 ### Edge Layer (Nginx)
@@ -103,12 +147,20 @@ flowchart TB
 
 | Сервис | Домен | Порт |
 |--------|-------|------|
-| User Service | Пользователи, организации, роли | 8081 |
-| Event Service | События, билеты, регистрации | 8082 |
-| Payment Service | Платежи, возвраты | 8083 |
-| Notification Service | Email, Telegram | 8084 |
+| User Service | Пользователи, организации, группы, роли | 8081 |
+| Event Service | События, билеты, регистрации, бронирование | 8082 |
+| Payment Service | Платежи, предоплата, возвраты | 8083 |
+| Notification Service | Telegram (уведомления, билеты) | 8084 |
 | Media Service | Файлы, изображения | 8085 |
 | Analytics Service | Метрики, отчёты | 8086 |
+
+### Messaging Layer
+
+**RabbitMQ** — асинхронная коммуникация:
+- Outbox pattern для reliable publishing
+- Topic-based routing
+- Dead Letter Queue для failed messages
+- Retry механизмы
 
 ### Data Layer
 
@@ -171,6 +223,8 @@ sequenceDiagram
 ```
 
 ## Технологические решения
+
+Здесь описаны ключевые архитектурные решения. Полный список технологий: [Tech Stack Overview](../tech-stack/overview.md).
 
 ### Spring MVC (не WebFlux)
 

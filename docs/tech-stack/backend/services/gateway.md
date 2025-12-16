@@ -63,10 +63,10 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/users/**,/api/v1/organizations/**,/api/v1/auth/**
+            - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/organizations/**,/api/v1/organization-requests/**,/api/v1/groups/**
           filters:
             - StripPrefix=0
-            
+
         - id: event-service
           uri: lb://event-service
           predicates:
@@ -166,6 +166,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtTokenProvider tokenProvider;
     private final List<String> publicPaths = List.of(
+        "/api/v1/auth/telegram",
         "/api/v1/auth/login",
         "/api/v1/auth/register",
         "/api/v1/events/public",

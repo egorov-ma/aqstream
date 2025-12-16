@@ -1,6 +1,6 @@
 # Notification Service
 
-Notification Service отвечает за отправку уведомлений пользователям.
+Notification Service отвечает за отправку уведомлений пользователям через Telegram.
 
 ## Обзор
 
@@ -12,17 +12,18 @@ Notification Service отвечает за отправку уведомлени
 
 ## Ответственности
 
-- Email уведомления (SMTP)
-- Telegram уведомления (Bot API)
-- Шаблоны сообщений
+- Telegram уведомления (Bot API) — единственный канал
+- Шаблоны сообщений (Mustache + Markdown)
+- Очередь отправки
 - Логирование отправок
 
 ## Каналы
 
 | Канал | Технология |
 |-------|-----------|
-| Email | Spring Mail + SMTP |
 | Telegram | Telegram Bot API |
+
+**Важно:** Telegram — единственный канал уведомлений. Email используется только для альтернативной аутентификации, но не для уведомлений.
 
 ## API Endpoints
 
@@ -37,39 +38,34 @@ Notification Service отвечает за отправку уведомлени
 
 ```java
 public enum NotificationTemplate {
+    USER_WELCOME("user.welcome"),
     REGISTRATION_CONFIRMED("registration.confirmed"),
     REGISTRATION_CANCELLED("registration.cancelled"),
+    RESERVATION_EXPIRED("reservation.expired"),
     EVENT_REMINDER("event.reminder"),
     EVENT_CHANGED("event.changed"),
     EVENT_CANCELLED("event.cancelled"),
     WAITLIST_AVAILABLE("waitlist.available"),
-    PASSWORD_RESET("password.reset"),
-    EMAIL_VERIFICATION("email.verification");
+    PAYMENT_RECEIPT("payment.receipt");
 }
 ```
 
-### Email шаблон (Mustache)
+### Telegram шаблон (Mustache + Markdown)
 
-```html
-<!-- templates/email/registration.confirmed.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Регистрация подтверждена</title>
-</head>
-<body>
-    <h1>Привет, {{firstName}}!</h1>
-    <p>Вы успешно зарегистрировались на событие <strong>{{eventTitle}}</strong>.</p>
-    
-    <div class="ticket">
-        <p>Код билета: <strong>{{confirmationCode}}</strong></p>
-        <p>Дата: {{eventDate}}</p>
-        <p>Место: {{eventLocation}}</p>
-    </div>
-    
-    <img src="{{qrCodeUrl}}" alt="QR код билета" />
-</body>
-</html>
+```markdown
+<!-- templates/telegram/registration.confirmed.md -->
+🎫 *Билет на событие*
+
+Привет, {{firstName}}!
+
+Вы успешно зарегистрировались на *{{eventTitle}}*.
+
+📋 *Детали:*
+• Код билета: `{{confirmationCode}}`
+• Дата: {{eventDate}}
+• Место: {{eventLocation}}
+
+[Подробнее о событии]({{eventUrl}})
 ```
 
 ## Отправка уведомлений
@@ -79,38 +75,32 @@ public enum NotificationTemplate {
 @RequiredArgsConstructor
 public class NotificationService {
 
-    private final EmailSender emailSender;
     private final TelegramSender telegramSender;
     private final TemplateEngine templateEngine;
     private final NotificationLogRepository logRepository;
 
     public void send(SendNotificationRequest request) {
         // Рендеринг шаблона
-        String subject = templateEngine.render(
-            request.template().getSubjectTemplate(),
-            request.variables()
-        );
         String body = templateEngine.render(
             request.template().getBodyTemplate(),
             request.variables()
         );
-        
-        // Отправка по каналам
-        if (request.channels().contains(Channel.EMAIL)) {
-            sendEmail(request.email(), subject, body);
-        }
-        
-        if (request.channels().contains(Channel.TELEGRAM) && request.telegramChatId() != null) {
+
+        // Отправка в Telegram
+        if (request.telegramChatId() != null) {
             sendTelegram(request.telegramChatId(), body);
+        } else {
+            log.warn("Не удалось отправить уведомление: пользователь не подключил Telegram, userId={}",
+                request.userId());
         }
     }
 
-    private void sendEmail(String email, String subject, String body) {
+    private void sendTelegram(String chatId, String body) {
         try {
-            emailSender.send(email, subject, body);
-            logSuccess(email, Channel.EMAIL);
+            telegramSender.send(chatId, body);
+            logSuccess(chatId, Channel.TELEGRAM);
         } catch (Exception e) {
-            logFailure(email, Channel.EMAIL, e.getMessage());
+            logFailure(chatId, Channel.TELEGRAM, e.getMessage());
             throw new NotificationFailedException(e);
         }
     }
@@ -123,14 +113,15 @@ public class NotificationService {
 
 | Event | Уведомление |
 |-------|-------------|
-| `user.registered` | Email verification |
-| `registration.created` | Confirmation email |
-| `registration.cancelled` | Cancellation notice |
-| `event.published` | — |
-| `event.cancelled` | Cancellation notice to all |
-| `event.changed` | Update notice |
-| `payment.completed` | Receipt |
-| `waitlist.available` | Spot available |
+| `user.registered` | Welcome сообщение в Telegram |
+| `registration.created` | Билет с QR-кодом в Telegram |
+| `registration.cancelled` | Уведомление об отмене |
+| `reservation.expired` | Уведомление об истечении брони |
+| `event.cancelled` | Уведомление об отмене события всем участникам |
+| `event.changed` | Уведомление об изменениях |
+| `event.reminder` | Напоминание о событии (за 24ч) |
+| `payment.completed` | Чек об оплате |
+| `waitlist.available` | Место из листа ожидания |
 
 ```java
 @Component
@@ -138,19 +129,24 @@ public class NotificationService {
 public class NotificationEventListener {
 
     private final NotificationService notificationService;
+    private final UserClient userClient;
 
     @RabbitListener(queues = "notifications.registration.created")
     public void handleRegistrationCreated(RegistrationCreatedEvent event) {
+        // Получаем telegram_chat_id пользователя
+        UserDto user = userClient.findById(event.getUserId());
+
         notificationService.send(SendNotificationRequest.builder()
             .template(NotificationTemplate.REGISTRATION_CONFIRMED)
-            .email(event.getEmail())
-            .channels(Set.of(Channel.EMAIL))
+            .userId(event.getUserId())
+            .telegramChatId(user.getTelegramChatId())
             .variables(Map.of(
                 "firstName", event.getFirstName(),
                 "eventTitle", event.getEventTitle(),
                 "confirmationCode", event.getConfirmationCode(),
                 "eventDate", formatDate(event.getEventStartsAt()),
-                "qrCodeUrl", generateQrCodeUrl(event.getConfirmationCode())
+                "eventLocation", event.getEventLocation(),
+                "eventUrl", generateEventUrl(event.getEventId())
             ))
             .build());
     }
@@ -188,16 +184,6 @@ public class TelegramBotService {
 ## Конфигурация
 
 ```yaml
-spring:
-  mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
-    port: ${SMTP_PORT:587}
-    username: ${SMTP_USERNAME}
-    password: ${SMTP_PASSWORD}
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN}
   bot-username: ${TELEGRAM_BOT_USERNAME}

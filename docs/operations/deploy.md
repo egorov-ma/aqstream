@@ -9,9 +9,7 @@ flowchart LR
     Dev["Development"] --> PR["Pull Request"]
     PR --> CI["CI Tests"]
     CI --> Main["Merge to main"]
-    Main --> Staging["Auto-deploy Staging"]
-    Staging --> Approval["Manual Approval"]
-    Approval --> Prod["Deploy Production"]
+    Main --> Prod["Deploy Production"]
 ```
 
 ## Docker Images
@@ -107,11 +105,11 @@ jobs:
       - run: cd frontend && pnpm build
 ```
 
-### Deploy to Staging
+### Deploy to Production
 
 ```yaml
-# .github/workflows/deploy-staging.yml
-name: Deploy Staging
+# .github/workflows/deploy-production.yml
+name: Deploy Production
 
 on:
   push:
@@ -122,40 +120,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build and push images
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker compose -f docker-compose.prod.yml build
           docker compose -f docker-compose.prod.yml push
-      
-      - name: Deploy to staging
-        run: |
-          # SSH and deploy
-          ssh deploy@staging.aqstream.com "cd /app && docker compose pull && docker compose up -d"
-```
 
-### Deploy to Production
-
-```yaml
-# .github/workflows/deploy-production.yml
-name: Deploy Production
-
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to deploy'
-        required: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: production  # Requires approval
-    steps:
       - name: Deploy to production
         run: |
-          ssh deploy@aqstream.com "cd /app && ./deploy.sh ${{ inputs.version }}"
+          ssh deploy@aqstream.ru "cd /app && docker compose pull && docker compose up -d"
 ```
 
 ## Deployment Strategy
@@ -206,11 +180,7 @@ spring:
 ### Ручные (для сложных миграций)
 
 ```bash
-# На staging
-./gradlew :services:event-service:liquibaseUpdate -Penv=staging
-
-# На production (после тестирования на staging)
-./gradlew :services:event-service:liquibaseUpdate -Penv=production
+./gradlew :services:event-service:event-service-db:update -Penv=production
 ```
 
 ## Rollback
@@ -239,8 +209,8 @@ GITHUB_TOKEN          # GitHub Container Registry
 DATABASE_URL          # PostgreSQL connection string
 REDIS_URL             # Redis connection string
 JWT_SECRET            # JWT signing key
-STRIPE_API_KEY        # Stripe API key
-SMTP_PASSWORD         # SMTP password
+PAYMENT_API_KEY       # Payment provider API key
+TELEGRAM_BOT_TOKEN    # Telegram Bot API token
 ```
 
 ### Environment injection
@@ -255,27 +225,13 @@ services:
 
 ## Мониторинг деплоя
 
-### Slack notification
-
-```yaml
-- name: Notify Slack
-  uses: slackapi/slack-github-action@v1
-  with:
-    payload: |
-      {
-        "text": "Deployed ${{ github.sha }} to staging"
-      }
-  env:
-    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-```
-
 ### Health check после деплоя
 
 ```yaml
 - name: Verify deployment
   run: |
     for i in {1..30}; do
-      if curl -s http://staging.aqstream.com/actuator/health | grep -q "UP"; then
+      if curl -s http://aqstream.ru/actuator/health | grep -q "UP"; then
         echo "Deployment successful"
         exit 0
       fi
@@ -289,4 +245,4 @@ services:
 
 - [CI/CD](./ci-cd.md) — детали пайплайнов
 - [Observability](./observability.md) — мониторинг
-- [Runbooks](./runbooks/) — операционные процедуры
+- [Runbook](./runbook.md) — операционные процедуры

@@ -8,9 +8,7 @@ GitHub Actions для AqStream.
 flowchart LR
     PR["Pull Request"] --> CI["CI Checks"]
     CI --> Main["Merge to main"]
-    Main --> Staging["Auto-deploy Staging"]
-    Staging --> Approval["Manual Approval"]
-    Approval --> Prod["Deploy Production"]
+    Main --> Prod["Deploy Production"]
 ```
 
 ## Workflows
@@ -18,8 +16,8 @@ flowchart LR
 | Файл | Триггер | Действие |
 |------|---------|----------|
 | `.github/workflows/ci.yml` | PR to main, Push to main | Lint, Test, Build |
-| `.github/workflows/deploy-staging.yml` | Push to main | Build images, Deploy staging |
-| `.github/workflows/deploy-production.yml` | Manual (workflow_dispatch) | Deploy production |
+| `.github/workflows/deploy-production.yml` | Push to main | Build images, Deploy production |
+| `.github/workflows/docs.yml` | Push to main (docs/**) | Build MkDocs, Deploy to docs.aqstream.ru |
 
 ## CI Workflow
 
@@ -79,16 +77,15 @@ concurrency:
 | Frontend TypeCheck | Yes | TypeScript |
 | Frontend Tests | Yes | Vitest |
 
-## Deploy to Staging
+## Deploy to Production
 
 Автоматический деплой при push в `main`:
 
 1. **Build JARs** — `./gradlew bootJar`
 2. **Build Docker images** — для каждого сервиса
 3. **Push to GHCR** — `ghcr.io/aqstream/<service>:<sha>`
-4. **Deploy** — SSH к staging серверу
+4. **Deploy** — SSH к production серверу
 5. **Health Check** — проверка `/actuator/health`
-6. **Notification** — Slack (когда настроен)
 
 ### Image Tags
 
@@ -99,35 +96,45 @@ ghcr.io/aqstream/aqstream/user-service:abc1234
 ghcr.io/aqstream/aqstream/event-service:abc1234
 ```
 
-## Deploy to Production
+## Deploy Documentation
 
-Manual workflow с обязательным подтверждением:
+Автоматический деплой документации при изменениях в `docs/`:
 
-1. **Input:** версия (SHA или tag) + подтверждение "deploy"
-2. **Validation** — проверка формата версии
-3. **Verify images** — проверка наличия образов в registry
-4. **Deploy** — SSH к production серверу
-5. **Health Check** — 30 попыток с интервалом 10 секунд
-6. **Notification** — Slack/Email
+1. **Trigger** — push to main с изменениями в `docs/**`
+2. **Build** — `make docs-build` (MkDocs + Material theme)
+3. **Deploy** — SCP на production сервер в `/var/www/docs.aqstream.ru`
 
-### Запуск вручную
+```yaml
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
 
+jobs:
+  deploy:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: pip install -r docs/_internal/doc-as-code/requirements.txt
+      - run: make docs-build
+      - uses: appleboy/scp-action@master
+        with:
+          source: "site/*"
+          target: "/var/www/docs.aqstream.ru"
 ```
-gh workflow run deploy-production.yml \
-  -f version=abc1234 \
-  -f confirm=deploy
-```
+
+См. полный пример в [Server Setup](./server-setup.md).
 
 ## GitHub Secrets
 
 | Secret | Description | Required For |
 |--------|-------------|--------------|
 | `GITHUB_TOKEN` | Автоматически предоставляется | GHCR push |
-| `STAGING_SSH_KEY` | SSH ключ для staging | deploy-staging |
-| `STAGING_HOST` | Адрес staging сервера | deploy-staging |
 | `PRODUCTION_SSH_KEY` | SSH ключ для production | deploy-production |
 | `PRODUCTION_HOST` | Адрес production сервера | deploy-production |
-| `SLACK_WEBHOOK` | Webhook для уведомлений | Notifications |
+| `SSH_KEY` | SSH ключ для деплоя docs | docs |
+| `SSH_HOST` | Адрес сервера docs | docs |
+| `SSH_USER` | Пользователь SSH | docs |
 | `CODECOV_TOKEN` | Токен Codecov | Coverage reports |
 
 ## Branch Protection Rules
@@ -165,19 +172,6 @@ gh workflow run deploy-production.yml \
     cache-dependency-path: frontend/pnpm-lock.yaml
 ```
 
-## CODEOWNERS
-
-Файл `.github/CODEOWNERS` определяет автоматических reviewers:
-
-| Path | Team |
-|------|------|
-| `/services/` | @aqstream/backend-team |
-| `/common/` | @aqstream/backend-team |
-| `/frontend/` | @aqstream/frontend-team |
-| `/.github/` | @aqstream/devops-team |
-| `/docker/` | @aqstream/devops-team |
-| `/docs/` | @aqstream/core-team |
-
 ## Troubleshooting
 
 ### CI падает на checkstyle
@@ -206,4 +200,4 @@ open build/reports/checkstyle/main.html
 
 - [Deploy](./deploy.md) — процесс деплоя
 - [Environments](./environments.md) — окружения
-- [Runbooks](./runbooks/) — операционные процедуры
+- [Runbook](./runbook.md) — операционные процедуры

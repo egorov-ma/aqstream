@@ -1,8 +1,8 @@
 site_name: AqStream Documentation
 site_description: Документация платформы управления мероприятиями AqStream
-site_url: https://docs.aqstream.com
-repo_url: https://github.com/aqstream/aqstream
-repo_name: aqstream/aqstream
+site_url: https://docs.aqstream.ru
+repo_url: https://github.com/egorov-ma/aqstream
+repo_name: egorov-ma/aqstream
 docs_dir: ..
 
 theme:
@@ -70,6 +70,7 @@ nav:
   
   - Бизнес:
     - Видение: business/vision.md
+    - Ролевая модель: business/role-model.md
     - User Journeys: business/user-journeys.md
     - Требования: business/functional-requirements.md
     - Roadmap: business/roadmap.md
@@ -103,22 +104,19 @@ nav:
   
   - Operations:
     - Окружения: operations/environments.md
+    - Настройка сервера: operations/server-setup.md
     - Деплой: operations/deploy.md
     - CI/CD: operations/ci-cd.md
     - Observability: operations/observability.md
-    - Runbooks:
-      - Service Restart: operations/runbooks/service-restart.md
-      - Incident Response: operations/runbooks/incident-response.md
-      - Backup & Restore: operations/runbooks/backup-restore.md
+    - Runbook: operations/runbook.md
   
   - Community:
     - Безопасность: experience/security.md
-    - Contributing: experience/contributing.md
     - Сообщество: experience/community.md
 
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/aqstream/aqstream
+      link: https://github.com/egorov-ma/aqstream
     - icon: fontawesome/brands/telegram
       link: https://t.me/aqstream

@@ -13,7 +13,7 @@ ID формируется как: P{фаза}-{порядковый номер},
 | Фаза | Phase N: Name |
 | Статус | `backlog` / `ready` / `in_progress` / `review` / `done` |
 | Приоритет | `critical` / `high` / `medium` / `low` |
-| Связь с roadmap | [Ссылка на пункт в roadmap](../business/roadmap.md#section) |
+| Связь с roadmap | [Roadmap](../business/roadmap.md) |
 
 ## Контекст
 

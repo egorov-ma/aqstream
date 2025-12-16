@@ -7,8 +7,12 @@
 | Environment | Назначение | URL |
 |-------------|-----------|-----|
 | Local | Локальная разработка | localhost |
-| Staging | Тестирование | staging.aqstream.com |
-| Production | Продакшен | aqstream.com |
+| Production | Продакшен | aqstream.ru |
+
+**Production URLs:**
+- Frontend: `https://aqstream.ru`
+- API Gateway: `https://api.aqstream.ru`
+- Documentation: `https://docs.aqstream.ru`
 
 ## Local Development
 
@@ -24,7 +28,7 @@
 
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/aqstream/aqstream.git
+git clone https://github.com/egorov-ma/aqstream.git
 cd aqstream
 
 # Скопировать конфигурацию
@@ -55,6 +59,7 @@ cd frontend && pnpm dev
 | PostgreSQL (shared) | 5432 |
 | PostgreSQL (user) | 5433 |
 | PostgreSQL (payment) | 5434 |
+| PostgreSQL (analytics) | 5435 |
 | Redis | 6379 |
 | RabbitMQ | 5672 |
 | RabbitMQ Management | 15672 |
@@ -122,39 +127,6 @@ make infra-reset
 | http://localhost:15672 | RabbitMQ Management | guest/guest |
 | http://localhost:9001 | MinIO Console | minioadmin/minioadmin |
 
-## Staging
-
-### Назначение
-
-- Тестирование перед продакшеном
-- QA тестирование
-- Demo для стейкхолдеров
-
-### Деплой
-
-Автоматический деплой при merge в `main`:
-
-```yaml
-# .github/workflows/deploy-staging.yml
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to Staging
-        run: |
-          # Deploy logic
-```
-
-### Данные
-
-- Отдельная БД от продакшена
-- Тестовые данные (seeded)
-- Stripe/ЮKassa в test mode
-
 ## Production
 
 ### Характеристики
@@ -166,21 +138,21 @@ jobs:
 
 ### Деплой
 
-Manual approval после staging:
+Автоматический деплой при push в `main`:
 
 ```yaml
 # .github/workflows/deploy-production.yml
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to deploy'
-        required: true
+  push:
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production  # Requires approval
+    steps:
+      - name: Deploy to production
+        run: |
+          ssh deploy@aqstream.ru "cd /app && docker compose pull && docker compose up -d"
 ```
 
 ## Конфигурация
@@ -189,7 +161,7 @@ jobs:
 
 ```bash
 # Общие
-NODE_ENV=development|staging|production
+NODE_ENV=development|production
 LOG_LEVEL=debug|info|warn|error
 
 # Database
@@ -211,11 +183,10 @@ RABBITMQ_PASSWORD=guest
 JWT_SECRET=your-secret-key
 
 # External Services
-STRIPE_API_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-SMTP_HOST=smtp.example.com
-SMTP_USERNAME=user
-SMTP_PASSWORD=secret
+PAYMENT_API_KEY=...
+PAYMENT_WEBHOOK_SECRET=...
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_BOT_USERNAME=...
 ```
 
 ### Profiles
@@ -233,14 +204,6 @@ spring:
       on-profile: local
   datasource:
     url: jdbc:postgresql://localhost:5432/event_service
-
----
-spring:
-  config:
-    activate:
-      on-profile: staging
-  datasource:
-    url: ${DATABASE_URL}
 
 ---
 spring:

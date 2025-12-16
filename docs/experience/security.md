@@ -17,7 +17,7 @@
   "sub": "user-uuid",
   "email": "user@example.com",
   "tenantId": "org-uuid",
-  "roles": ["ADMIN"],
+  "roles": ["MODERATOR"],
   "iat": 1623456789,
   "exp": 1623457689
 }
@@ -48,10 +48,8 @@ public PasswordEncoder passwordEncoder() {
 
 | Роль | Уровень | Права |
 |------|---------|-------|
-| OWNER | Организация | Полный доступ |
-| ADMIN | Организация | Управление, кроме удаления org |
-| MANAGER | Организация | Управление событиями |
-| VIEWER | Организация | Только просмотр |
+| OWNER | Организация | Полный контроль, удаление организации |
+| MODERATOR | Организация | Управление событиями, check-in, аналитика |
 
 ### Resource-Based Access
 
@@ -159,8 +157,7 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-            "https://aqstream.com",
-            "https://staging.aqstream.com"
+            "https://aqstream.ru"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         config.setAllowedHeaders(List.of("*"));
@@ -204,7 +201,7 @@ log.info("Пользователь вошёл: email={}", email);    // ❌
 ### Payment Data
 
 - Номера карт **не хранятся**
-- Используются токены платёжных провайдеров (Stripe, ЮKassa)
+- Используются токены платёжных провайдеров
 - PCI DSS: провайдер отвечает за compliance
 
 ## Security Headers
@@ -235,7 +232,7 @@ public class SecurityConfig {
 # Secrets через environment variables
 JWT_SECRET=...
 DATABASE_PASSWORD=...
-STRIPE_API_KEY=...
+PAYMENT_API_KEY=...
 ```
 
 ### Запрещено
@@ -272,7 +269,7 @@ pnpm audit
 4. Исправить уязвимость
 5. Провести post-mortem
 
-См. [Incident Response Runbook](../operations/runbooks/incident-response.md)
+См. [Runbook](../operations/runbook.md)
 
 ## Compliance
 

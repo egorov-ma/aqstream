@@ -9,27 +9,39 @@ flowchart TB
     subgraph Gateway["API Gateway :8080"]
         GW["Authentication<br/>Rate Limiting<br/>Routing"]
     end
-    
+
     subgraph Core["Core Services"]
         US["User Service<br/>:8081"]
         ES["Event Service<br/>:8082"]
     end
-    
+
     subgraph Support["Support Services"]
         PS["Payment Service<br/>:8083"]
         NS["Notification Service<br/>:8084"]
         MS["Media Service<br/>:8085"]
         AS["Analytics Service<br/>:8086"]
     end
-    
-    Gateway --> Core
-    Gateway --> Support
-    
-    ES --> US
-    PS --> ES
-    NS --> US
-    NS --> ES
-    AS --> ES
+
+    subgraph Messaging["Message Broker"]
+        RMQ["RabbitMQ<br/>:5672"]
+    end
+
+    Gateway -->|HTTP| Core
+    Gateway -->|HTTP| Support
+
+    ES -->|HTTP| US
+    ES -->|HTTP| MS
+    PS -->|HTTP| ES
+    NS -->|HTTP| US
+    NS -->|HTTP| ES
+    AS -->|HTTP| ES
+
+    US -.->|AMQP| RMQ
+    ES -.->|AMQP| RMQ
+    PS -.->|AMQP| RMQ
+    RMQ -.->|AMQP| PS
+    RMQ -.->|AMQP| NS
+    RMQ -.->|AMQP| AS
 ```
 
 ## API Gateway
@@ -49,8 +61,11 @@ flowchart TB
 
 | Path | Target | Description |
 |------|--------|-------------|
+| `/api/v1/auth/**` | User Service | Аутентификация |
 | `/api/v1/users/**` | User Service | Пользователи |
 | `/api/v1/organizations/**` | User Service | Организации |
+| `/api/v1/organization-requests/**` | User Service | Запросы на организации |
+| `/api/v1/groups/**` | User Service | Группы |
 | `/api/v1/events/**` | Event Service | События |
 | `/api/v1/registrations/**` | Event Service | Регистрации |
 | `/api/v1/payments/**` | Payment Service | Платежи |
@@ -68,34 +83,47 @@ flowchart TB
 **Схема:** `user_service`
 
 **Ответственность:**
-- Регистрация и аутентификация пользователей
-- Управление организациями
-- Роли и права доступа
+- Регистрация и аутентификация пользователей (Telegram / email)
+- Управление организациями (запросы, одобрение, создание)
+- Группы для приватных событий
+- Роли и права доступа (Владелец, Модератор)
 - JWT token generation
 
 **Основные сущности:**
 - User
-- Organization  
+- Organization
 - OrganizationMember
+- OrganizationRequest
+- Group
+- GroupMember
 - Role
 
 **API:**
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/auth/register` | Регистрация |
-| POST | `/api/v1/auth/login` | Вход |
+| POST | `/api/v1/auth/telegram` | Вход через Telegram |
+| POST | `/api/v1/auth/register` | Регистрация по email |
+| POST | `/api/v1/auth/login` | Вход по email/password |
 | POST | `/api/v1/auth/refresh` | Обновление токена |
 | GET | `/api/v1/users/me` | Текущий пользователь |
 | GET | `/api/v1/organizations` | Список организаций |
-| POST | `/api/v1/organizations` | Создание организации |
+| POST | `/api/v1/organization-requests` | Запрос на создание организации |
+| POST | `/api/v1/organizations` | Создание организации (после одобрения) |
 | GET | `/api/v1/organizations/{id}/members` | Члены организации |
+| POST | `/api/v1/organizations/{id}/invite` | Приглашение (через Telegram) |
+| GET | `/api/v1/organizations/{id}/groups` | Группы организации |
+| POST | `/api/v1/organizations/{id}/groups` | Создание группы |
+| POST | `/api/v1/groups/{id}/invite` | Инвайт в группу |
 
 **События (публикует):**
 - `user.registered`
 - `user.updated`
+- `organization.request.created`
 - `organization.created`
 - `organization.member.added`
+- `group.created`
+- `group.member.added`
 
 ## Event Service
 
@@ -107,7 +135,10 @@ flowchart TB
 
 **Ответственность:**
 - Управление событиями (CRUD, lifecycle)
+- Видимость участников (закрытая/открытая)
+- Привязка события к группе (приватные события)
 - Типы билетов и лимиты
+- Бронирование билетов (с таймером)
 - Регистрации участников
 - Check-in на событии
 - Листы ожидания
@@ -116,6 +147,7 @@ flowchart TB
 - Event
 - TicketType
 - Registration
+- Reservation (бронь с таймером)
 - CheckIn
 - WaitlistEntry
 
@@ -154,11 +186,13 @@ stateDiagram-v2
 - `event.completed`
 - `registration.created`
 - `registration.cancelled`
+- `reservation.expired`
 - `checkin.completed`
 
 **События (потребляет):**
 - `payment.completed` → Подтверждение регистрации
 - `payment.refunded` → Отмена регистрации
+- `group.member.added` → Доступ к приватным событиям
 
 ## Payment Service
 
@@ -169,13 +203,15 @@ stateDiagram-v2
 **Схема:** `payment_service`
 
 **Ответственность:**
-- Интеграция с платёжными провайдерами (Stripe, ЮKassa)
-- Обработка платежей
+- Интеграция с платёжными провайдерами
+- Обработка платежей (полная оплата и предоплата)
+- Доплата остатка
 - Возвраты (полные и частичные)
 - Webhook handling
 
 **Основные сущности:**
 - Payment
+- Prepayment (предоплата)
 - Refund
 - PaymentMethod
 
@@ -201,8 +237,7 @@ stateDiagram-v2
 | POST | `/api/v1/payments` | Создание платежа |
 | GET | `/api/v1/payments/{id}` | Статус платежа |
 | POST | `/api/v1/payments/{id}/refund` | Возврат |
-| POST | `/api/v1/webhooks/stripe` | Stripe webhook |
-| POST | `/api/v1/webhooks/yookassa` | ЮKassa webhook |
+| POST | `/api/v1/webhooks/{provider}` | Webhook от провайдера |
 
 **События (публикует):**
 - `payment.created`
@@ -223,7 +258,6 @@ stateDiagram-v2
 **Схема:** `notification_service`
 
 **Ответственность:**
-- Email уведомления (SMTP)
 - Telegram уведомления (Bot API)
 - Шаблоны сообщений
 - Очередь отправки
@@ -234,7 +268,6 @@ stateDiagram-v2
 - UserNotificationPreference
 
 **Каналы:**
-- Email (через SMTP)
 - Telegram (через Bot API)
 
 **API:**
@@ -246,11 +279,12 @@ stateDiagram-v2
 | PUT | `/api/v1/notifications/preferences` | Настройки пользователя |
 
 **События (потребляет):**
-- `user.registered` → Welcome email
-- `registration.created` → Confirmation email
-- `event.cancelled` → Cancellation notice
-- `event.reminder` → Reminder before event
-- `payment.completed` → Receipt
+- `user.registered` → Welcome сообщение в Telegram
+- `registration.created` → Билет с QR-кодом в Telegram
+- `event.cancelled` → Уведомление об отмене
+- `event.reminder` → Напоминание о событии
+- `payment.completed` → Чек об оплате
+- `reservation.expired` → Уведомление об истечении брони
 
 ## Media Service
 

@@ -42,7 +42,7 @@ flowchart TB
 | Spring Boot | 3.5.x | Application framework |
 | Spring MVC | — | Web framework (servlet-based) |
 | Spring Security | 6.5.x | Security framework |
-| Spring Data JPA | 2025.0.x | Data access |
+| Spring Data JPA | — | Data access (managed by Spring Boot) |
 
 **Важно:** Используем классический **Spring MVC** (servlet-based, blocking I/O), не WebFlux. Исключение — API Gateway.
 
@@ -79,8 +79,8 @@ flowchart TB
 
 | Технология | Версия | Назначение |
 |------------|--------|------------|
-| Gradle | 8.x | Build tool |
-| MapStruct | 1.5.x | DTO mapping |
+| Gradle | 9.x | Build tool |
+| MapStruct | 1.6.x | DTO mapping |
 | Lombok | — | Boilerplate reduction |
 
 ## Frontend
@@ -160,8 +160,8 @@ flowchart TB
 
 ```kotlin
 // Root build.gradle.kts
-extra["springBootVersion"] = "3.3.0"
-extra["springCloudVersion"] = "2023.0.0"
+extra["springBootVersion"] = "3.5.8"
+extra["springCloudVersion"] = "2025.0.0"
 
 // Dependencies
 implementation("org.springframework.boot:spring-boot-starter-web")
@@ -172,14 +172,14 @@ implementation("org.springframework.boot:spring-boot-starter-amqp")
 implementation("org.springframework.boot:spring-boot-starter-data-redis")
 implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 implementation("org.liquibase:liquibase-core")
-implementation("org.mapstruct:mapstruct:1.5.5.Final")
+implementation("org.mapstruct:mapstruct:1.6.3")
 implementation("io.jsonwebtoken:jjwt-api:0.12.3")
 
 runtimeOnly("org.postgresql:postgresql")
 
 compileOnly("org.projectlombok:lombok")
 annotationProcessor("org.projectlombok:lombok")
-annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
+annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
 testImplementation("org.springframework.boot:spring-boot-starter-test")
 testImplementation("org.testcontainers:postgresql")

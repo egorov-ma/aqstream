@@ -8,7 +8,7 @@
 |------------|--------|------------|
 | Docker | 24+ | Контейнеризация |
 | Docker Compose | 2.x | Локальная оркестрация |
-| JDK | 21 | Java runtime |
+| JDK | 25 | Java runtime |
 | Node.js | 20 LTS | Frontend runtime |
 | pnpm | 8+ | Package manager |
 | Git | 2.40+ | Version control |
@@ -256,6 +256,17 @@ services:
     volumes:
       - postgres-payment-data:/var/lib/postgresql/data
 
+  postgres-analytics:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: aqstream
+      POSTGRES_PASSWORD: aqstream
+      POSTGRES_DB: analytics_service_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-analytics-data:/var/lib/postgresql/data
+
   # Cache
   redis:
     image: redis:7
@@ -286,6 +297,7 @@ volumes:
   postgres-shared-data:
   postgres-user-data:
   postgres-payment-data:
+  postgres-analytics-data:
   minio-data:
 ```
 

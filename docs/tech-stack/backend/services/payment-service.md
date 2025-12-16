@@ -12,11 +12,67 @@ Payment Service отвечает за платежи и интеграцию с 
 
 ## Ответственности
 
-- Интеграция со Stripe и ЮKassa
-- Создание и обработка платежей
+- Интеграция с платёжными провайдерами
+- Создание и обработка платежей (полная оплата)
+- Предоплата (частичная оплата при регистрации)
+- Доплата остатка
 - Возвраты (полные и частичные)
 - Обработка webhooks
-- Финансовая отчётность
+
+## ERD
+
+```mermaid
+erDiagram
+    PAYMENT ||--o{ REFUND : has
+    PAYMENT }o--|| REGISTRATION : "for"
+    PREPAYMENT }o--|| REGISTRATION : "for"
+    PREPAYMENT }o--|| PAYMENT : "initial"
+
+    PAYMENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid registration_id FK
+        string provider
+        string provider_payment_id UK
+        int amount_cents
+        string currency
+        string status
+        uuid idempotency_key UK
+        timestamp completed_at
+        timestamp created_at
+    }
+
+    PREPAYMENT {
+        uuid id PK
+        uuid payment_id FK
+        uuid registration_id FK
+        int prepaid_cents
+        int remaining_cents
+        string status
+        timestamp due_date
+        timestamp completed_at
+        timestamp created_at
+    }
+
+    REFUND {
+        uuid id PK
+        uuid payment_id FK
+        string provider_refund_id UK
+        int amount_cents
+        string reason
+        string status
+        timestamp created_at
+    }
+```
+
+**Статусы Prepayment:**
+- `PARTIAL` — предоплата внесена, ожидает доплаты
+- `COMPLETED` — полностью оплачено
+
+**Бизнес-правила:**
+- Создаётся когда билет имеет `prepayment_percent > 0`
+- Остаток можно оплатить в личном кабинете
+- Если не оплачено до `due_date` — регистрация может быть отменена
 
 ## API Endpoints
 
@@ -32,28 +88,24 @@ Payment Service отвечает за платежи и интеграцию с 
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/webhooks/stripe` | Stripe webhook |
-| POST | `/api/v1/webhooks/yookassa` | ЮKassa webhook |
+| POST | `/api/v1/webhooks/{provider}` | Webhook от провайдера |
 
 ## Платёжные провайдеры
 
 ```java
 public interface PaymentProvider {
+    String getName();
     PaymentSession createSession(CreatePaymentRequest request);
     PaymentStatus getStatus(String providerPaymentId);
     RefundResult refund(String providerPaymentId, int amountCents);
+    boolean verifyWebhook(String payload, String signature);
 }
 
+// Реализации провайдеров подключаются через @ConditionalOnProperty
 @Service
-@ConditionalOnProperty(name = "payment.provider", havingValue = "stripe")
-public class StripePaymentProvider implements PaymentProvider {
-    // Stripe implementation
-}
-
-@Service
-@ConditionalOnProperty(name = "payment.provider", havingValue = "yookassa")
-public class YookassaPaymentProvider implements PaymentProvider {
-    // ЮKassa implementation
+@ConditionalOnProperty(name = "payment.provider", havingValue = "...")
+public class ConcretePaymentProvider implements PaymentProvider {
+    // Implementation
 }
 ```
 
@@ -104,59 +156,55 @@ public class PaymentService {
 @RequiredArgsConstructor
 public class WebhookController {
 
-    private final StripeWebhookHandler stripeHandler;
-    private final YookassaWebhookHandler yookassaHandler;
+    private final WebhookService webhookService;
 
-    @PostMapping("/stripe")
-    public ResponseEntity<Void> handleStripe(
+    @PostMapping("/{provider}")
+    public ResponseEntity<Void> handleWebhook(
+        @PathVariable String provider,
         @RequestBody String payload,
-        @RequestHeader("Stripe-Signature") String signature
+        @RequestHeader(value = "X-Signature", required = false) String signature
     ) {
-        stripeHandler.handle(payload, signature);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/yookassa")
-    public ResponseEntity<Void> handleYookassa(
-        @RequestBody String payload
-    ) {
-        yookassaHandler.handle(payload);
+        webhookService.handle(provider, payload, signature);
         return ResponseEntity.ok().build();
     }
 }
 ```
 
 ```java
-@Component
+@Service
 @RequiredArgsConstructor
-public class StripeWebhookHandler {
+public class WebhookService {
 
+    private final PaymentProvider paymentProvider;
     private final PaymentRepository paymentRepository;
     private final EventPublisher eventPublisher;
 
     @Transactional
-    public void handle(String payload, String signature) {
-        Event event = Webhook.constructEvent(payload, signature, webhookSecret);
-        
+    public void handle(String provider, String payload, String signature) {
+        // Верификация подписи
+        if (!paymentProvider.verifyWebhook(payload, signature)) {
+            throw new InvalidWebhookException("Неверная подпись webhook");
+        }
+
+        // Обработка события
+        WebhookEvent event = paymentProvider.parseWebhook(payload);
+
         switch (event.getType()) {
-            case "payment_intent.succeeded" -> handlePaymentSucceeded(event);
-            case "payment_intent.payment_failed" -> handlePaymentFailed(event);
-            case "charge.refunded" -> handleRefunded(event);
+            case PAYMENT_SUCCEEDED -> handlePaymentSucceeded(event);
+            case PAYMENT_FAILED -> handlePaymentFailed(event);
+            case REFUNDED -> handleRefunded(event);
         }
     }
 
-    private void handlePaymentSucceeded(Event event) {
-        PaymentIntent intent = (PaymentIntent) event.getDataObjectDeserializer()
-            .getObject().orElseThrow();
-        
+    private void handlePaymentSucceeded(WebhookEvent event) {
         Payment payment = paymentRepository
-            .findByProviderPaymentId(intent.getId())
+            .findByProviderPaymentId(event.getPaymentId())
             .orElseThrow();
-        
+
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setCompletedAt(Instant.now());
         paymentRepository.save(payment);
-        
+
         eventPublisher.publish(new PaymentCompletedEvent(
             payment.getId(),
             payment.getRegistrationId()
@@ -242,15 +290,9 @@ public RefundDto refund(UUID paymentId, RefundRequest request) {
 
 ```yaml
 payment:
-  provider: ${PAYMENT_PROVIDER:stripe}
-
-stripe:
-  api-key: ${STRIPE_API_KEY}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
-
-yookassa:
-  shop-id: ${YOOKASSA_SHOP_ID}
-  secret-key: ${YOOKASSA_SECRET_KEY}
+  provider: ${PAYMENT_PROVIDER}
+  api-key: ${PAYMENT_API_KEY}
+  webhook-secret: ${PAYMENT_WEBHOOK_SECRET}
 ```
 
 ## Дальнейшее чтение

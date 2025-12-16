@@ -79,17 +79,17 @@ services/event-service/event-service-db/src/main/resources/db/changelog/
 ## Команды
 
 ```bash
-# Применить
-./gradlew :services:event-service:liquibaseUpdate
+# Применить миграции
+./gradlew :services:event-service:event-service-db:update
 
-# Откатить последний
-./gradlew :services:event-service:liquibaseRollbackCount -PliquibaseCommandValue=1
+# Откатить последний changeset
+./gradlew :services:event-service:event-service-db:rollbackCount -PliquibaseCommandValue=1
 
 # Посмотреть SQL без применения
-./gradlew :services:event-service:liquibaseUpdateSQL
+./gradlew :services:event-service:event-service-db:updateSQL
 
-# Статус
-./gradlew :services:event-service:liquibaseStatus
+# Статус миграций
+./gradlew :services:event-service:event-service-db:status
 ```
 
 ## Troubleshooting

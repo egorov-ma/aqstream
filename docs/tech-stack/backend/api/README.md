@@ -20,8 +20,8 @@
 
 ### Production
 
-- Swagger UI: https://api.aqstream.com/swagger-ui.html
-- ReDoc: https://api.aqstream.com/redoc
+- Swagger UI: https://api.aqstream.ru/swagger-ui.html
+- ReDoc: https://api.aqstream.ru/redoc
 
 ## Структура документации
 
@@ -199,7 +199,7 @@ springdoc:
     description: API для управления событиями
     contact:
       name: AqStream Team
-      url: https://github.com/aqstream/aqstream
+      url: https://github.com/egorov-ma/aqstream
 ```
 
 ### OpenApiConfig.java
@@ -216,7 +216,7 @@ public class OpenApiConfig {
                 .description("API для управления событиями")
                 .contact(new Contact()
                     .name("AqStream Team")
-                    .url("https://github.com/aqstream/aqstream")))
+                    .url("https://github.com/egorov-ma/aqstream")))
             .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
             .components(new Components()
                 .addSecuritySchemes("bearerAuth",
