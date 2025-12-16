@@ -1,4 +1,4 @@
-.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset docs-serve docs-build docs-validate docs-openapi docs-redoc
+.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc
 
 # Цвета для вывода
 CYAN := \033[36m
@@ -28,14 +28,15 @@ check: ## Запустить все проверки (checkstyle, tests)
 
 infra-up: ## Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)
 	@echo "$(CYAN)Запуск инфраструктуры...$(RESET)"
-	docker compose up -d postgres-shared postgres-user postgres-payment redis rabbitmq minio minio-init
+	docker compose up -d postgres-shared postgres-user postgres-payment postgres-analytics redis rabbitmq minio minio-init
 	@echo "$(GREEN)Инфраструктура запущена!$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Доступные сервисы:$(RESET)"
-	@echo "  PostgreSQL (shared):  localhost:5432"
-	@echo "  PostgreSQL (user):    localhost:5433"
-	@echo "  PostgreSQL (payment): localhost:5434"
-	@echo "  Redis:                localhost:6379"
+	@echo "  PostgreSQL (shared):    localhost:5432"
+	@echo "  PostgreSQL (user):      localhost:5433"
+	@echo "  PostgreSQL (payment):   localhost:5434"
+	@echo "  PostgreSQL (analytics): localhost:5435"
+	@echo "  Redis:                  localhost:6379"
 	@echo "  RabbitMQ:             localhost:5672"
 	@echo "  RabbitMQ UI:          http://localhost:15672 (guest/guest)"
 	@echo "  MinIO API:            http://localhost:9000"
@@ -47,7 +48,7 @@ infra-down: ## Остановить инфраструктуру
 	@echo "$(GREEN)Инфраструктура остановлена$(RESET)"
 
 infra-logs: ## Показать логи инфраструктуры
-	docker compose logs -f postgres-shared postgres-user postgres-payment redis rabbitmq minio
+	docker compose logs -f postgres-shared postgres-user postgres-payment postgres-analytics redis rabbitmq minio
 
 infra-ps: ## Показать статус контейнеров
 	docker compose ps
@@ -102,12 +103,18 @@ health: ## Проверить health всех сервисов
 	@docker compose exec -T postgres-shared pg_isready -U aqstream || echo "postgres-shared: недоступен"
 	@docker compose exec -T postgres-user pg_isready -U aqstream || echo "postgres-user: недоступен"
 	@docker compose exec -T postgres-payment pg_isready -U aqstream || echo "postgres-payment: недоступен"
+	@docker compose exec -T postgres-analytics pg_isready -U aqstream || echo "postgres-analytics: недоступен"
 	@echo "$(CYAN)Проверка Redis...$(RESET)"
 	@docker compose exec -T redis redis-cli ping || echo "redis: недоступен"
 	@echo "$(CYAN)Проверка RabbitMQ...$(RESET)"
 	@docker compose exec -T rabbitmq rabbitmq-diagnostics check_running || echo "rabbitmq: недоступен"
 
 # === Documentation ===
+
+docs-install: ## Установить Python зависимости для документации
+	@echo "$(CYAN)Установка зависимостей для документации...$(RESET)"
+	pip3 install -r docs/_internal/doc-as-code/requirements.txt
+	@echo "$(GREEN)Зависимости установлены$(RESET)"
 
 docs-serve: ## Запустить локальный сервер документации
 	@echo "$(CYAN)Запуск MkDocs на http://localhost:8000$(RESET)"

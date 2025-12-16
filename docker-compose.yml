@@ -68,6 +68,27 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # Dedicated database для Analytics Service (TimescaleDB)
+  postgres-analytics:
+    image: timescale/timescaledb:latest-pg16
+    container_name: aqstream-postgres-analytics
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aqstream}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aqstream}
+      POSTGRES_DB: analytics_service_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-analytics-data:/var/lib/postgresql/data
+      - ./docker/postgres/init/04-init-analytics-db.sql:/docker-entrypoint-initdb.d/01-init-analytics-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aqstream} -d analytics_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   # === Redis ===
 
   redis:
@@ -207,6 +228,8 @@ volumes:
     name: aqstream-postgres-user-data
   postgres-payment-data:
     name: aqstream-postgres-payment-data
+  postgres-analytics-data:
+    name: aqstream-postgres-analytics-data
   redis-data:
     name: aqstream-redis-data
   rabbitmq-data:

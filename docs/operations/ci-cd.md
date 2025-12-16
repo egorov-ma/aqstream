@@ -15,9 +15,11 @@ flowchart LR
 
 | Файл | Триггер | Действие |
 |------|---------|----------|
-| `.github/workflows/ci.yml` | PR to main, Push to main | Lint, Test, Build |
-| `.github/workflows/deploy-production.yml` | Push to main | Build images, Deploy production |
-| `.github/workflows/docs.yml` | Push to main (docs/**) | Build MkDocs, Deploy to docs.aqstream.ru |
+| `.github/workflows/ci.yml` | PR, Push to main, Manual | Lint, Test, Build |
+| `.github/workflows/deploy-production.yml` | Push to main, Manual | Build images, Deploy production |
+| `.github/workflows/docs.yml` | Push to main (docs/**), Manual | Validate, Build, Deploy docs |
+
+Все workflows поддерживают ручной запуск через `workflow_dispatch`.
 
 ## CI Workflow
 
@@ -81,19 +83,24 @@ concurrency:
 
 Автоматический деплой при push в `main`:
 
+### Build Job
+
 1. **Build JARs** — `./gradlew bootJar`
 2. **Build Docker images** — для каждого сервиса
-3. **Push to GHCR** — `ghcr.io/aqstream/<service>:<sha>`
-4. **Deploy** — SSH к production серверу
-5. **Health Check** — проверка `/actuator/health`
+3. **Push to GHCR** — `ghcr.io/<repo>/<service>:<sha>`
+
+### Deploy Job
+
+1. **SSH** — подключение к production серверу
+2. **Pull images** — `docker compose pull`
+3. **Restart** — `docker compose up -d`
+4. **Health Check** — проверка `https://api.aqstream.ru/actuator/health`
 
 ### Image Tags
 
 ```
-ghcr.io/aqstream/aqstream/gateway:abc1234
-ghcr.io/aqstream/aqstream/gateway:latest
-ghcr.io/aqstream/aqstream/user-service:abc1234
-ghcr.io/aqstream/aqstream/event-service:abc1234
+ghcr.io/egorov-ma/aqstream/gateway:abc1234
+ghcr.io/egorov-ma/aqstream/gateway:latest
 ```
 
 ## Deploy Documentation
