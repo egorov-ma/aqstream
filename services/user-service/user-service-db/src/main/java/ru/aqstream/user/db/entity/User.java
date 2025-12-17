@@ -42,6 +42,9 @@ public class User extends BaseEntity {
     @Column(name = "telegram_id", length = 64)
     private String telegramId;
 
+    @Column(name = "telegram_chat_id", length = 64)
+    private String telegramChatId;
+
     @Column(name = "email", length = 255)
     private String email;
 
@@ -92,6 +95,35 @@ public class User extends BaseEntity {
         user.passwordHash = passwordHash;
         user.firstName = firstName;
         user.lastName = lastName;
+        user.emailVerified = false;
+        return user;
+    }
+
+    /**
+     * Создаёт пользователя с Telegram регистрацией.
+     *
+     * @param telegramId     Telegram ID пользователя
+     * @param telegramChatId Telegram Chat ID для уведомлений
+     * @param firstName      имя
+     * @param lastName       фамилия
+     * @param avatarUrl      URL фото из Telegram (nullable)
+     * @return новый пользователь
+     */
+    public static User createWithTelegram(
+        String telegramId,
+        String telegramChatId,
+        String firstName,
+        String lastName,
+        String avatarUrl
+    ) {
+        User user = new User();
+        user.telegramId = telegramId;
+        user.telegramChatId = telegramChatId;
+        user.firstName = firstName;
+        user.lastName = lastName;
+        user.avatarUrl = avatarUrl;
+        // Email не подтверждён, т.к. при Telegram-регистрации email отсутствует.
+        // Аккаунт активен — верификация email не требуется для Telegram-пользователей.
         user.emailVerified = false;
         return user;
     }

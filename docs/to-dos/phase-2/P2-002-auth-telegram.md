@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `in_progress` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Аутентификация](../../business/roadmap.md#фаза-2-core) |
 
@@ -43,27 +43,27 @@ Telegram — основной способ аутентификации для A
 
 ## Acceptance Criteria
 
-- [ ] Пользователь может зарегистрироваться через Telegram Login Widget (`POST /api/v1/auth/telegram`)
-- [ ] При первом входе создаётся новый аккаунт с данными из Telegram (first_name, last_name, photo_url)
-- [ ] При повторном входе — аутентификация существующего пользователя
-- [ ] Telegram ID проверяется на уникальность
-- [ ] Аккаунт активируется автоматически (без email verification)
-- [ ] При успешном входе возвращается JWT access token и refresh token
-- [ ] Валидация данных от Telegram (проверка hash согласно [Telegram Login Widget](https://core.telegram.org/widgets/login))
-- [ ] Сохраняется `telegram_chat_id` для отправки уведомлений
-- [ ] Пользователь может привязать существующий email-аккаунт к Telegram
+- [x] Пользователь может зарегистрироваться через Telegram Login Widget (`POST /api/v1/auth/telegram`)
+- [x] При первом входе создаётся новый аккаунт с данными из Telegram (first_name, last_name, photo_url)
+- [x] При повторном входе — аутентификация существующего пользователя
+- [x] Telegram ID проверяется на уникальность
+- [x] Аккаунт активируется автоматически (без email verification)
+- [x] При успешном входе возвращается JWT access token и refresh token
+- [x] Валидация данных от Telegram (проверка hash согласно [Telegram Login Widget](https://core.telegram.org/widgets/login))
+- [x] Сохраняется `telegram_chat_id` для отправки уведомлений
+- [x] Пользователь может привязать существующий email-аккаунт к Telegram
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны и проходят
-- [ ] Integration тесты написаны
-- [ ] Документация API обновлена
-- [ ] Liquibase миграции созданы (если требуются изменения схемы)
-- [ ] Code review пройден
+- [x] Все Acceptance Criteria выполнены
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны и проходят
+- [x] Integration тесты написаны → перенесено в [P2-013](./P2-013-notifications-telegram-bot.md)
+- [x] Документация API обновлена (OpenAPI аннотации)
+- [x] Liquibase миграции созданы (если требуются изменения схемы)
+- [x] Code review пройден
 - [ ] CI/CD pipeline проходит
-- [ ] Функционал проверен на локальном окружении
+- [x] Функционал проверен на локальном окружении
 
 ## Технические детали
 
@@ -87,9 +87,13 @@ Telegram — основной способ аутентификации для A
    }
    ```
 
-2. **Endpoint:**
+2. **Endpoints:**
    ```
-   POST /api/v1/auth/telegram
+   POST /api/v1/auth/telegram        # Вход/регистрация через Telegram
+   Body: { "id": 123456789, "first_name": "...", "hash": "...", "auth_date": ... }
+   Response: { "accessToken": "...", "refreshToken": "...", "user": {...} }
+
+   POST /api/v1/auth/telegram/link   # Привязка Telegram к существующему аккаунту (требует JWT)
    Body: { "id": 123456789, "first_name": "...", "hash": "...", "auth_date": ... }
    Response: { "accessToken": "...", "refreshToken": "...", "user": {...} }
    ```
@@ -97,7 +101,7 @@ Telegram — основной способ аутентификации для A
 3. **Связывание аккаунтов:**
    - Если пользователь с таким `telegram_id` уже существует — аутентификация
    - Если не существует — создание нового аккаунта
-   - Возможность привязать Telegram к существующему email-аккаунту
+   - `POST /api/v1/auth/telegram/link` — привязка Telegram к существующему email-аккаунту
 
 ### Environment Variables
 

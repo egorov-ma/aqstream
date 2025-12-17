@@ -13,12 +13,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.common.web.ClientIpResolver;
 import ru.aqstream.user.api.dto.AuthResponse;
 import ru.aqstream.user.api.dto.LoginRequest;
 import ru.aqstream.user.api.dto.RefreshTokenRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
+import ru.aqstream.user.api.dto.TelegramAuthRequest;
 import ru.aqstream.user.service.AuthService;
+import ru.aqstream.user.service.TelegramAuthService;
 
 /**
  * Контроллер аутентификации.
@@ -31,6 +35,7 @@ import ru.aqstream.user.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
+    private final TelegramAuthService telegramAuthService;
 
     @Operation(summary = "Регистрация", description = "Регистрация нового пользователя по email")
     @ApiResponses({
@@ -82,6 +87,59 @@ public class AuthController {
         String ipAddress = ClientIpResolver.resolve(httpRequest);
 
         AuthResponse response = authService.refresh(request, userAgent, ipAddress);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "Вход через Telegram",
+        description = "Вход или регистрация через Telegram Login Widget. " +
+            "При первом входе создаётся новый аккаунт с данными из Telegram."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Успешный вход/регистрация"),
+        @ApiResponse(responseCode = "400", description = "Невалидные данные"),
+        @ApiResponse(responseCode = "401", description = "Невалидная подпись Telegram")
+    })
+    @PostMapping("/telegram")
+    public ResponseEntity<AuthResponse> telegramAuth(
+        @Valid @RequestBody TelegramAuthRequest request,
+        HttpServletRequest httpRequest
+    ) {
+        String userAgent = httpRequest.getHeader("User-Agent");
+        String ipAddress = ClientIpResolver.resolve(httpRequest);
+
+        AuthResponse response = telegramAuthService.authenticate(request, userAgent, ipAddress);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "Привязка Telegram к аккаунту",
+        description = "Привязывает Telegram к существующему аккаунту пользователя. " +
+            "Требует аутентификации. Telegram ID должен быть уникальным."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Telegram успешно привязан"),
+        @ApiResponse(responseCode = "400", description = "Невалидные данные"),
+        @ApiResponse(responseCode = "401", description = "Невалидная подпись Telegram или не авторизован"),
+        @ApiResponse(responseCode = "409", description = "Telegram уже привязан к другому аккаунту")
+    })
+    @PostMapping("/telegram/link")
+    public ResponseEntity<AuthResponse> linkTelegram(
+        @AuthenticationPrincipal UserPrincipal principal,
+        @Valid @RequestBody TelegramAuthRequest request,
+        HttpServletRequest httpRequest
+    ) {
+        // Проверяем что пользователь аутентифицирован (JWT передаётся через Gateway)
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String userAgent = httpRequest.getHeader("User-Agent");
+        String ipAddress = ClientIpResolver.resolve(httpRequest);
+
+        AuthResponse response = telegramAuthService.linkTelegram(
+            principal.userId(), request, userAgent, ipAddress
+        );
         return ResponseEntity.ok(response);
     }
 

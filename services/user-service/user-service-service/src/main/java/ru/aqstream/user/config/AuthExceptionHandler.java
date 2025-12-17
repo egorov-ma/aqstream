@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.aqstream.common.api.ErrorResponse;
 import ru.aqstream.user.api.exception.AccountLockedException;
 import ru.aqstream.user.api.exception.InvalidCredentialsException;
+import ru.aqstream.user.api.exception.InvalidTelegramAuthException;
+import ru.aqstream.user.api.exception.TelegramIdAlreadyExistsException;
 
 /**
  * Обработчик исключений аутентификации.
@@ -37,6 +39,28 @@ public class AuthExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccountLocked(AccountLockedException ex) {
         return ResponseEntity
             .status(HttpStatus.FORBIDDEN)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает невалидную Telegram аутентификацию.
+     * HTTP 401 Unauthorized
+     */
+    @ExceptionHandler(InvalidTelegramAuthException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTelegramAuth(InvalidTelegramAuthException ex) {
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает конфликт Telegram ID.
+     * HTTP 409 Conflict
+     */
+    @ExceptionHandler(TelegramIdAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleTelegramIdAlreadyExists(TelegramIdAlreadyExistsException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
     }
 }

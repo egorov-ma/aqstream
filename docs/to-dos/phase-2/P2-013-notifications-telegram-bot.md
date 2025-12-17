@@ -42,12 +42,15 @@ Telegram — единственный канал уведомлений в AqStr
 
 ## Acceptance Criteria
 
-### Создание бота
+### Создание бота и конфигурация
 
 - [ ] Бот создан через @BotFather
 - [ ] Настроены commands: /start, /help
 - [ ] Webhook или long polling для получения updates
 - [ ] Bot Token безопасно хранится в env variables
+- [ ] Документация по получению токена от @BotFather обновлена в `docs/operations/environments.md`
+- [ ] Тестовый bot token настроен для integration тестов (application-test.yaml)
+- [ ] Integration тесты для `POST /api/v1/auth/telegram` написаны (из P2-002)
 
 ### Команда /start
 
