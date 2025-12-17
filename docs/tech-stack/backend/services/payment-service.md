@@ -65,9 +65,22 @@ erDiagram
     }
 ```
 
-**Статусы Prepayment:**
-- `PARTIAL` — предоплата внесена, ожидает доплаты
-- `COMPLETED` — полностью оплачено
+## Статусы платежей
+
+| Статус | Описание |
+|--------|----------|
+| `PENDING` | Ожидает оплаты |
+| `COMPLETED` | Успешно оплачен |
+| `FAILED` | Ошибка оплаты |
+| `REFUNDED` | Полностью возвращён |
+| `PARTIALLY_REFUNDED` | Частично возвращён |
+
+## Статусы предоплаты
+
+| Статус | Описание |
+|--------|----------|
+| `PARTIAL` | Предоплата внесена, ожидает доплаты |
+| `COMPLETED` | Полностью оплачено |
 
 **Бизнес-правила:**
 - Создаётся когда билет имеет `prepayment_percent > 0`
@@ -92,181 +105,56 @@ erDiagram
 
 ## Платёжные провайдеры
 
-```java
-public interface PaymentProvider {
-    String getName();
-    PaymentSession createSession(CreatePaymentRequest request);
-    PaymentStatus getStatus(String providerPaymentId);
-    RefundResult refund(String providerPaymentId, int amountCents);
-    boolean verifyWebhook(String payload, String signature);
-}
+**Архитектура:** Провайдеры реализуют общий интерфейс `PaymentProvider` и подключаются через `@ConditionalOnProperty`.
 
-// Реализации провайдеров подключаются через @ConditionalOnProperty
-@Service
-@ConditionalOnProperty(name = "payment.provider", havingValue = "...")
-public class ConcretePaymentProvider implements PaymentProvider {
-    // Implementation
-}
-```
+**Методы интерфейса:**
+
+| Метод | Описание |
+|-------|----------|
+| `createSession()` | Создание платёжной сессии |
+| `getStatus()` | Получение статуса платежа |
+| `refund()` | Выполнение возврата |
+| `verifyWebhook()` | Верификация подписи webhook |
 
 ## Создание платежа
 
-```java
-@Service
-@RequiredArgsConstructor
-public class PaymentService {
+**Процесс:**
+1. Проверка идемпотентности по `idempotency_key`
+2. Создание сессии у платёжного провайдера
+3. Сохранение платежа со статусом `PENDING`
+4. Возврат URL для перенаправления на оплату
 
-    private final PaymentProvider paymentProvider;
-    private final PaymentRepository paymentRepository;
+**Идемпотентность:** Header `X-Idempotency-Key` обязателен. При повторном запросе с тем же ключом возвращается существующий платёж.
 
-    @Transactional
-    public PaymentDto create(CreatePaymentRequest request, UUID idempotencyKey) {
-        // Проверка идемпотентности
-        Optional<Payment> existing = paymentRepository.findByIdempotencyKey(idempotencyKey);
-        if (existing.isPresent()) {
-            return paymentMapper.toDto(existing.get());
-        }
-        
-        // Создание сессии у провайдера
-        PaymentSession session = paymentProvider.createSession(request);
-        
-        // Сохранение платежа
-        Payment payment = new Payment();
-        payment.setRegistrationId(request.registrationId());
-        payment.setTenantId(request.tenantId());
-        payment.setProvider(paymentProvider.getName());
-        payment.setProviderPaymentId(session.getId());
-        payment.setAmountCents(request.amountCents());
-        payment.setCurrency(request.currency());
-        payment.setStatus(PaymentStatus.PENDING);
-        payment.setIdempotencyKey(idempotencyKey);
-        
-        Payment saved = paymentRepository.save(payment);
-        
-        return paymentMapper.toDto(saved, session.getCheckoutUrl());
-    }
-}
-```
+## Обработка Webhook
 
-## Webhook Processing
+**Процесс:**
+1. Верификация подписи запроса
+2. Парсинг события от провайдера
+3. Обновление статуса платежа
+4. Публикация события в RabbitMQ
 
-```java
-@RestController
-@RequestMapping("/api/v1/webhooks")
-@RequiredArgsConstructor
-public class WebhookController {
+**Типы событий от провайдера:**
 
-    private final WebhookService webhookService;
-
-    @PostMapping("/{provider}")
-    public ResponseEntity<Void> handleWebhook(
-        @PathVariable String provider,
-        @RequestBody String payload,
-        @RequestHeader(value = "X-Signature", required = false) String signature
-    ) {
-        webhookService.handle(provider, payload, signature);
-        return ResponseEntity.ok().build();
-    }
-}
-```
-
-```java
-@Service
-@RequiredArgsConstructor
-public class WebhookService {
-
-    private final PaymentProvider paymentProvider;
-    private final PaymentRepository paymentRepository;
-    private final EventPublisher eventPublisher;
-
-    @Transactional
-    public void handle(String provider, String payload, String signature) {
-        // Верификация подписи
-        if (!paymentProvider.verifyWebhook(payload, signature)) {
-            throw new InvalidWebhookException("Неверная подпись webhook");
-        }
-
-        // Обработка события
-        WebhookEvent event = paymentProvider.parseWebhook(payload);
-
-        switch (event.getType()) {
-            case PAYMENT_SUCCEEDED -> handlePaymentSucceeded(event);
-            case PAYMENT_FAILED -> handlePaymentFailed(event);
-            case REFUNDED -> handleRefunded(event);
-        }
-    }
-
-    private void handlePaymentSucceeded(WebhookEvent event) {
-        Payment payment = paymentRepository
-            .findByProviderPaymentId(event.getPaymentId())
-            .orElseThrow();
-
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setCompletedAt(Instant.now());
-        paymentRepository.save(payment);
-
-        eventPublisher.publish(new PaymentCompletedEvent(
-            payment.getId(),
-            payment.getRegistrationId()
-        ));
-    }
-}
-```
+| Тип | Действие |
+|-----|----------|
+| `PAYMENT_SUCCEEDED` | Установить статус `COMPLETED`, опубликовать `payment.completed` |
+| `PAYMENT_FAILED` | Установить статус `FAILED`, опубликовать `payment.failed` |
+| `REFUNDED` | Создать запись Refund, опубликовать `payment.refunded` |
 
 ## Возвраты
 
-```java
-@Transactional
-public RefundDto refund(UUID paymentId, RefundRequest request) {
-    Payment payment = findByIdOrThrow(paymentId);
-    
-    if (payment.getStatus() != PaymentStatus.COMPLETED) {
-        throw new InvalidPaymentStateException("Можно вернуть только завершённый платёж");
-    }
-    
-    int refundAmount = request.amountCents() != null 
-        ? request.amountCents() 
-        : payment.getAmountCents();
-    
-    // Проверка суммы
-    int alreadyRefunded = refundRepository.sumByPaymentId(paymentId);
-    if (alreadyRefunded + refundAmount > payment.getAmountCents()) {
-        throw new RefundAmountExceededException();
-    }
-    
-    // Возврат через провайдера
-    RefundResult result = paymentProvider.refund(
-        payment.getProviderPaymentId(), 
-        refundAmount
-    );
-    
-    // Сохранение
-    Refund refund = new Refund();
-    refund.setPayment(payment);
-    refund.setAmountCents(refundAmount);
-    refund.setReason(request.reason());
-    refund.setProviderRefundId(result.getId());
-    refund.setStatus(RefundStatus.COMPLETED);
-    
-    Refund saved = refundRepository.save(refund);
-    
-    // Обновляем статус платежа
-    if (alreadyRefunded + refundAmount == payment.getAmountCents()) {
-        payment.setStatus(PaymentStatus.REFUNDED);
-    } else {
-        payment.setStatus(PaymentStatus.PARTIALLY_REFUNDED);
-    }
-    paymentRepository.save(payment);
-    
-    eventPublisher.publish(new PaymentRefundedEvent(
-        payment.getId(),
-        payment.getRegistrationId(),
-        refundAmount
-    ));
-    
-    return refundMapper.toDto(saved);
-}
-```
+**Процесс:**
+1. Проверка что платёж в статусе `COMPLETED`
+2. Проверка что сумма возврата не превышает оплаченную
+3. Выполнение возврата через провайдера
+4. Сохранение записи Refund
+5. Обновление статуса платежа (`REFUNDED` или `PARTIALLY_REFUNDED`)
+6. Публикация события `payment.refunded`
+
+**Типы возвратов:**
+- Полный возврат — вся сумма платежа
+- Частичный возврат — указанная сумма
 
 ## События (RabbitMQ)
 
@@ -288,12 +176,11 @@ public RefundDto refund(UUID paymentId, RefundRequest request) {
 
 ## Конфигурация
 
-```yaml
-payment:
-  provider: ${PAYMENT_PROVIDER}
-  api-key: ${PAYMENT_API_KEY}
-  webhook-secret: ${PAYMENT_WEBHOOK_SECRET}
-```
+| Переменная | Описание |
+|------------|----------|
+| `PAYMENT_PROVIDER` | Активный провайдер |
+| `PAYMENT_API_KEY` | API ключ провайдера |
+| `PAYMENT_WEBHOOK_SECRET` | Секрет для верификации webhook |
 
 ## Дальнейшее чтение
 

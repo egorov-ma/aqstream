@@ -60,117 +60,47 @@ CREATE INDEX idx_analytics_event ON analytics_events(event_id, created_at DESC);
 
 ## Трекинг
 
-```java
-@RestController
-@RequestMapping("/api/v1/analytics")
-@RequiredArgsConstructor
-public class AnalyticsController {
+**Процесс:**
+1. Получение события (из API или RabbitMQ)
+2. Обогащение контекстом (tenant_id, user_id)
+3. Сохранение в TimescaleDB hypertable
 
-    private final AnalyticsService analyticsService;
-
-    @PostMapping("/track")
-    public ResponseEntity<Void> track(@Valid @RequestBody TrackRequest request) {
-        analyticsService.track(request);
-        return ResponseEntity.accepted().build();
-    }
-}
-```
-
-```java
-@Service
-@RequiredArgsConstructor
-public class AnalyticsService {
-
-    private final AnalyticsEventRepository repository;
-
-    public void track(TrackRequest request) {
-        AnalyticsEvent event = new AnalyticsEvent();
-        event.setTenantId(TenantContext.getTenantId());
-        event.setEventType(request.eventType());
-        event.setEventId(request.eventId());
-        event.setUserId(request.userId());
-        event.setProperties(request.properties());
-        
-        repository.save(event);
-    }
-}
-```
+**Properties (JSONB):**
+- Произвольные данные для каждого типа события
+- Например: `ticketTypeId`, `registrationId`, `source`
 
 ## Дашборд события
 
-```java
-public record EventDashboard(
-    UUID eventId,
-    String eventTitle,
-    
-    // Общие метрики
-    long totalViews,
-    long uniqueViews,
-    long totalRegistrations,
-    long confirmedRegistrations,
-    long checkedIn,
-    
-    // Конверсии
-    double viewToRegistrationRate,
-    double registrationToCheckinRate,
-    
-    // По дням
-    List<DailyMetric> viewsByDay,
-    List<DailyMetric> registrationsByDay,
-    
-    // По типам билетов
-    List<TicketTypeMetric> byTicketType
-) {}
-```
+**Метрики:**
 
-```java
-@Service
-public class DashboardService {
+| Метрика | Описание |
+|---------|----------|
+| `totalViews` | Общее количество просмотров |
+| `uniqueViews` | Уникальные посетители |
+| `totalRegistrations` | Всего регистраций |
+| `confirmedRegistrations` | Подтверждённых |
+| `checkedIn` | Пришедших |
+| `viewToRegistrationRate` | Конверсия просмотр → регистрация |
+| `registrationToCheckinRate` | Конверсия регистрация → check-in |
 
-    public EventDashboard getEventDashboard(UUID eventId) {
-        // Общие метрики
-        long totalViews = repository.countByEventIdAndType(eventId, "page.view");
-        long uniqueViews = repository.countDistinctUsersByEventIdAndType(eventId, "page.view");
-        long registrations = repository.countByEventIdAndType(eventId, "registration.completed");
-        long checkedIn = repository.countByEventIdAndType(eventId, "checkin.completed");
-        
-        // По дням (TimescaleDB time_bucket)
-        List<DailyMetric> viewsByDay = repository.getMetricsByDay(
-            eventId, "page.view", 30
-        );
-        
-        return new EventDashboard(
-            eventId,
-            eventTitle,
-            totalViews,
-            uniqueViews,
-            registrations,
-            registrations, // confirmed
-            checkedIn,
-            calculateRate(registrations, totalViews),
-            calculateRate(checkedIn, registrations),
-            viewsByDay,
-            registrationsByDay,
-            byTicketType
-        );
-    }
-}
-```
+**Группировки:**
+- По дням (графики динамики)
+- По типам билетов
+- По источникам трафика
 
 ## Воронка регистраций
 
-```java
-public record RegistrationFunnel(
-    long pageViews,
-    long registrationStarted,
-    long registrationCompleted,
-    long checkedIn,
-    
-    double startRate,      // started / views
-    double completionRate, // completed / started
-    double attendanceRate  // checkedIn / completed
-) {}
-```
+| Этап | Описание |
+|------|----------|
+| Page views | Просмотры страницы события |
+| Registration started | Начали заполнять форму |
+| Registration completed | Завершили регистрацию |
+| Checked in | Пришли на событие |
+
+**Конверсии:**
+- `startRate` = started / views
+- `completionRate` = completed / started
+- `attendanceRate` = checkedIn / completed
 
 ## События (RabbitMQ)
 
@@ -184,58 +114,32 @@ public record RegistrationFunnel(
 | `checkin.completed` | checkin.completed |
 | `payment.completed` | payment.completed |
 
-```java
-@Component
-@RequiredArgsConstructor
-public class AnalyticsEventListener {
-
-    private final AnalyticsService analyticsService;
-
-    @RabbitListener(queues = "analytics.registration.created")
-    public void handleRegistrationCreated(RegistrationCreatedEvent event) {
-        analyticsService.track(TrackRequest.builder()
-            .eventType("registration.completed")
-            .eventId(event.getEventId())
-            .userId(event.getUserId())
-            .properties(Map.of(
-                "ticketTypeId", event.getTicketTypeId(),
-                "registrationId", event.getRegistrationId()
-            ))
-            .build());
-    }
-}
-```
-
 ## Экспорт
 
-```java
-@PostMapping("/export")
-public ResponseEntity<Resource> export(@Valid @RequestBody ExportRequest request) {
-    byte[] data = exportService.export(request);
-    
-    String filename = String.format("report_%s.%s", 
-        LocalDate.now(), 
-        request.format().getExtension()
-    );
-    
-    return ResponseEntity.ok()
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-        .contentType(request.format().getMediaType())
-        .body(new ByteArrayResource(data));
-}
-```
-
-### Форматы экспорта
+### Форматы
 
 | Формат | MIME Type |
 |--------|-----------|
 | CSV | text/csv |
 | XLSX | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet |
 
+### Параметры запроса
+
+| Параметр | Описание |
+|----------|----------|
+| `eventId` | ID события (опционально) |
+| `organizationId` | ID организации |
+| `dateFrom` | Начало периода |
+| `dateTo` | Конец периода |
+| `format` | Формат экспорта (csv/xlsx) |
+
 ## Retention
 
+**Политика хранения:**
+- Автоматическое удаление данных старше 1 года
+- Реализовано через TimescaleDB retention policy
+
 ```sql
--- Автоматическое удаление старых данных (TimescaleDB)
 SELECT add_retention_policy('analytics_events', INTERVAL '1 year');
 ```
 

@@ -34,23 +34,21 @@ Notification Service отвечает за отправку уведомлени
 | GET | `/api/v1/notifications/preferences` | Настройки пользователя |
 | PUT | `/api/v1/notifications/preferences` | Обновить настройки |
 
-## Шаблоны
+## Шаблоны уведомлений
 
-```java
-public enum NotificationTemplate {
-    USER_WELCOME("user.welcome"),
-    REGISTRATION_CONFIRMED("registration.confirmed"),
-    REGISTRATION_CANCELLED("registration.cancelled"),
-    RESERVATION_EXPIRED("reservation.expired"),
-    EVENT_REMINDER("event.reminder"),
-    EVENT_CHANGED("event.changed"),
-    EVENT_CANCELLED("event.cancelled"),
-    WAITLIST_AVAILABLE("waitlist.available"),
-    PAYMENT_RECEIPT("payment.receipt");
-}
-```
+| Шаблон | Описание |
+|--------|----------|
+| `user.welcome` | Приветствие при регистрации |
+| `registration.confirmed` | Подтверждение регистрации с билетом |
+| `registration.cancelled` | Отмена регистрации |
+| `reservation.expired` | Истечение брони |
+| `event.reminder` | Напоминание о событии (за 24ч) |
+| `event.changed` | Изменения в событии |
+| `event.cancelled` | Отмена события |
+| `waitlist.available` | Освобождение места из листа ожидания |
+| `payment.receipt` | Чек об оплате |
 
-### Telegram шаблон (Mustache + Markdown)
+### Формат шаблона (Mustache + Markdown)
 
 ```markdown
 <!-- templates/telegram/registration.confirmed.md -->
@@ -70,42 +68,15 @@ public enum NotificationTemplate {
 
 ## Отправка уведомлений
 
-```java
-@Service
-@RequiredArgsConstructor
-public class NotificationService {
+**Процесс отправки:**
+1. Получение события из RabbitMQ
+2. Рендеринг шаблона с переменными
+3. Отправка через Telegram Bot API
+4. Логирование результата (success/failure)
 
-    private final TelegramSender telegramSender;
-    private final TemplateEngine templateEngine;
-    private final NotificationLogRepository logRepository;
-
-    public void send(SendNotificationRequest request) {
-        // Рендеринг шаблона
-        String body = templateEngine.render(
-            request.template().getBodyTemplate(),
-            request.variables()
-        );
-
-        // Отправка в Telegram
-        if (request.telegramChatId() != null) {
-            sendTelegram(request.telegramChatId(), body);
-        } else {
-            log.warn("Не удалось отправить уведомление: пользователь не подключил Telegram, userId={}",
-                request.userId());
-        }
-    }
-
-    private void sendTelegram(String chatId, String body) {
-        try {
-            telegramSender.send(chatId, body);
-            logSuccess(chatId, Channel.TELEGRAM);
-        } catch (Exception e) {
-            logFailure(chatId, Channel.TELEGRAM, e.getMessage());
-            throw new NotificationFailedException(e);
-        }
-    }
-}
-```
+**Fallback при отсутствии Telegram:**
+- Если у пользователя не привязан Telegram — уведомление не отправляется
+- В логе фиксируется warning
 
 ## События (RabbitMQ)
 
@@ -123,71 +94,28 @@ public class NotificationService {
 | `payment.completed` | Чек об оплате |
 | `waitlist.available` | Место из листа ожидания |
 
-```java
-@Component
-@RequiredArgsConstructor
-public class NotificationEventListener {
-
-    private final NotificationService notificationService;
-    private final UserClient userClient;
-
-    @RabbitListener(queues = "notifications.registration.created")
-    public void handleRegistrationCreated(RegistrationCreatedEvent event) {
-        // Получаем telegram_chat_id пользователя
-        UserDto user = userClient.findById(event.getUserId());
-
-        notificationService.send(SendNotificationRequest.builder()
-            .template(NotificationTemplate.REGISTRATION_CONFIRMED)
-            .userId(event.getUserId())
-            .telegramChatId(user.getTelegramChatId())
-            .variables(Map.of(
-                "firstName", event.getFirstName(),
-                "eventTitle", event.getEventTitle(),
-                "confirmationCode", event.getConfirmationCode(),
-                "eventDate", formatDate(event.getEventStartsAt()),
-                "eventLocation", event.getEventLocation(),
-                "eventUrl", generateEventUrl(event.getEventId())
-            ))
-            .build());
-    }
-}
-```
-
 ## Telegram Bot
 
-```java
-@Service
-@RequiredArgsConstructor
-public class TelegramBotService {
+**Команды бота:**
 
-    private final TelegramBot bot;
+| Команда | Описание |
+|---------|----------|
+| `/start {token}` | Привязка Telegram к аккаунту |
+| `/help` | Справка |
+| `/tickets` | Мои билеты |
 
-    public void sendMessage(Long chatId, String text) {
-        SendMessage message = new SendMessage(chatId, text);
-        message.parseMode(ParseMode.HTML);
-        bot.execute(message);
-    }
-
-    // Команда /start — привязка аккаунта
-    public void handleStart(Update update) {
-        Long chatId = update.message().chat().id();
-        String token = extractToken(update.message().text());
-        
-        // Привязываем chatId к пользователю
-        userService.linkTelegram(token, chatId);
-        
-        sendMessage(chatId, "Telegram успешно подключен!");
-    }
-}
-```
+**Привязка аккаунта:**
+1. Пользователь в личном кабинете получает одноразовую ссылку
+2. Ссылка ведёт к боту с уникальным токеном
+3. Бот привязывает `chat_id` к аккаунту пользователя
+4. Все уведомления отправляются в этот чат
 
 ## Конфигурация
 
-```yaml
-telegram:
-  bot-token: ${TELEGRAM_BOT_TOKEN}
-  bot-username: ${TELEGRAM_BOT_USERNAME}
-```
+| Переменная | Описание |
+|------------|----------|
+| `TELEGRAM_BOT_TOKEN` | Токен Telegram бота |
+| `TELEGRAM_BOT_USERNAME` | Username бота |
 
 ## Дальнейшее чтение
 

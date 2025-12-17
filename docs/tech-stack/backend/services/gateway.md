@@ -32,7 +32,7 @@ flowchart LR
 
 - Валидация JWT токенов
 - Извлечение claims (userId, tenantId, roles)
-- Прокидывание контекста в downstream сервисы
+- Прокидывание контекста в downstream сервисы через headers
 
 ### Rate Limiting
 
@@ -55,71 +55,16 @@ flowchart LR
 
 ## Маршруты
 
-```yaml
-spring:
-  cloud:
-    gateway:
-      routes:
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/organizations/**,/api/v1/organization-requests/**,/api/v1/groups/**
-          filters:
-            - StripPrefix=0
-
-        - id: event-service
-          uri: lb://event-service
-          predicates:
-            - Path=/api/v1/events/**,/api/v1/registrations/**
-          filters:
-            - StripPrefix=0
-            
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/v1/payments/**,/api/v1/webhooks/**
-          filters:
-            - StripPrefix=0
-            
-        - id: notification-service
-          uri: lb://notification-service
-          predicates:
-            - Path=/api/v1/notifications/**
-          filters:
-            - StripPrefix=0
-            
-        - id: media-service
-          uri: lb://media-service
-          predicates:
-            - Path=/api/v1/media/**
-          filters:
-            - StripPrefix=0
-            
-        - id: analytics-service
-          uri: lb://analytics-service
-          predicates:
-            - Path=/api/v1/analytics/**
-          filters:
-            - StripPrefix=0
-```
+| Сервис | Пути |
+|--------|------|
+| User Service | `/api/v1/auth/**`, `/api/v1/users/**`, `/api/v1/organizations/**`, `/api/v1/organization-requests/**`, `/api/v1/groups/**` |
+| Event Service | `/api/v1/events/**`, `/api/v1/registrations/**` |
+| Payment Service | `/api/v1/payments/**`, `/api/v1/webhooks/**` |
+| Notification Service | `/api/v1/notifications/**` |
+| Media Service | `/api/v1/media/**` |
+| Analytics Service | `/api/v1/analytics/**` |
 
 ## Rate Limiting
-
-### Конфигурация
-
-```yaml
-spring:
-  cloud:
-    gateway:
-      default-filters:
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter:
-              replenishRate: 100
-              burstCapacity: 200
-              requestedTokens: 1
-            key-resolver: "#{@userKeyResolver}"
-```
 
 ### Лимиты
 
@@ -129,216 +74,94 @@ spring:
 | Authenticated | 1000 req/min | Per User |
 | File upload | 10 req/min | Per User |
 
-### Key Resolver
+### Key Resolution
 
-```java
-@Configuration
-public class RateLimitConfig {
-
-    @Bean
-    public KeyResolver userKeyResolver() {
-        return exchange -> {
-            String userId = exchange.getRequest()
-                .getHeaders()
-                .getFirst("X-User-Id");
-            
-            if (userId != null) {
-                return Mono.just(userId);
-            }
-            
-            // Fallback to IP
-            return Mono.just(
-                exchange.getRequest()
-                    .getRemoteAddress()
-                    .getAddress()
-                    .getHostAddress()
-            );
-        };
-    }
-}
-```
+**Приоритет:**
+1. `X-User-Id` header (для аутентифицированных)
+2. IP адрес (fallback для анонимных)
 
 ## Authentication Filter
 
-```java
-@Component
-public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
+**Публичные endpoints (без аутентификации):**
+- `/api/v1/auth/telegram`
+- `/api/v1/auth/login`
+- `/api/v1/auth/register`
+- `/api/v1/events/public`
+- `/api/v1/webhooks`
 
-    private final JwtTokenProvider tokenProvider;
-    private final List<String> publicPaths = List.of(
-        "/api/v1/auth/telegram",
-        "/api/v1/auth/login",
-        "/api/v1/auth/register",
-        "/api/v1/events/public",
-        "/api/v1/webhooks"
-    );
-
-    @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String path = exchange.getRequest().getPath().value();
-        
-        // Пропускаем публичные endpoints
-        if (isPublicPath(path)) {
-            return chain.filter(exchange);
-        }
-        
-        String token = extractToken(exchange.getRequest());
-        if (token == null) {
-            return unauthorized(exchange);
-        }
-        
-        try {
-            Claims claims = tokenProvider.validateAndGetClaims(token);
-            
-            // Добавляем headers для downstream сервисов
-            ServerHttpRequest request = exchange.getRequest().mutate()
-                .header("X-User-Id", claims.getSubject())
-                .header("X-Tenant-Id", claims.get("tenantId", String.class))
-                .header("X-User-Roles", String.join(",", claims.get("roles", List.class)))
-                .build();
-            
-            return chain.filter(exchange.mutate().request(request).build());
-            
-        } catch (JwtException e) {
-            return unauthorized(exchange);
-        }
-    }
-
-    @Override
-    public int getOrder() {
-        return -100; // Высокий приоритет
-    }
-}
-```
+**Процесс для защищённых endpoints:**
+1. Извлечение токена из `Authorization: Bearer <token>`
+2. Валидация JWT
+3. Извлечение claims
+4. Добавление headers для downstream сервисов:
+   - `X-User-Id` — UUID пользователя
+   - `X-Tenant-Id` — UUID текущей организации
+   - `X-User-Roles` — роли через запятую
 
 ## Correlation ID
 
-```java
-@Component
-public class CorrelationIdFilter implements GlobalFilter, Ordered {
+**Процесс:**
+1. Проверка наличия `X-Correlation-Id` в запросе
+2. Если отсутствует — генерация нового UUID
+3. Прокидывание в downstream сервисы
+4. Добавление в response headers
 
-    private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
-
-    @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String correlationId = exchange.getRequest()
-            .getHeaders()
-            .getFirst(CORRELATION_ID_HEADER);
-        
-        if (correlationId == null) {
-            correlationId = UUID.randomUUID().toString();
-        }
-        
-        ServerHttpRequest request = exchange.getRequest().mutate()
-            .header(CORRELATION_ID_HEADER, correlationId)
-            .build();
-        
-        String finalCorrelationId = correlationId;
-        return chain.filter(exchange.mutate().request(request).build())
-            .then(Mono.fromRunnable(() -> {
-                exchange.getResponse()
-                    .getHeaders()
-                    .add(CORRELATION_ID_HEADER, finalCorrelationId);
-            }));
-    }
-
-    @Override
-    public int getOrder() {
-        return -200; // Перед auth filter
-    }
-}
-```
+**Использование:** Сквозной трейсинг запросов через все сервисы.
 
 ## Error Handling
 
-```java
-@Component
-public class GlobalErrorHandler implements ErrorWebExceptionHandler {
+**Маппинг ошибок:**
 
-    @Override
-    public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
-        HttpStatus status = determineStatus(ex);
-        
-        ErrorResponse error = new ErrorResponse(
-            determineCode(ex),
-            determineMessage(ex),
-            Map.of()
-        );
-        
-        exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        
-        byte[] bytes = objectMapper.writeValueAsBytes(error);
-        DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-        
-        return exchange.getResponse().writeWith(Mono.just(buffer));
-    }
-    
-    private HttpStatus determineStatus(Throwable ex) {
-        if (ex instanceof ResponseStatusException rse) {
-            return HttpStatus.valueOf(rse.getStatusCode().value());
-        }
-        if (ex instanceof JwtException) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        return HttpStatus.INTERNAL_SERVER_ERROR;
-    }
+| Exception | HTTP Status |
+|-----------|-------------|
+| `JwtException` | 401 Unauthorized |
+| `ResponseStatusException` | Соответствующий статус |
+| Остальные | 500 Internal Server Error |
+
+**Формат ответа:**
+```json
+{
+  "code": "error_code",
+  "message": "Описание ошибки",
+  "details": {}
 }
 ```
 
 ## Health Check
 
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    health:
-      show-details: always
-      probes:
-        enabled: true
-  health:
-    redis:
-      enabled: true
-```
+| Endpoint | Описание |
+|----------|----------|
+| `/actuator/health` | Общий статус |
+| `/actuator/health/liveness` | Приложение живо |
+| `/actuator/health/readiness` | Готово принимать трафик |
 
-## Docker
-
-```yaml
-# docker-compose.yml
-gateway:
-  build: ./services/gateway
-  ports:
-    - "8080:8080"
-  environment:
-    - SPRING_PROFILES_ACTIVE=docker
-    - REDIS_HOST=redis
-    - JWT_SECRET=${JWT_SECRET}
-  depends_on:
-    - redis
-    - user-service
-    - event-service
-```
+**Проверяемые зависимости:**
+- Redis (rate limiting store)
 
 ## Мониторинг
 
 ### Метрики
 
-- `gateway.requests.total` — общее количество запросов
-- `gateway.requests.duration` — время обработки
-- `gateway.rate_limit.exceeded` — превышения rate limit
-- `gateway.auth.failures` — неудачные аутентификации
+| Метрика | Описание |
+|---------|----------|
+| `gateway.requests.total` | Общее количество запросов |
+| `gateway.requests.duration` | Время обработки |
+| `gateway.rate_limit.exceeded` | Превышения rate limit |
+| `gateway.auth.failures` | Неудачные аутентификации |
 
 ### Логирование
 
-```yaml
-logging:
-  level:
-    org.springframework.cloud.gateway: INFO
-    reactor.netty: INFO
-```
+| Logger | Level |
+|--------|-------|
+| `org.springframework.cloud.gateway` | INFO |
+| `reactor.netty` | INFO |
+
+## Конфигурация
+
+| Переменная | Описание |
+|------------|----------|
+| `REDIS_HOST` | Хост Redis |
+| `JWT_SECRET` | Секрет для валидации JWT |
 
 ## Дальнейшее чтение
 

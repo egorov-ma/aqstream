@@ -116,17 +116,23 @@ erDiagram
     }
 ```
 
-**Видимость участников (participants_visibility):**
-- **CLOSED** — участник видит только свою регистрацию (по умолчанию)
-- **OPEN** — участники видят список зарегистрированных с распределением по типам билетов (для турниров)
+## Видимость участников
 
-**Статусы регистрации:**
-- `RESERVED` — забронировано, ожидает оплаты (с таймером)
-- `PENDING` — ожидает оплаты (без таймера)
-- `CONFIRMED` — подтверждена
-- `CANCELLED` — отменена
-- `CHECKED_IN` — участник пришёл
-- `EXPIRED` — бронь истекла
+| Значение | Описание |
+|----------|----------|
+| `CLOSED` | Участник видит только свою регистрацию (по умолчанию) |
+| `OPEN` | Участники видят список зарегистрированных с распределением по типам билетов (для турниров) |
+
+## Статусы регистрации
+
+| Статус | Описание |
+|--------|----------|
+| `RESERVED` | Забронировано, ожидает оплаты (с таймером) |
+| `PENDING` | Ожидает оплаты (без таймера) |
+| `CONFIRMED` | Подтверждена |
+| `CANCELLED` | Отменена |
+| `CHECKED_IN` | Участник пришёл |
+| `EXPIRED` | Бронь истекла |
 
 ## API Endpoints
 
@@ -182,121 +188,51 @@ stateDiagram-v2
     COMPLETED --> [*]
 ```
 
-```java
-@Service
-@RequiredArgsConstructor
-public class EventService {
-
-    @Transactional
-    public EventDto publish(UUID eventId) {
-        Event event = findByIdOrThrow(eventId);
-        
-        if (event.getStatus() != EventStatus.DRAFT) {
-            throw new InvalidEventStateException("Только черновик можно опубликовать");
-        }
-        
-        if (event.getStartsAt().isBefore(Instant.now())) {
-            throw new ValidationException("Дата начала должна быть в будущем");
-        }
-        
-        event.setStatus(EventStatus.PUBLISHED);
-        event.setPublishedAt(Instant.now());
-        
-        Event saved = eventRepository.save(event);
-        eventPublisher.publish(new EventPublishedEvent(saved.getId(), saved.getTenantId()));
-        
-        return eventMapper.toDto(saved);
-    }
-}
-```
+**Правила переходов:**
+- Публикация возможна только из статуса `DRAFT`
+- Дата начала должна быть в будущем при публикации
+- При публикации отправляется событие `event.published`
 
 ## Регистрация
 
-```java
-@Service
-@RequiredArgsConstructor
-public class RegistrationService {
+**Процесс создания регистрации:**
+1. Проверка что событие принимает регистрации
+2. Проверка доступности билетов выбранного типа
+3. Проверка что пользователь ещё не зарегистрирован
+4. Создание регистрации с уникальным confirmation code
+5. Обновление счётчика проданных билетов
+6. Отправка события `registration.created`
 
-    @Transactional
-    public RegistrationDto create(UUID eventId, CreateRegistrationRequest request) {
-        Event event = eventService.findByIdOrThrow(eventId);
-        
-        // Проверки
-        validateEventAcceptsRegistrations(event);
-        
-        TicketType ticketType = ticketTypeRepository.findById(request.ticketTypeId())
-            .orElseThrow(() -> new TicketTypeNotFoundException(request.ticketTypeId()));
-        
-        validateTicketAvailability(ticketType);
-        validateNotAlreadyRegistered(eventId, request.email());
-        
-        // Создание регистрации
-        Registration registration = new Registration();
-        registration.setEvent(event);
-        registration.setTicketType(ticketType);
-        registration.setEmail(request.email());
-        registration.setFirstName(request.firstName());
-        registration.setLastName(request.lastName());
-        registration.setConfirmationCode(generateConfirmationCode());
-        registration.setStatus(RegistrationStatus.CONFIRMED); // Для бесплатных
-        registration.setTenantId(event.getTenantId());
-        
-        Registration saved = registrationRepository.save(registration);
-        
-        // Обновляем счётчик
-        ticketType.setSoldCount(ticketType.getSoldCount() + 1);
-        ticketTypeRepository.save(ticketType);
-        
-        eventPublisher.publish(new RegistrationCreatedEvent(
-            saved.getId(),
-            saved.getEvent().getId(),
-            saved.getEmail()
-        ));
-        
-        return registrationMapper.toDto(saved);
-    }
-    
-    private String generateConfirmationCode() {
-        return RandomStringUtils.randomAlphanumeric(8).toUpperCase();
-    }
-}
-```
+**Confirmation code:** 8 символов, alphanumeric, uppercase (например: `A1B2C3D4`)
 
 ## Check-in
 
-```java
-@Transactional
-public CheckInDto checkIn(UUID registrationId, CheckInRequest request) {
-    Registration registration = findByIdOrThrow(registrationId);
-    
-    if (registration.getStatus() != RegistrationStatus.CONFIRMED) {
-        throw new InvalidRegistrationStateException("Регистрация не подтверждена");
-    }
-    
-    // Проверка на повторный check-in
-    if (checkInRepository.existsByRegistrationId(registrationId)) {
-        throw new AlreadyCheckedInException(registrationId);
-    }
-    
-    CheckIn checkIn = new CheckIn();
-    checkIn.setRegistration(registration);
-    checkIn.setCheckedInBy(SecurityContext.getUserId());
-    checkIn.setMethod(request.method());
-    checkIn.setCheckedInAt(Instant.now());
-    
-    CheckIn saved = checkInRepository.save(checkIn);
-    
-    registration.setStatus(RegistrationStatus.CHECKED_IN);
-    registrationRepository.save(registration);
-    
-    eventPublisher.publish(new CheckInCompletedEvent(
-        registration.getEvent().getId(),
-        registrationId
-    ));
-    
-    return checkInMapper.toDto(saved);
-}
-```
+**Процесс check-in:**
+1. Проверка что регистрация подтверждена (`CONFIRMED`)
+2. Проверка на повторный check-in
+3. Создание записи CHECK_IN с методом и timestamp
+4. Обновление статуса регистрации на `CHECKED_IN`
+5. Отправка события `checkin.completed`
+
+**Методы check-in:**
+- `QR_CODE` — сканирование QR-кода
+- `MANUAL` — ручной ввод кода
+
+## Лист ожидания
+
+**Статусы waitlist:**
+
+| Статус | Описание |
+|--------|----------|
+| `WAITING` | Ожидает места |
+| `NOTIFIED` | Уведомлён о свободном месте |
+| `CONVERTED` | Зарегистрировался |
+| `EXPIRED` | Истекло время на регистрацию |
+
+**Логика обработки:**
+- При освобождении места первый в очереди получает уведомление
+- Даётся 24 часа на регистрацию
+- При истечении времени уведомляется следующий
 
 ## События (RabbitMQ)
 
@@ -321,38 +257,6 @@ public CheckInDto checkIn(UUID registrationId, CheckInRequest request) {
 | `payment.failed` | Отмена регистрации |
 | `payment.refunded` | Отмена регистрации |
 | `group.member.added` | Доступ к приватным событиям группы |
-
-## Лист ожидания
-
-```java
-@Service
-public class WaitlistService {
-
-    @Transactional
-    public void processAvailableSpot(UUID eventId, UUID ticketTypeId) {
-        // Находим первого в очереди
-        Optional<WaitlistEntry> first = waitlistRepository
-            .findFirstByEventIdAndTicketTypeIdAndStatusOrderByCreatedAt(
-                eventId, ticketTypeId, WaitlistStatus.WAITING
-            );
-        
-        if (first.isEmpty()) return;
-        
-        WaitlistEntry entry = first.get();
-        entry.setStatus(WaitlistStatus.NOTIFIED);
-        entry.setNotifiedAt(Instant.now());
-        entry.setExpiresAt(Instant.now().plus(24, ChronoUnit.HOURS));
-        
-        waitlistRepository.save(entry);
-        
-        eventPublisher.publish(new WaitlistSpotAvailableEvent(
-            entry.getId(),
-            entry.getEmail(),
-            eventId
-        ));
-    }
-}
-```
 
 ## Дальнейшее чтение
 

@@ -37,210 +37,75 @@ Media Service отвечает за загрузку и обработку фа�
 
 ## Загрузка файлов
 
-```java
-@RestController
-@RequestMapping("/api/v1/media")
-@RequiredArgsConstructor
-public class MediaController {
+**Процесс:**
+1. Валидация MIME type и размера
+2. Генерация уникального пути в хранилище
+3. Загрузка файла в MinIO
+4. Сохранение метаданных в БД
+5. Создание вариантов для изображений (асинхронно)
 
-    private final MediaService mediaService;
-
-    @PostMapping("/upload")
-    public ResponseEntity<MediaDto> upload(
-        @RequestParam("file") MultipartFile file
-    ) {
-        MediaDto result = mediaService.upload(file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(result);
-    }
-}
-```
-
-```java
-@Service
-@RequiredArgsConstructor
-public class MediaService {
-
-    private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
-        "image/jpeg", "image/png", "image/webp", "image/gif"
-    );
-    private static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-
-    private final MinioClient minioClient;
-    private final MediaRepository mediaRepository;
-    private final ImageProcessor imageProcessor;
-
-    @Transactional
-    public MediaDto upload(MultipartFile file) {
-        // Валидация
-        validateFile(file);
-        
-        // Генерация пути
-        String storagePath = generateStoragePath(file.getOriginalFilename());
-        
-        // Загрузка в MinIO
-        minioClient.putObject(PutObjectArgs.builder()
-            .bucket(bucketName)
-            .object(storagePath)
-            .stream(file.getInputStream(), file.getSize(), -1)
-            .contentType(file.getContentType())
-            .build());
-        
-        // Сохранение метаданных
-        Media media = new Media();
-        media.setTenantId(TenantContext.getTenantId());
-        media.setUploadedBy(SecurityContext.getUserId());
-        media.setFilename(file.getOriginalFilename());
-        media.setContentType(file.getContentType());
-        media.setSizeBytes((int) file.getSize());
-        media.setStoragePath(storagePath);
-        media.setStatus(MediaStatus.READY);
-        
-        Media saved = mediaRepository.save(media);
-        
-        // Создание вариантов для изображений
-        if (isImage(file.getContentType())) {
-            createImageVariants(saved, file);
-        }
-        
-        return mediaMapper.toDto(saved);
-    }
-
-    private void validateFile(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new ValidationException("Файл пустой");
-        }
-        
-        String contentType = file.getContentType();
-        
-        if (ALLOWED_IMAGE_TYPES.contains(contentType)) {
-            if (file.getSize() > MAX_IMAGE_SIZE) {
-                throw new ValidationException("Изображение слишком большое. Максимум 5MB");
-            }
-        } else if ("application/pdf".equals(contentType)) {
-            if (file.getSize() > 10 * 1024 * 1024) {
-                throw new ValidationException("PDF слишком большой. Максимум 10MB");
-            }
-        } else {
-            throw new ValidationException("Неподдерживаемый тип файла");
-        }
-    }
-}
-```
+**Валидация:**
+- Пустой файл отклоняется
+- Неподдерживаемый MIME type отклоняется
+- Превышение лимита размера отклоняется
 
 ## Варианты изображений
 
-```java
-public enum ImageVariant {
-    THUMBNAIL(150, 150),
-    SMALL(300, 300),
-    MEDIUM(600, 600),
-    LARGE(1200, 1200);
-    
-    private final int width;
-    private final int height;
-}
-```
+| Вариант | Размер (px) | Использование |
+|---------|-------------|---------------|
+| `THUMBNAIL` | 150×150 | Превью в списках |
+| `SMALL` | 300×300 | Карточки |
+| `MEDIUM` | 600×600 | Детальный просмотр |
+| `LARGE` | 1200×1200 | Полноэкранный режим |
 
-```java
-private void createImageVariants(Media media, MultipartFile file) {
-    for (ImageVariant variant : ImageVariant.values()) {
-        byte[] resized = imageProcessor.resize(
-            file.getBytes(),
-            variant.getWidth(),
-            variant.getHeight()
-        );
-        
-        String variantPath = generateVariantPath(media.getStoragePath(), variant);
-        
-        minioClient.putObject(PutObjectArgs.builder()
-            .bucket(bucketName)
-            .object(variantPath)
-            .stream(new ByteArrayInputStream(resized), resized.length, -1)
-            .contentType(media.getContentType())
-            .build());
-        
-        MediaVariant mediaVariant = new MediaVariant();
-        mediaVariant.setMedia(media);
-        mediaVariant.setVariantType(variant);
-        mediaVariant.setWidth(variant.getWidth());
-        mediaVariant.setHeight(variant.getHeight());
-        mediaVariant.setStoragePath(variantPath);
-        
-        mediaVariantRepository.save(mediaVariant);
-    }
-}
-```
+**Логика:**
+- Варианты создаются только для изображений
+- Сохраняют пропорции (fit within)
+- Каждый вариант хранится отдельно в MinIO
 
 ## Signed URLs
 
-```java
-public String getSignedUrl(UUID mediaId, ImageVariant variant) {
-    Media media = findByIdOrThrow(mediaId);
-    
-    String path = variant != null 
-        ? getVariantPath(media, variant)
-        : media.getStoragePath();
-    
-    return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-        .bucket(bucketName)
-        .object(path)
-        .method(Method.GET)
-        .expiry(1, TimeUnit.HOURS)
-        .build());
-}
-```
+**Параметры:**
+- Время жизни: 1 час
+- Поддержка вариантов изображений
+- Защита от прямого доступа
+
+**Использование:**
+- Frontend запрашивает signed URL
+- URL используется для отображения/скачивания
+- По истечении TTL URL становится невалидным
+
+## Статусы файлов
+
+| Статус | Описание |
+|--------|----------|
+| `UPLOADING` | В процессе загрузки |
+| `PROCESSING` | Обработка (resize) |
+| `READY` | Готов к использованию |
+| `DELETED` | Удалён |
 
 ## Cleanup Job
 
-```java
-@Component
-@RequiredArgsConstructor
-public class MediaCleanupJob {
+**Расписание:** Каждый день в 3:00
 
-    private final MediaRepository mediaRepository;
-    private final MinioClient minioClient;
+**Логика:**
+1. Поиск файлов старше 24 часов без привязки к сущностям
+2. Удаление файла и всех вариантов из MinIO
+3. Установка статуса `DELETED`
 
-    @Scheduled(cron = "0 0 3 * * *") // Каждый день в 3:00
-    @Transactional
-    public void cleanupUnusedMedia() {
-        // Находим файлы старше 24 часов, которые ни к чему не привязаны
-        List<Media> unused = mediaRepository.findUnusedOlderThan(
-            Instant.now().minus(24, ChronoUnit.HOURS)
-        );
-        
-        for (Media media : unused) {
-            // Удаляем из MinIO
-            minioClient.removeObject(RemoveObjectArgs.builder()
-                .bucket(bucketName)
-                .object(media.getStoragePath())
-                .build());
-            
-            // Удаляем варианты
-            for (MediaVariant variant : media.getVariants()) {
-                minioClient.removeObject(RemoveObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(variant.getStoragePath())
-                    .build());
-            }
-            
-            media.setStatus(MediaStatus.DELETED);
-            mediaRepository.save(media);
-        }
-        
-        log.info("Очищено {} неиспользуемых файлов", unused.size());
-    }
-}
-```
+**Привязка к сущностям:**
+- Event cover image → `events.cover_image_id`
+- Organization logo → `organizations.logo_id`
+- User avatar → `users.avatar_id`
 
 ## Конфигурация
 
-```yaml
-minio:
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY}
-  secret-key: ${MINIO_SECRET_KEY}
-  bucket-name: ${MINIO_BUCKET:aqstream-media}
-```
+| Переменная | Описание |
+|------------|----------|
+| `MINIO_ENDPOINT` | URL MinIO сервера |
+| `MINIO_ACCESS_KEY` | Access key |
+| `MINIO_SECRET_KEY` | Secret key |
+| `MINIO_BUCKET` | Имя bucket (default: aqstream-media) |
 
 ## Дальнейшее чтение
 

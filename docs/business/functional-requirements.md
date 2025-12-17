@@ -406,7 +406,7 @@ stateDiagram-v2
 |--------|-----------|
 | Транспорт | HTTPS (TLS 1.3) |
 | Пароли | bcrypt с cost factor 12 |
-| Аутентификация | JWT (RS256) |
+| Аутентификация | JWT (HS256) |
 | Multi-tenancy | Row Level Security в PostgreSQL |
 | Secrets | Environment variables, не в коде |
 | Валидация | На всех уровнях (API, Service, DB) |

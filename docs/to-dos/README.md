@@ -69,6 +69,63 @@ backlog → ready → in_progress → review → done
 | Фаза | Статус | Описание |
 |------|--------|----------|
 | Phase 1: Foundation | ✅ Done | Инфраструктура, CI/CD, common modules |
-| Phase 2: Core | 🔜 Next | User Service, Event Service, основной функционал |
+| Phase 2: Core | 🟡 Ready | 20 задач готовы к работе |
 | Phase 3: Growth | — | Платежи, уведомления, аналитика |
 | Phase 4: Scale | — | Оптимизация, масштабирование |
+
+## Phase 2: Core — Список задач
+
+### Аутентификация (User Service)
+
+| ID | Название | Статус | Приоритет |
+|----|----------|--------|-----------|
+| [P2-001](./phase-2/P2-001-auth-email-registration.md) | Регистрация и вход по email | `ready` | critical |
+| [P2-002](./phase-2/P2-002-auth-telegram.md) | Регистрация и вход через Telegram | `ready` | critical |
+| [P2-003](./phase-2/P2-003-auth-jwt-refresh.md) | JWT токены и refresh механизм | `ready` | critical |
+| [P2-004](./phase-2/P2-004-auth-email-verification.md) | Email verification и Password reset | `ready` | high |
+
+### Организации (User Service)
+
+| ID | Название | Статус | Приоритет |
+|----|----------|--------|-----------|
+| [P2-005](./phase-2/P2-005-organizations-requests.md) | Запросы на создание организаций | `ready` | critical |
+| [P2-006](./phase-2/P2-006-organizations-crud.md) | CRUD организаций и управление членами | `ready` | critical |
+| [P2-007](./phase-2/P2-007-organizations-rls.md) | Row Level Security для multi-tenancy | `ready` | critical |
+| [P2-008](./phase-2/P2-008-groups-crud.md) | Группы для приватных событий | `ready` | high |
+
+### События (Event Service)
+
+| ID | Название | Статус | Приоритет |
+|----|----------|--------|-----------|
+| [P2-009](./phase-2/P2-009-events-crud.md) | CRUD событий и жизненный цикл | `ready` | critical |
+| [P2-010](./phase-2/P2-010-events-ticket-types.md) | Типы билетов (бесплатные) | `ready` | critical |
+| [P2-011](./phase-2/P2-011-registrations-crud.md) | Регистрации на события | `ready` | critical |
+| [P2-012](./phase-2/P2-012-registrations-qr-code.md) | QR-код для билета | `ready` | high |
+
+### Уведомления (Notification Service)
+
+| ID | Название | Статус | Приоритет |
+|----|----------|--------|-----------|
+| [P2-013](./phase-2/P2-013-notifications-telegram-bot.md) | Telegram Bot интеграция | `ready` | critical |
+| [P2-014](./phase-2/P2-014-notifications-templates.md) | Шаблоны уведомлений и отправка | `ready` | high |
+
+### Frontend
+
+| ID | Название | Статус | Приоритет |
+|----|----------|--------|-----------|
+| [P2-015](./phase-2/P2-015-frontend-auth-pages.md) | Auth pages (login, register) | `ready` | critical |
+| [P2-016](./phase-2/P2-016-frontend-dashboard.md) | Dashboard организатора | `ready` | critical |
+| [P2-017](./phase-2/P2-017-frontend-event-crud.md) | Создание и редактирование события | `ready` | critical |
+| [P2-018](./phase-2/P2-018-frontend-event-page.md) | Публичная страница события | `ready` | critical |
+| [P2-019](./phase-2/P2-019-frontend-registration.md) | Процесс регистрации | `ready` | high |
+| [P2-020](./phase-2/P2-020-frontend-user-cabinet.md) | Личный кабинет участника | `ready` | high |
+
+### Рекомендуемый порядок выполнения
+
+1. **Backend Foundation:** P2-001 → P2-003 → P2-002 → P2-004
+2. **Organizations:** P2-005 → P2-006 → P2-007 → P2-008
+3. **Events:** P2-009 → P2-010 → P2-011 → P2-012
+4. **Notifications:** P2-013 → P2-014
+5. **Frontend:** P2-015 → P2-016 → P2-017 → P2-018 → P2-019 → P2-020
+
+Задачи в рамках одного блока могут выполняться параллельно разными разработчиками.
