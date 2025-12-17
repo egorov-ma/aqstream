@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Аутентификация](../../business/roadmap.md#фаза-2-core) |
 
@@ -62,7 +62,7 @@ Email-аутентификация — альтернативный способ
 - [x] API соответствует [User Service API](../../tech-stack/backend/services/user-service.md#authentication)
 - [x] Liquibase миграции созданы с rollback
 - [x] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] CI/CD pipeline проходит
 - [x] Функционал проверен на локальном окружении
 
 ## Технические детали
