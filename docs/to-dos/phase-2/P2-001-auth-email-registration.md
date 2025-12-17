@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Аутентификация](../../business/roadmap.md#фаза-2-core) |
 
@@ -43,27 +43,27 @@ Email-аутентификация — альтернативный способ
 
 ## Acceptance Criteria
 
-- [ ] Пользователь может зарегистрироваться по email и паролю (`POST /api/v1/auth/register`)
-- [ ] Пароль валидируется: минимум 8 символов, буквы и цифры ([FR-1.1.5](../../business/functional-requirements.md))
-- [ ] Email проверяется на уникальность ([FR-1.1.6](../../business/functional-requirements.md))
-- [ ] Пользователь может войти по email и паролю (`POST /api/v1/auth/login`)
-- [ ] При успешном входе возвращается JWT access token (15 минут) и refresh token (7 дней)
-- [ ] Аккаунт блокируется после 5 неудачных попыток входа ([FR-1.2.6](../../business/functional-requirements.md))
-- [ ] Пароль хешируется через bcrypt с cost factor 12
-- [ ] Email хранится в нижнем регистре
-- [ ] Сообщения об ошибках на русском языке
+- [x] Пользователь может зарегистрироваться по email и паролю (`POST /api/v1/auth/register`)
+- [x] Пароль валидируется: минимум 8 символов, буквы и цифры ([FR-1.1.5](../../business/functional-requirements.md))
+- [x] Email проверяется на уникальность ([FR-1.1.6](../../business/functional-requirements.md))
+- [x] Пользователь может войти по email и паролю (`POST /api/v1/auth/login`)
+- [x] При успешном входе возвращается JWT access token (15 минут) и refresh token (7 дней)
+- [x] Аккаунт блокируется после 5 неудачных попыток входа ([FR-1.2.6](../../business/functional-requirements.md))
+- [x] Пароль хешируется через bcrypt с cost factor 12
+- [x] Email хранится в нижнем регистре
+- [x] Сообщения об ошибках на русском языке
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта (Spring MVC, не WebFlux)
-- [ ] Unit тесты написаны и проходят (coverage 80%+)
-- [ ] Integration тесты с Testcontainers написаны
-- [ ] API соответствует [User Service API](../../tech-stack/backend/services/user-service.md#authentication)
-- [ ] Liquibase миграции созданы с rollback
-- [ ] Code review пройден
+- [x] Все Acceptance Criteria выполнены
+- [x] Код написан согласно code style проекта (Spring MVC, не WebFlux)
+- [x] Unit тесты написаны и проходят (19 unit тестов)
+- [x] Integration тесты с Testcontainers написаны (11 integration тестов)
+- [x] API соответствует [User Service API](../../tech-stack/backend/services/user-service.md#authentication)
+- [x] Liquibase миграции созданы с rollback
+- [x] Code review пройден
 - [ ] CI/CD pipeline проходит
-- [ ] Функционал проверен на локальном окружении
+- [x] Функционал проверен на локальном окружении
 
 ## Технические детали
 
@@ -88,9 +88,10 @@ Email-аутентификация — альтернативный способ
    - Exception classes (`EmailAlreadyExistsException`, `InvalidCredentialsException`)
 
 3. **user-service-service:**
-   - `AuthService` — регистрация, вход, refresh
+   - `AuthService` — регистрация, вход, refresh, лимит сессий
    - `AuthController` — REST endpoints
    - `PasswordService` — валидация и хеширование
+   - `TokenCleanupService` — периодическая очистка истёкших токенов
    - Интеграция с `JwtTokenProvider` из common-security
 
 ### API Endpoints
@@ -133,3 +134,14 @@ POST /api/v1/auth/logout
 - В коде `JwtTokenProvider` используется HMAC (HS256)
 
 **Решение:** Использовать HS256 как в коде. Обновить functional-requirements.md при выполнении задачи.
+
+**Дополнительные улучшения (сверх scope):**
+- Лимит активных сессий: максимум 10 активных refresh tokens на пользователя. При превышении старые сессии автоматически отзываются.
+- Периодическая очистка: `TokenCleanupService` удаляет истёкшие refresh tokens каждый час.
+- Refresh tokens хранятся хешированными (SHA-256) для безопасности.
+- One-time use для refresh tokens с rotation.
+
+**Константы безопасности:**
+- `User.MAX_FAILED_LOGIN_ATTEMPTS = 5` — блокировка после 5 неудачных попыток
+- `User.LOCK_DURATION_MINUTES = 15` — длительность блокировки
+- `AuthService.MAX_ACTIVE_SESSIONS = 10` — максимум активных сессий

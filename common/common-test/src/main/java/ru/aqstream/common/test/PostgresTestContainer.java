@@ -8,6 +8,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * Singleton Testcontainer для PostgreSQL.
  * Наследуйте этот класс в интеграционных тестах для автоматической настройки БД.
  *
+ * <p>Работает с Liquibase — НЕ устанавливает ddl-auto, позволяя Liquibase управлять схемой.</p>
+ *
  * <p>Использование:</p>
  * <pre>
  * {@code @IntegrationTest}
@@ -28,6 +30,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 public abstract class PostgresTestContainer {
 
+    /**
+     * Защищённый конструктор для наследников.
+     */
+    protected PostgresTestContainer() {
+        // Пустой конструктор для наследования
+    }
+
     private static final PostgreSQLContainer<?> POSTGRES;
 
     static {
@@ -47,9 +56,9 @@ public abstract class PostgresTestContainer {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
 
-        // JPA settings for tests
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.jpa.show-sql", () -> "false");
+        // Liquibase управляет схемой, НЕ Hibernate
+        // ddl-auto: none позволяет Liquibase создавать таблицы
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
     }
 
     /**

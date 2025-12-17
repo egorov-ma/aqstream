@@ -1,0 +1,28 @@
+# Тестовая конфигурация для интеграционных тестов
+# Testcontainers динамически переопределяет datasource properties
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none  # Liquibase управляет схемой
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: user_service
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+# JWT для тестов
+jwt:
+  secret: test-secret-key-minimum-32-characters-long-for-hs256
+  access-token-expiration: 15m
+  refresh-token-expiration: 7d
+
+logging:
+  level:
+    root: WARN
+    ru.aqstream: DEBUG
+    org.hibernate.SQL: DEBUG

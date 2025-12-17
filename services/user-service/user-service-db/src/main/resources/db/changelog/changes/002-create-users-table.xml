@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Таблица пользователей -->
+    <changeSet id="002-create-users-table" author="aqstream">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists schemaName="user_service" tableName="users"/>
+            </not>
+        </preConditions>
+
+        <createTable schemaName="user_service" tableName="users"
+                     remarks="Пользователи системы. НЕ использует RLS (пользователь может быть в нескольких организациях)">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v4()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <!-- Способы аутентификации -->
+            <column name="telegram_id" type="VARCHAR(64)"
+                    remarks="Telegram ID пользователя (уникальный среди активных)"/>
+            <column name="email" type="VARCHAR(255)"
+                    remarks="Email пользователя (уникальный среди активных, хранится в нижнем регистре)"/>
+            <column name="password_hash" type="VARCHAR(255)"
+                    remarks="Bcrypt hash пароля (nullable для Telegram-only пользователей)"/>
+
+            <!-- Профиль -->
+            <column name="first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(100)"
+                    remarks="Фамилия пользователя"/>
+            <column name="avatar_url" type="VARCHAR(500)"
+                    remarks="URL аватара пользователя"/>
+
+            <!-- Email verification -->
+            <column name="email_verified" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email_verified_at" type="TIMESTAMP WITH TIME ZONE"
+                    remarks="Когда email был подтверждён"/>
+
+            <!-- Безопасность -->
+            <column name="failed_login_attempts" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="locked_until" type="TIMESTAMP WITH TIME ZONE"
+                    remarks="До какого времени аккаунт заблокирован"/>
+            <column name="last_login_at" type="TIMESTAMP WITH TIME ZONE"
+                    remarks="Время последнего входа"/>
+
+            <!-- Аудит -->
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMP WITH TIME ZONE"
+                    remarks="Soft delete timestamp"/>
+        </createTable>
+
+        <!-- Индексы для уникальности (учитывают soft delete) -->
+        <createIndex schemaName="user_service" tableName="users"
+                     indexName="idx_users_telegram_id_active" unique="true">
+            <column name="telegram_id"/>
+        </createIndex>
+        <sql>
+            DROP INDEX IF EXISTS user_service.idx_users_telegram_id_active;
+            CREATE UNIQUE INDEX idx_users_telegram_id_active
+                ON user_service.users (telegram_id)
+                WHERE deleted_at IS NULL AND telegram_id IS NOT NULL;
+        </sql>
+
+        <sql>
+            CREATE UNIQUE INDEX idx_users_email_active
+                ON user_service.users (LOWER(email))
+                WHERE deleted_at IS NULL AND email IS NOT NULL;
+        </sql>
+
+        <!-- Индекс для поиска по email -->
+        <createIndex schemaName="user_service" tableName="users" indexName="idx_users_email_lower">
+            <column name="email" computed="true"/>
+        </createIndex>
+        <sql>
+            DROP INDEX IF EXISTS user_service.idx_users_email_lower;
+            CREATE INDEX idx_users_email_lower ON user_service.users (LOWER(email))
+                WHERE deleted_at IS NULL;
+        </sql>
+
+        <!-- Триггер для updated_at -->
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION user_service.update_updated_at_column()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW.updated_at = NOW();
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER trigger_users_updated_at
+                BEFORE UPDATE ON user_service.users
+                FOR EACH ROW
+                EXECUTE FUNCTION user_service.update_updated_at_column();
+        </sql>
+
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trigger_users_updated_at ON user_service.users;</sql>
+            <sql>DROP FUNCTION IF EXISTS user_service.update_updated_at_column();</sql>
+            <dropTable schemaName="user_service" tableName="users"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Check constraint: telegram_id или email должен быть заполнен -->
+    <changeSet id="002-users-check-constraint" author="aqstream">
+        <sql>
+            ALTER TABLE user_service.users
+                ADD CONSTRAINT chk_users_has_identity
+                CHECK (telegram_id IS NOT NULL OR email IS NOT NULL);
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE user_service.users DROP CONSTRAINT IF EXISTS chk_users_has_identity;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -85,6 +85,7 @@ public class JwtTokenProvider {
         Instant expiry = now.plus(refreshTokenExpiration);
 
         return Jwts.builder()
+            .id(UUID.randomUUID().toString()) // Уникальный jti для каждого токена
             .subject(userId.toString())
             .claim(CLAIM_USER_ID, userId.toString())
             .claim(CLAIM_TOKEN_TYPE, TOKEN_TYPE_REFRESH)

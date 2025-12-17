@@ -10,6 +10,9 @@ dependencyManagement {
     }
 }
 
+val testcontainersVersion: String by project
+val datafakerVersion: String by project
+
 dependencies {
     api(project(":common:common-api"))
     api(project(":common:common-security"))
@@ -18,10 +21,12 @@ dependencies {
     api("org.springframework.security:spring-security-test")
 
     // Testcontainers
-    val testcontainersVersion: String by project
     api("org.testcontainers:junit-jupiter:$testcontainersVersion")
     api("org.testcontainers:postgresql:$testcontainersVersion")
     api("org.testcontainers:rabbitmq:$testcontainersVersion")
+
+    // Data Faker - генерация тестовых данных
+    api("net.datafaker:datafaker:$datafakerVersion")
 
     // REST Assured
     api("io.rest-assured:rest-assured")

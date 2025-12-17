@@ -8,6 +8,9 @@
     <!-- User Service Database Migrations -->
     <!-- Схема: user_service в user_service_db -->
 
+    <include file="db/changelog/changes/000-create-schema.xml"/>
     <include file="db/changelog/changes/001-create-outbox-table.xml"/>
+    <include file="db/changelog/changes/002-create-users-table.xml"/>
+    <include file="db/changelog/changes/003-create-refresh-tokens-table.xml"/>
 
 </databaseChangeLog>
