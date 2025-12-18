@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Таблица организаций -->
+    <changeSet id="008-create-organizations-table" author="aqstream">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists schemaName="user_service" tableName="organizations"/>
+            </not>
+        </preConditions>
+
+        <createTable schemaName="user_service" tableName="organizations"
+                     remarks="Организации — tenants в системе. Organization.id = tenant_id">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v4()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="owner_id" type="UUID" remarks="Владелец организации (FK → users)">
+                <constraints nullable="false"
+                             foreignKeyName="fk_organizations_owner_id"
+                             references="user_service.users(id)"/>
+            </column>
+
+            <column name="name" type="VARCHAR(255)" remarks="Название организации">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="slug" type="VARCHAR(50)" remarks="URL-slug, уникален среди активных">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="description" type="TEXT" remarks="Описание организации"/>
+
+            <column name="logo_url" type="VARCHAR(500)" remarks="URL логотипа"/>
+
+            <column name="settings" type="JSONB" defaultValue="{}"
+                    remarks="Настройки организации (JSON)"/>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="deleted_at" type="TIMESTAMP WITH TIME ZONE"
+                    remarks="Soft delete timestamp"/>
+        </createTable>
+
+        <!-- Индекс для owner_id -->
+        <createIndex schemaName="user_service" tableName="organizations"
+                     indexName="idx_organizations_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+
+        <!-- Уникальный индекс slug среди активных (учитывает soft delete) -->
+        <sql>
+            CREATE UNIQUE INDEX idx_organizations_slug_active
+                ON user_service.organizations (LOWER(slug))
+                WHERE deleted_at IS NULL;
+        </sql>
+
+        <!-- Триггер для updated_at -->
+        <sql splitStatements="false">
+            CREATE TRIGGER trigger_organizations_updated_at
+                BEFORE UPDATE ON user_service.organizations
+                FOR EACH ROW
+                EXECUTE FUNCTION user_service.update_updated_at_column();
+        </sql>
+
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trigger_organizations_updated_at ON user_service.organizations;</sql>
+            <sql>DROP INDEX IF EXISTS user_service.idx_organizations_slug_active;</sql>
+            <dropTable schemaName="user_service" tableName="organizations"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

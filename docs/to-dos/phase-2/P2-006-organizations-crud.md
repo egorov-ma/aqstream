@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `in_progress` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -46,46 +46,46 @@
 
 ### CRUD Организаций
 
-- [ ] Пользователь с одобренным запросом может создать организацию (`POST /api/v1/organizations`)
-- [ ] Slug из одобренного запроса используется автоматически
-- [ ] Создатель становится OWNER
-- [ ] Организация создаётся с настройками по умолчанию
-- [ ] OWNER может редактировать организацию (`PUT /api/v1/organizations/{id}`)
-- [ ] OWNER может удалить организацию (`DELETE /api/v1/organizations/{id}`) — soft delete
-- [ ] При удалении все события архивируются
+- [x] Пользователь с одобренным запросом может создать организацию (`POST /api/v1/organizations`)
+- [x] Slug из одобренного запроса используется автоматически
+- [x] Создатель становится OWNER
+- [x] Организация создаётся с настройками по умолчанию
+- [x] OWNER может редактировать организацию (`PUT /api/v1/organizations/{id}`)
+- [x] OWNER может удалить организацию (`DELETE /api/v1/organizations/{id}`) — soft delete
+- [ ] При удалении все события архивируются (требует event-service)
 
 ### Управление членами
 
-- [ ] Список членов организации (`GET /api/v1/organizations/{id}/members`)
-- [ ] Приглашение нового члена через Telegram (`POST /api/v1/organizations/{id}/invite`)
-- [ ] Приглашённый получает deeplink в Telegram
-- [ ] При переходе по ссылке — становится MODERATOR
-- [ ] Изменение роли члена (`PUT /api/v1/organizations/{id}/members/{userId}`)
-- [ ] Удаление члена (`DELETE /api/v1/organizations/{id}/members/{userId}`)
-- [ ] OWNER не может быть удалён
-- [ ] Приглашение действительно 7 дней ([FR-3.2.5](../../business/functional-requirements.md))
+- [x] Список членов организации (`GET /api/v1/organizations/{id}/members`)
+- [x] Приглашение нового члена через Telegram (`POST /api/v1/organizations/{id}/invite`)
+- [x] Приглашённый получает deeplink в Telegram
+- [x] При переходе по ссылке — становится MODERATOR
+- [x] Изменение роли члена (`PUT /api/v1/organizations/{id}/members/{userId}`)
+- [x] Удаление члена (`DELETE /api/v1/organizations/{id}/members/{userId}`)
+- [x] OWNER не может быть удалён
+- [x] Приглашение действительно 7 дней ([FR-3.2.5](../../business/functional-requirements.md))
 
 ### Роли и права
 
-- [ ] OWNER — полный контроль, удаление организации, передача владения
-- [ ] MODERATOR — управление событиями, членами (кроме OWNER), check-in
-- [ ] Только OWNER может назначать роли
-- [ ] Только OWNER может удалять организацию
+- [x] OWNER — полный контроль, удаление организации, передача владения
+- [x] MODERATOR — управление событиями, членами (кроме OWNER), check-in
+- [x] Только OWNER может назначать роли
+- [x] Только OWNER может удалять организацию
 
 ### Переключение организаций
 
-- [ ] Пользователь видит список своих организаций (`GET /api/v1/organizations`)
-- [ ] Пользователь может переключиться на другую организацию
-- [ ] При переключении выдаётся новый access token с другим tenantId
+- [x] Пользователь видит список своих организаций (`GET /api/v1/organizations`)
+- [x] Пользователь может переключиться на другую организацию
+- [x] При переключении выдаётся новый access token с другим tenantId
 
 ## Definition of Done (DoD)
 
 - [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны
-- [ ] Integration тесты написаны
-- [ ] Миграции созданы с RLS политиками
-- [ ] Events опубликованы в RabbitMQ
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны
+- [x] Integration тесты написаны
+- [x] Миграции созданы (RLS политики — отдельная задача P2-007)
+- [ ] Events опубликованы в RabbitMQ (отдельная задача)
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит
 

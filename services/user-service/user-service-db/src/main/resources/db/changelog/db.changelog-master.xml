@@ -16,5 +16,8 @@
     <include file="db/changelog/changes/005-create-verification-tokens-table.xml"/>
     <include file="db/changelog/changes/006-create-organization-requests-table.xml"/>
     <include file="db/changelog/changes/007-add-is-admin-to-users.xml"/>
+    <include file="db/changelog/changes/008-create-organizations-table.xml"/>
+    <include file="db/changelog/changes/009-create-organization-members-table.xml"/>
+    <include file="db/changelog/changes/010-create-organization-invites-table.xml"/>
 
 </databaseChangeLog>
