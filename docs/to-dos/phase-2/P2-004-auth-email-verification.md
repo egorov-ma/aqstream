@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `in_progress` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Аутентификация](../../business/roadmap.md#фаза-2-core) |
 
@@ -45,36 +45,36 @@
 
 ### Email Verification
 
-- [ ] После регистрации по email отправляется письмо с ссылкой подтверждения
-- [ ] Ссылка содержит уникальный токен (UUID)
-- [ ] Endpoint `POST /api/v1/auth/verify-email` подтверждает email
-- [ ] Токен верификации действителен 24 часа
-- [ ] После подтверждения `email_verified = true`, `email_verified_at` заполняется
-- [ ] Можно запросить повторную отправку письма
+- [x] После регистрации по email отправляется письмо с ссылкой подтверждения
+- [x] Ссылка содержит уникальный токен (UUID)
+- [x] Endpoint `POST /api/v1/auth/verify-email` подтверждает email
+- [x] Токен верификации действителен 24 часа
+- [x] После подтверждения `email_verified = true`, `email_verified_at` заполняется
+- [x] Можно запросить повторную отправку письма
 
 ### Password Reset
 
-- [ ] Endpoint `POST /api/v1/auth/forgot-password` отправляет письмо со ссылкой
-- [ ] Ссылка для сброса действительна 1 час ([FR-1.3.2](../../business/functional-requirements.md))
-- [ ] Endpoint `POST /api/v1/auth/reset-password` устанавливает новый пароль
-- [ ] После сброса все активные сессии завершаются ([FR-1.3.3](../../business/functional-requirements.md))
-- [ ] Все refresh токены пользователя отзываются
-- [ ] Новый пароль валидируется по тем же правилам
+- [x] Endpoint `POST /api/v1/auth/forgot-password` отправляет письмо со ссылкой
+- [x] Ссылка для сброса действительна 1 час ([FR-1.3.2](../../business/functional-requirements.md))
+- [x] Endpoint `POST /api/v1/auth/reset-password` устанавливает новый пароль
+- [x] После сброса все активные сессии завершаются ([FR-1.3.3](../../business/functional-requirements.md))
+- [x] Все refresh токены пользователя отзываются
+- [x] Новый пароль валидируется по тем же правилам
 
 ### Безопасность
 
-- [ ] Токены одноразовые
-- [ ] При запросе на несуществующий email — ответ такой же (timing attack prevention)
-- [ ] Rate limiting на endpoints (не более 3 запросов в час на email)
+- [x] Токены одноразовые
+- [x] При запросе на несуществующий email — ответ такой же (timing attack prevention)
+- [x] Rate limiting на endpoints (не более 3 запросов в час на email)
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны
-- [ ] Integration тесты написаны
-- [ ] Email шаблоны созданы
-- [ ] Миграции созданы
+- [x] Все Acceptance Criteria выполнены
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны
+- [x] Integration тесты написаны
+- [ ] Email шаблоны созданы (TODO: интеграция с notification-service)
+- [x] Миграции созданы
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит
 

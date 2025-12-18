@@ -21,6 +21,7 @@ import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.exception.AccountLockedException;
 import ru.aqstream.user.api.exception.EmailAlreadyExistsException;
 import ru.aqstream.user.api.exception.InvalidCredentialsException;
+import ru.aqstream.user.api.util.EmailUtils;
 import ru.aqstream.user.db.entity.RefreshToken;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
@@ -57,6 +58,7 @@ public class AuthService {
     private final PasswordService passwordService;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
+    private final VerificationService verificationService;
 
     @Value("${jwt.access-token-expiration:15m}")
     private Duration accessTokenExpiration;
@@ -74,11 +76,11 @@ public class AuthService {
      */
     @Transactional
     public AuthResponse register(RegisterRequest request, String userAgent, String ipAddress) {
-        log.info("Регистрация нового пользователя: email={}", maskEmail(request.email()));
+        log.info("Регистрация нового пользователя: email={}", EmailUtils.maskEmail(request.email()));
 
         // Проверяем уникальность email
         if (userRepository.existsByEmail(request.email())) {
-            log.debug("Email уже зарегистрирован: {}", maskEmail(request.email()));
+            log.debug("Email уже зарегистрирован: {}", EmailUtils.maskEmail(request.email()));
             throw new EmailAlreadyExistsException();
         }
 
@@ -97,6 +99,9 @@ public class AuthService {
 
         log.info("Пользователь зарегистрирован: userId={}", user.getId());
 
+        // Создаём токен верификации email
+        verificationService.createEmailVerificationToken(user);
+
         // Генерируем токены
         return createAuthResponse(user, userAgent, ipAddress);
     }
@@ -111,12 +116,12 @@ public class AuthService {
      */
     @Transactional(noRollbackFor = {InvalidCredentialsException.class, AccountLockedException.class})
     public AuthResponse login(LoginRequest request, String userAgent, String ipAddress) {
-        log.debug("Попытка входа: email={}", maskEmail(request.email()));
+        log.debug("Попытка входа: email={}", EmailUtils.maskEmail(request.email()));
 
         // Ищем пользователя
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> {
-                log.debug("Пользователь не найден: email={}", maskEmail(request.email()));
+                log.debug("Пользователь не найден: email={}", EmailUtils.maskEmail(request.email()));
                 return new InvalidCredentialsException();
             });
 
@@ -297,19 +302,5 @@ public class AuthService {
         long expiresIn = accessTokenExpiration.toSeconds();
 
         return AuthResponse.bearer(accessToken, refreshToken, expiresIn, userDto);
-    }
-
-    /**
-     * Маскирует email для логов.
-     */
-    private String maskEmail(String email) {
-        if (email == null || !email.contains("@")) {
-            return "***";
-        }
-        int atIndex = email.indexOf('@');
-        if (atIndex <= 1) {
-            return "*" + email.substring(atIndex);
-        }
-        return email.charAt(0) + "***" + email.substring(atIndex);
     }
 }

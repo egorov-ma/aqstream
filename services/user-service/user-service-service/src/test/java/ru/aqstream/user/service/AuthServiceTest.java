@@ -56,6 +56,9 @@ class AuthServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private VerificationService verificationService;
+
     private AuthService authService;
 
     private static final Faker FAKER = new Faker();
@@ -85,7 +88,8 @@ class AuthServiceTest {
             refreshTokenRepository,
             passwordService,
             jwtTokenProvider,
-            userMapper
+            userMapper,
+            verificationService
         );
 
         // Устанавливаем значения @Value полей через reflection

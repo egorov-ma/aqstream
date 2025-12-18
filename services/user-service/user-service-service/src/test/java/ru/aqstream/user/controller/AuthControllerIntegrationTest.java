@@ -17,11 +17,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
+import ru.aqstream.user.api.dto.ForgotPasswordRequest;
 import ru.aqstream.user.api.dto.LoginRequest;
 import ru.aqstream.user.api.dto.RefreshTokenRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
+import ru.aqstream.user.api.dto.ResendVerificationRequest;
+import ru.aqstream.user.api.dto.ResetPasswordRequest;
+import ru.aqstream.user.api.dto.VerifyEmailRequest;
 import ru.aqstream.user.db.entity.User;
+import ru.aqstream.user.db.entity.VerificationToken;
+import ru.aqstream.user.db.entity.VerificationToken.TokenType;
 import ru.aqstream.user.db.repository.UserRepository;
+import ru.aqstream.user.db.repository.VerificationTokenRepository;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -39,10 +46,17 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+
     private static final String REGISTER_URL = "/api/v1/auth/register";
     private static final String LOGIN_URL = "/api/v1/auth/login";
     private static final String REFRESH_URL = "/api/v1/auth/refresh";
     private static final String LOGOUT_URL = "/api/v1/auth/logout";
+    private static final String VERIFY_EMAIL_URL = "/api/v1/auth/verify-email";
+    private static final String RESEND_VERIFICATION_URL = "/api/v1/auth/resend-verification";
+    private static final String FORGOT_PASSWORD_URL = "/api/v1/auth/forgot-password";
+    private static final String RESET_PASSWORD_URL = "/api/v1/auth/reset-password";
 
     /**
      * Генерирует уникальный email для теста.
@@ -315,6 +329,207 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(logoutRequest)))
                 .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/auth/verify-email")
+    class VerifyEmail {
+
+        @Test
+        @DisplayName("успешно подтверждает email по валидному токену")
+        void verifyEmail_ValidToken_ReturnsNoContent() throws Exception {
+            // Регистрируемся
+            String email = fakeEmail();
+            RegisterRequest registerRequest = new RegisterRequest(
+                email, "Password123", FAKER.name().firstName(), null
+            );
+            mockMvc.perform(post(REGISTER_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+
+            // Получаем токен верификации из БД
+            User user = userRepository.findByEmail(email).orElseThrow();
+            VerificationToken token = verificationTokenRepository
+                .findValidTokenByUserIdAndType(user.getId(), TokenType.EMAIL_VERIFICATION, java.time.Instant.now())
+                .orElseThrow();
+
+            // Верифицируем email
+            VerifyEmailRequest verifyRequest = new VerifyEmailRequest(token.getToken());
+            mockMvc.perform(post(VERIFY_EMAIL_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(verifyRequest)))
+                .andExpect(status().isNoContent());
+
+            // Проверяем, что email подтверждён
+            User verifiedUser = userRepository.findById(user.getId()).orElseThrow();
+            assertThat(verifiedUser.isEmailVerified()).isTrue();
+        }
+
+        @Test
+        @DisplayName("возвращает 400 при невалидном токене")
+        void verifyEmail_InvalidToken_ReturnsBadRequest() throws Exception {
+            VerifyEmailRequest verifyRequest = new VerifyEmailRequest(
+                "invalid-token-12345678901234567890123456789012"
+            );
+
+            mockMvc.perform(post(VERIFY_EMAIL_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(verifyRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("invalid_verification_token"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/auth/resend-verification")
+    class ResendVerification {
+
+        @Test
+        @DisplayName("успешно отправляет повторное письмо")
+        void resendVerification_ValidEmail_ReturnsNoContent() throws Exception {
+            // Регистрируемся
+            String email = fakeEmail();
+            RegisterRequest registerRequest = new RegisterRequest(
+                email, "Password123", FAKER.name().firstName(), null
+            );
+            mockMvc.perform(post(REGISTER_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+
+            // Запрашиваем повторную отправку
+            ResendVerificationRequest resendRequest = new ResendVerificationRequest(email);
+            mockMvc.perform(post(RESEND_VERIFICATION_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resendRequest)))
+                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("не раскрывает существование email")
+        void resendVerification_NonExistentEmail_ReturnsNoContent() throws Exception {
+            ResendVerificationRequest resendRequest = new ResendVerificationRequest(fakeEmail());
+
+            // Не должен выдавать ошибку для несуществующего email
+            mockMvc.perform(post(RESEND_VERIFICATION_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resendRequest)))
+                .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/auth/forgot-password")
+    class ForgotPassword {
+
+        @Test
+        @DisplayName("успешно создаёт токен сброса пароля")
+        void forgotPassword_ValidEmail_ReturnsNoContent() throws Exception {
+            // Регистрируемся
+            String email = fakeEmail();
+            RegisterRequest registerRequest = new RegisterRequest(
+                email, "Password123", FAKER.name().firstName(), null
+            );
+            mockMvc.perform(post(REGISTER_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+
+            // Запрашиваем сброс пароля
+            ForgotPasswordRequest forgotRequest = new ForgotPasswordRequest(email);
+            mockMvc.perform(post(FORGOT_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(forgotRequest)))
+                .andExpect(status().isNoContent());
+
+            // Проверяем, что токен создан
+            User user = userRepository.findByEmail(email).orElseThrow();
+            assertThat(verificationTokenRepository.findValidTokenByUserIdAndType(
+                user.getId(), TokenType.PASSWORD_RESET, java.time.Instant.now()
+            )).isPresent();
+        }
+
+        @Test
+        @DisplayName("не раскрывает существование email")
+        void forgotPassword_NonExistentEmail_ReturnsNoContent() throws Exception {
+            ForgotPasswordRequest forgotRequest = new ForgotPasswordRequest(fakeEmail());
+
+            mockMvc.perform(post(FORGOT_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(forgotRequest)))
+                .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/auth/reset-password")
+    class ResetPassword {
+
+        @Test
+        @DisplayName("успешно сбрасывает пароль по валидному токену")
+        void resetPassword_ValidToken_ReturnsNoContent() throws Exception {
+            // Регистрируемся
+            String email = fakeEmail();
+            String oldPassword = "Password123";
+            RegisterRequest registerRequest = new RegisterRequest(
+                email, oldPassword, FAKER.name().firstName(), null
+            );
+            mockMvc.perform(post(REGISTER_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+
+            // Запрашиваем сброс пароля
+            ForgotPasswordRequest forgotRequest = new ForgotPasswordRequest(email);
+            mockMvc.perform(post(FORGOT_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(forgotRequest)))
+                .andExpect(status().isNoContent());
+
+            // Получаем токен из БД
+            User user = userRepository.findByEmail(email).orElseThrow();
+            VerificationToken token = verificationTokenRepository
+                .findValidTokenByUserIdAndType(user.getId(), TokenType.PASSWORD_RESET, java.time.Instant.now())
+                .orElseThrow();
+
+            // Сбрасываем пароль
+            String newPassword = "NewPassword456";
+            ResetPasswordRequest resetRequest = new ResetPasswordRequest(token.getToken(), newPassword);
+            mockMvc.perform(post(RESET_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resetRequest)))
+                .andExpect(status().isNoContent());
+
+            // Проверяем, что старый пароль не работает
+            LoginRequest oldLoginRequest = new LoginRequest(email, oldPassword);
+            mockMvc.perform(post(LOGIN_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(oldLoginRequest)))
+                .andExpect(status().isUnauthorized());
+
+            // Проверяем, что новый пароль работает
+            LoginRequest newLoginRequest = new LoginRequest(email, newPassword);
+            mockMvc.perform(post(LOGIN_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(newLoginRequest)))
+                .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("возвращает 400 при невалидном токене")
+        void resetPassword_InvalidToken_ReturnsBadRequest() throws Exception {
+            ResetPasswordRequest resetRequest = new ResetPasswordRequest(
+                "invalid-token-12345678901234567890123456789012",
+                "NewPassword456"
+            );
+
+            mockMvc.perform(post(RESET_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resetRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("invalid_verification_token"));
         }
     }
 }

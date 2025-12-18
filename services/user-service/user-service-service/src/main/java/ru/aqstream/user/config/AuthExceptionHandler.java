@@ -11,6 +11,7 @@ import ru.aqstream.user.api.exception.AccountLockedException;
 import ru.aqstream.user.api.exception.InvalidCredentialsException;
 import ru.aqstream.user.api.exception.InvalidTelegramAuthException;
 import ru.aqstream.user.api.exception.TelegramIdAlreadyExistsException;
+import ru.aqstream.user.api.exception.TooManyVerificationRequestsException;
 
 /**
  * Обработчик исключений аутентификации.
@@ -61,6 +62,17 @@ public class AuthExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTelegramIdAlreadyExists(TelegramIdAlreadyExistsException ex) {
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает слишком много запросов на верификацию.
+     * HTTP 429 Too Many Requests
+     */
+    @ExceptionHandler(TooManyVerificationRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyVerificationRequestsException ex) {
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
     }
 }

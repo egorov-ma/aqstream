@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Таблица для токенов верификации email и сброса пароля -->
+    <changeSet id="005-create-verification-tokens-table" author="aqstream">
+        <comment>Создание таблицы verification_tokens для email verification и password reset</comment>
+
+        <createTable tableName="verification_tokens" schemaName="user_service">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v4()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="token" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="used_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Foreign key к users -->
+        <addForeignKeyConstraint
+            baseTableSchemaName="user_service"
+            baseTableName="verification_tokens"
+            baseColumnNames="user_id"
+            constraintName="fk_verification_tokens_user"
+            referencedTableSchemaName="user_service"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <!-- Уникальный индекс на token -->
+        <createIndex
+            indexName="idx_verification_tokens_token"
+            tableName="verification_tokens"
+            schemaName="user_service"
+            unique="true">
+            <column name="token"/>
+        </createIndex>
+
+        <!-- Индекс для поиска по user_id и type -->
+        <createIndex
+            indexName="idx_verification_tokens_user_type"
+            tableName="verification_tokens"
+            schemaName="user_service">
+            <column name="user_id"/>
+            <column name="type"/>
+        </createIndex>
+
+        <!-- Индекс для очистки истёкших токенов -->
+        <createIndex
+            indexName="idx_verification_tokens_expires_at"
+            tableName="verification_tokens"
+            schemaName="user_service">
+            <column name="expires_at"/>
+        </createIndex>
+
+        <!-- Check constraint для типа токена -->
+        <sql>
+            ALTER TABLE user_service.verification_tokens
+            ADD CONSTRAINT chk_verification_tokens_type
+            CHECK (type IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET'));
+        </sql>
+
+        <rollback>
+            <dropTable tableName="verification_tokens" schemaName="user_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

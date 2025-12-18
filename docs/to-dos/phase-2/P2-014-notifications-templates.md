@@ -19,7 +19,8 @@
 
 - Notification Service слушает события из RabbitMQ
 - Шаблоны на Mustache + Markdown
-- Отправка через Telegram Bot API
+- Отправка через Telegram Bot API (основной канал)
+- Email отправка для верификации и сброса пароля (SMTP)
 - Логирование всех отправок
 
 **Связанные документы:**
@@ -49,7 +50,7 @@
 - [ ] Поддержка Markdown в теле сообщения
 - [ ] Список переменных для каждого шаблона
 
-### Phase 2 шаблоны
+### Phase 2 шаблоны (Telegram)
 
 - [ ] `user.welcome` — приветствие после регистрации
 - [ ] `registration.confirmed` — билет с QR-кодом
@@ -58,13 +59,24 @@
 - [ ] `event.changed` — изменение даты/места
 - [ ] `event.cancelled` — отмена события
 
-### Event Listeners
+### Email шаблоны (аутентификация)
+
+- [ ] `auth.email-verification` — подтверждение email при регистрации
+- [ ] `auth.password-reset` — ссылка для сброса пароля
+- [ ] SMTP конфигурация (SendGrid/Amazon SES для production, Mailhog для dev)
+
+### Event Listeners (Telegram)
 
 - [ ] `UserRegisteredEvent` → `user.welcome`
 - [ ] `RegistrationCreatedEvent` → `registration.confirmed` + билет с QR
 - [ ] `RegistrationCancelledEvent` → `registration.cancelled`
 - [ ] `EventChangedEvent` → `event.changed` (всем участникам)
 - [ ] `EventCancelledEvent` → `event.cancelled` (всем участникам)
+
+### Event Listeners (Email)
+
+- [ ] `EmailVerificationRequestedEvent` → `auth.email-verification` (из user-service)
+- [ ] `PasswordResetRequestedEvent` → `auth.password-reset` (из user-service)
 
 ### Напоминания
 
@@ -242,6 +254,7 @@ public class EventReminderScheduler {
 
 ### Зависит от
 
+- [P2-004](./P2-004-auth-email-verification.md) Email verification (события для email)
 - [P2-011](./P2-011-registrations-crud.md) Регистрации (события)
 - [P2-012](./P2-012-registrations-qr-code.md) QR-код
 - [P2-013](./P2-013-notifications-telegram-bot.md) Telegram Bot
@@ -249,7 +262,7 @@ public class EventReminderScheduler {
 ## Out of Scope
 
 - Кастомные шаблоны организаций
-- Email уведомления (только для verification/reset)
+- Email уведомления о событиях (напоминания, изменения) — только Telegram
 - Push notifications
 - Массовые рассылки от организатора
 
