@@ -368,9 +368,11 @@ Event event = new EventBuilder()
 
 ```bash
 # Backend
-./gradlew test                    # Все тесты
-./gradlew test --tests "*Service*" # Только сервисы
-./gradlew test -Pfast             # Без integration tests
+./gradlew test                    # Все тесты (unit + integration + e2e)
+./gradlew unit                    # Только unit тесты
+./gradlew integration             # Только integration тесты
+./gradlew e2e                     # Только E2E тесты
+./gradlew test --tests "*Service*" # Тесты по имени
 
 # Frontend
 pnpm test                         # Unit tests

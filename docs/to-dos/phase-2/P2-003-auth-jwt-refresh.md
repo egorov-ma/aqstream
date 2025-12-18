@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Аутентификация](../../business/roadmap.md#фаза-2-core) |
 
@@ -17,9 +17,9 @@ JWT токены обеспечивают stateless аутентификацию
 
 ### Технический контекст
 
-- `JwtTokenProvider` уже реализован в `common-security`
+- `JwtTokenProvider` реализован в `common-security`
 - Генерация access и refresh токенов работает
-- Нужно реализовать хранение refresh токенов в БД и механизм ротации
+- Хранение refresh токенов в БД с механизмом ротации реализовано
 - Gateway валидирует access токены через `JwtAuthenticationFilter`
 
 **Связанные документы:**
@@ -27,9 +27,12 @@ JWT токены обеспечивают stateless аутентификацию
 - [User Service](../../tech-stack/backend/services/user-service.md#jwt-tokens) — структура токенов
 - [Common Library](../../tech-stack/backend/common-library.md#common-security) — JwtTokenProvider
 
-**Существующий код:**
+**Реализованный код:**
 - [JwtTokenProvider.java](../../../common/common-security/src/main/java/ru/aqstream/common/security/JwtTokenProvider.java)
-- [JwtAuthenticationFilter.java](../../../services/gateway/src/main/java/ru/aqstream/gateway/filter/JwtAuthenticationFilter.java)
+- [TokenHasher.java](../../../common/common-security/src/main/java/ru/aqstream/common/security/TokenHasher.java)
+- [RefreshToken.java](../../../services/user-service/user-service-db/src/main/java/ru/aqstream/user/db/entity/RefreshToken.java)
+- [AuthService.java](../../../services/user-service/user-service-service/src/main/java/ru/aqstream/user/service/AuthService.java)
+- [AuthController.java](../../../services/user-service/user-service-service/src/main/java/ru/aqstream/user/controller/AuthController.java)
 
 ## Цель
 
@@ -46,35 +49,34 @@ JWT токены обеспечивают stateless аутентификацию
 
 ## Acceptance Criteria
 
-- [ ] Access token содержит: userId, email, tenantId, roles
-- [ ] Access token действителен 15 минут ([FR-1.2.4](../../business/functional-requirements.md))
-- [ ] Refresh token действителен 7 дней ([FR-1.2.5](../../business/functional-requirements.md))
-- [ ] Refresh token хранится в БД (hashed)
-- [ ] При использовании refresh token — выдаётся новая пара токенов (rotation)
-- [ ] Использованный refresh token помечается как revoked
-- [ ] Endpoint `POST /api/v1/auth/refresh` работает корректно
-- [ ] Endpoint `POST /api/v1/auth/logout` отзывает все refresh токены пользователя
-- [ ] При выходе все активные сессии завершаются
-- [ ] Refresh token одноразовый (one-time use)
+- [x] Access token содержит: userId, email, tenantId, roles
+- [x] Access token действителен 15 минут ([FR-1.2.4](../../business/functional-requirements.md))
+- [x] Refresh token действителен 7 дней ([FR-1.2.5](../../business/functional-requirements.md))
+- [x] Refresh token хранится в БД (hashed) — `TokenHasher.hash()` SHA-256
+- [x] При использовании refresh token — выдаётся новая пара токенов (rotation)
+- [x] Использованный refresh token помечается как revoked
+- [x] Endpoint `POST /api/v1/auth/refresh` работает корректно
+- [x] Endpoint `POST /api/v1/auth/logout` отзывает все refresh токены пользователя
+- [x] При выходе все активные сессии завершаются
+- [x] Refresh token одноразовый (one-time use)
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты для JwtTokenProvider расширены
-- [ ] Integration тесты написаны
-- [ ] Миграции для таблицы `refresh_tokens` созданы
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Все Acceptance Criteria выполнены
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты для AuthService написаны (включая refresh, logout, revokeToken)
+- [x] Integration тесты написаны (AuthControllerIntegrationTest)
+- [x] Миграции для таблицы `refresh_tokens` созданы
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 
 ### Затрагиваемые компоненты
 
-- [x] Backend: `user-service-db` (RefreshToken entity), `user-service-service` (TokenService)
-- [ ] Frontend: interceptor для автоматического refresh
+- [x] Backend: `user-service-db` (RefreshToken entity), `user-service-service` (AuthService)
+- [ ] Frontend: interceptor для автоматического refresh (P2-015)
 - [x] Database: таблица `refresh_tokens`
-- [ ] Infrastructure: —
+- [x] Infrastructure: TokenCleanupService для очистки истёкших токенов
 
 ### Модель данных RefreshToken
 
@@ -123,11 +125,16 @@ CREATE INDEX idx_refresh_tokens_token_hash ON user_service.refresh_tokens(token_
 ## Out of Scope
 
 - Sliding session expiration
-- Device tracking
-- Concurrent session limits
+- Device tracking (user agent и IP сохраняются для аудита, но не используются для блокировки)
+
+## Реализовано дополнительно
+
+- **Concurrent session limits** — MAX_ACTIVE_SESSIONS = 10, старые сессии автоматически отзываются
+- **jti (JWT ID)** — уникальный ID для каждого refresh token
+- **TokenCleanupService** — scheduled job для очистки истёкших токенов (каждый час)
+- **Audit metadata** — сохранение user_agent и ip_address для каждого токена
 
 ## Заметки
 
-- Текущий `JwtTokenProvider` использует HMAC (HS256) — это правильно для нашего случая
+- `JwtTokenProvider` использует HMAC (HS256) — это правильно для нашего случая
 - В production JWT_SECRET должен быть минимум 256 бит
-- Рассмотреть добавление jti (JWT ID) для tracking

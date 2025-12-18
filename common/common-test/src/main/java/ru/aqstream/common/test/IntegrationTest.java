@@ -5,6 +5,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.junit.jupiter.api.Tag;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -15,6 +16,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *
  * <p>Включает:</p>
  * <ul>
+ *   <li>{@code @Tag("integration")} — тег для фильтрации тестов</li>
  *   <li>{@code @SpringBootTest} — полный Spring context</li>
  *   <li>{@code @Testcontainers} — автозапуск контейнеров</li>
  *   <li>{@code @AutoConfigureTestDatabase(replace = NONE)} — не заменять на H2</li>
@@ -35,10 +37,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *     }
  * }
  * </pre>
+ *
+ * <p>Запуск тестов:</p>
+ * <ul>
+ *   <li>{@code ./gradlew test} — все тесты (unit + integration + e2e)</li>
+ *   <li>{@code ./gradlew unit} — только unit тесты</li>
+ *   <li>{@code ./gradlew integration} — только интеграционные тесты</li>
+ *   <li>{@code ./gradlew e2e} — только E2E тесты</li>
+ * </ul>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
+@Tag("integration")
 @SpringBootTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

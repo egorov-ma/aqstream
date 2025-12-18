@@ -42,7 +42,47 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+
+    // test — все тесты (unit + integration + e2e)
+    tasks.named<Test>("test") {
+        description = "Runs all tests (unit + integration + e2e)."
         finalizedBy(tasks.named("jacocoTestReport"))
+    }
+
+    // unit — только unit тесты (без integration и e2e)
+    tasks.register<Test>("unit") {
+        description = "Runs unit tests only."
+        group = "verification"
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform {
+            excludeTags("integration", "e2e")
+        }
+    }
+
+    // integration — только интеграционные тесты
+    tasks.register<Test>("integration") {
+        description = "Runs integration tests only."
+        group = "verification"
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform {
+            includeTags("integration")
+        }
+        shouldRunAfter(tasks.named("unit"))
+    }
+
+    // e2e — только E2E тесты
+    tasks.register<Test>("e2e") {
+        description = "Runs end-to-end tests only."
+        group = "verification"
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform {
+            includeTags("e2e")
+        }
+        shouldRunAfter(tasks.named("integration"))
     }
 
     tasks.named<JacocoReport>("jacocoTestReport") {

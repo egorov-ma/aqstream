@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,11 +26,13 @@ import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.user.api.dto.AuthResponse;
 import ru.aqstream.user.api.dto.LoginRequest;
+import ru.aqstream.user.api.dto.RefreshTokenRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.exception.AccountLockedException;
 import ru.aqstream.user.api.exception.EmailAlreadyExistsException;
 import ru.aqstream.user.api.exception.InvalidCredentialsException;
+import ru.aqstream.user.db.entity.RefreshToken;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
@@ -281,6 +284,212 @@ class AuthServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("refresh")
+    class Refresh {
+
+        @Test
+        @DisplayName("успешно обновляет токены")
+        void refresh_ValidToken_ReturnsNewAuthResponse() {
+            // Arrange
+            String refreshTokenValue = "valid.refresh.token";
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshTokenValue);
+
+            User user = createTestUser();
+            RefreshToken storedToken = createTestRefreshToken(user);
+            UserDto userDto = createTestUserDto(user);
+
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(user.getId());
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.of(storedToken));
+            when(jwtTokenProvider.generateAccessToken(any())).thenReturn(TEST_ACCESS_TOKEN);
+            when(jwtTokenProvider.generateRefreshToken(any())).thenReturn(TEST_REFRESH_TOKEN);
+            when(userMapper.toDto(user)).thenReturn(userDto);
+
+            // Act
+            AuthResponse response = authService.refresh(request, TEST_USER_AGENT, TEST_IP);
+
+            // Assert
+            assertThat(response).isNotNull();
+            assertThat(response.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
+            assertThat(response.refreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
+            assertThat(response.tokenType()).isEqualTo("Bearer");
+
+            // Проверяем что старый токен отозван (one-time use)
+            assertThat(storedToken.isRevoked()).isTrue();
+
+            // save вызывается дважды: для отзыва старого токена и сохранения нового
+            verify(refreshTokenRepository, org.mockito.Mockito.times(2)).save(any());
+        }
+
+        @Test
+        @DisplayName("выбрасывает исключение если токен не найден в БД")
+        void refresh_TokenNotFound_ThrowsException() {
+            // Arrange
+            String refreshTokenValue = "unknown.refresh.token";
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshTokenValue);
+
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(UUID.randomUUID());
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.refresh(request, TEST_USER_AGENT, TEST_IP))
+                .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        @Test
+        @DisplayName("выбрасывает исключение если токен отозван")
+        void refresh_RevokedToken_ThrowsException() {
+            // Arrange
+            String refreshTokenValue = "revoked.refresh.token";
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshTokenValue);
+
+            User user = createTestUser();
+            RefreshToken storedToken = createTestRefreshToken(user);
+            storedToken.revoke(); // Отзываем токен
+
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(user.getId());
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.of(storedToken));
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.refresh(request, TEST_USER_AGENT, TEST_IP))
+                .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        @Test
+        @DisplayName("выбрасывает исключение если токен истёк")
+        void refresh_ExpiredToken_ThrowsException() {
+            // Arrange
+            String refreshTokenValue = "expired.refresh.token";
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshTokenValue);
+
+            User user = createTestUser();
+            RefreshToken storedToken = createExpiredRefreshToken(user);
+
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(user.getId());
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.of(storedToken));
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.refresh(request, TEST_USER_AGENT, TEST_IP))
+                .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        @Test
+        @DisplayName("выбрасывает исключение если токен принадлежит другому пользователю")
+        void refresh_TokenBelongsToAnotherUser_ThrowsException() {
+            // Arrange
+            String refreshTokenValue = "valid.refresh.token";
+            RefreshTokenRequest request = new RefreshTokenRequest(refreshTokenValue);
+
+            User tokenOwner = createTestUser();
+            RefreshToken storedToken = createTestRefreshToken(tokenOwner);
+
+            // JWT содержит другой userId
+            UUID claimedUserId = UUID.randomUUID();
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(claimedUserId);
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.of(storedToken));
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.refresh(request, TEST_USER_AGENT, TEST_IP))
+                .isInstanceOf(InvalidCredentialsException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("logout")
+    class Logout {
+
+        @Test
+        @DisplayName("отзывает все токены пользователя")
+        void logout_ValidUser_RevokesAllTokens() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            when(refreshTokenRepository.revokeAllByUserId(any(UUID.class), any(Instant.class)))
+                .thenReturn(3); // Симулируем отзыв 3 токенов
+
+            // Act
+            authService.logout(userId);
+
+            // Assert
+            verify(refreshTokenRepository).revokeAllByUserId(any(UUID.class), any(Instant.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("revokeToken")
+    class RevokeToken {
+
+        @Test
+        @DisplayName("успешно отзывает токен")
+        void revokeToken_ValidToken_RevokesToken() {
+            // Arrange
+            String refreshTokenValue = "token.to.revoke";
+            User user = createTestUser();
+            RefreshToken storedToken = createTestRefreshToken(user);
+
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.of(storedToken));
+
+            // Act
+            authService.revokeToken(refreshTokenValue);
+
+            // Assert
+            assertThat(storedToken.isRevoked()).isTrue();
+            verify(refreshTokenRepository).save(storedToken);
+        }
+
+        @Test
+        @DisplayName("игнорирует несуществующий токен")
+        void revokeToken_NonExistentToken_DoesNothing() {
+            // Arrange
+            String refreshTokenValue = "non.existent.token";
+
+            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
+
+            // Act
+            authService.revokeToken(refreshTokenValue);
+
+            // Assert
+            verify(refreshTokenRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("logoutAll")
+    class LogoutAll {
+
+        @Test
+        @DisplayName("отзывает все токены пользователя по refresh token")
+        void logoutAll_ValidToken_RevokesAllUserTokens() {
+            // Arrange
+            String refreshTokenValue = "valid.refresh.token";
+            UUID userId = UUID.randomUUID();
+
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(userId);
+            when(refreshTokenRepository.revokeAllByUserId(any(UUID.class), any(Instant.class)))
+                .thenReturn(3);
+
+            // Act
+            authService.logoutAll(refreshTokenValue);
+
+            // Assert
+            verify(jwtTokenProvider).validateRefreshToken(refreshTokenValue);
+            verify(refreshTokenRepository).revokeAllByUserId(eq(userId), any(Instant.class));
+        }
+
+        @Test
+        @DisplayName("выбрасывает исключение если токен невалиден")
+        void logoutAll_InvalidToken_ThrowsException() {
+            // Arrange
+            String refreshTokenValue = "invalid.refresh.token";
+
+            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue))
+                .thenThrow(new ru.aqstream.common.security.JwtAuthenticationException("Невалидный токен"));
+
+            // Act & Assert
+            assertThatThrownBy(() -> authService.logoutAll(refreshTokenValue))
+                .isInstanceOf(InvalidCredentialsException.class);
+        }
+    }
+
     // === Вспомогательные методы ===
 
     private User createTestUser() {
@@ -298,6 +507,26 @@ class AuthServiceTest {
             user.getAvatarUrl(),
             user.isEmailVerified(),
             Instant.now()
+        );
+    }
+
+    private RefreshToken createTestRefreshToken(User user) {
+        return RefreshToken.create(
+            user,
+            "test-token-hash",
+            Instant.now().plus(java.time.Duration.ofDays(7)),
+            TEST_USER_AGENT,
+            TEST_IP
+        );
+    }
+
+    private RefreshToken createExpiredRefreshToken(User user) {
+        return RefreshToken.create(
+            user,
+            "expired-token-hash",
+            Instant.now().minus(java.time.Duration.ofHours(1)), // Токен истёк час назад
+            TEST_USER_AGENT,
+            TEST_IP
         );
     }
 }

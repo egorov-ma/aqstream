@@ -44,6 +44,17 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     int deleteExpiredBefore(Instant before);
 
     /**
+     * Удаляет отозванные токены старше указанного времени.
+     * Используется для очистки после периода хранения для аудита.
+     *
+     * @param before удалить токены, отозванные до этого времени
+     * @return количество удалённых токенов
+     */
+    @Modifying
+    @Query("DELETE FROM RefreshToken t WHERE t.revoked = true AND t.revokedAt < :before")
+    int deleteRevokedBefore(Instant before);
+
+    /**
      * Подсчитывает активные токены пользователя.
      *
      * @param userId идентификатор пользователя

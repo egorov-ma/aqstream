@@ -143,13 +143,17 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Выход", description = "Отзыв refresh token")
+    @Operation(
+        summary = "Выход",
+        description = "Отзывает все refresh токены пользователя (завершает все сессии)"
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Токен отозван")
+        @ApiResponse(responseCode = "204", description = "Все токены отозваны"),
+        @ApiResponse(responseCode = "401", description = "Невалидный refresh token")
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
-        authService.revokeToken(request.refreshToken());
+        authService.logoutAll(request.refreshToken());
         return ResponseEntity.noContent().build();
     }
 }

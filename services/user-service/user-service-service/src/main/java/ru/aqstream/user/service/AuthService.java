@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aqstream.common.security.JwtAuthenticationException;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TokenHasher;
 import ru.aqstream.common.security.UserPrincipal;
@@ -39,6 +40,17 @@ public class AuthService {
      * При превышении старые сессии автоматически отзываются.
      */
     public static final int MAX_ACTIVE_SESSIONS = 10;
+
+    /**
+     * Системный tenant ID для пользователей без организации.
+     * Используется при регистрации/входе до выбора организации.
+     */
+    private static final UUID SYSTEM_TENANT_ID = new UUID(0L, 0L);
+
+    /**
+     * Роли по умолчанию для новых пользователей.
+     */
+    private static final Set<String> DEFAULT_USER_ROLES = Set.of("USER");
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -151,7 +163,13 @@ public class AuthService {
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request, String userAgent, String ipAddress) {
         // Валидируем JWT refresh token
-        UUID userId = jwtTokenProvider.validateRefreshToken(request.refreshToken());
+        UUID userId;
+        try {
+            userId = jwtTokenProvider.validateRefreshToken(request.refreshToken());
+        } catch (JwtAuthenticationException e) {
+            log.debug("Невалидный JWT refresh token: {}", e.getMessage());
+            throw new InvalidCredentialsException();
+        }
 
         // Ищем токен в БД
         String tokenHash = TokenHasher.hash(request.refreshToken());
@@ -197,6 +215,28 @@ public class AuthService {
     }
 
     /**
+     * Выполняет выход пользователя по refresh token (отзывает все его токены).
+     * Валидирует токен, извлекает userId и отзывает все сессии пользователя.
+     *
+     * @param refreshToken refresh token пользователя
+     * @throws InvalidCredentialsException если токен невалиден
+     */
+    @Transactional
+    public void logoutAll(String refreshToken) {
+        // Валидируем JWT и получаем userId
+        UUID userId;
+        try {
+            userId = jwtTokenProvider.validateRefreshToken(refreshToken);
+        } catch (JwtAuthenticationException e) {
+            log.debug("Невалидный refresh token при logout: {}", e.getMessage());
+            throw new InvalidCredentialsException();
+        }
+
+        // Отзываем все токены пользователя
+        logout(userId);
+    }
+
+    /**
      * Отзывает конкретный refresh token.
      *
      * @param refreshToken токен для отзыва
@@ -220,12 +260,12 @@ public class AuthService {
     private AuthResponse createAuthResponse(User user, String userAgent, String ipAddress) {
         // Создаём UserPrincipal для JWT
         // При регистрации/входе пользователь пока не связан с организацией,
-        // используем системный tenant UUID.ZERO (будет изменён после выбора организации)
+        // используем системный tenant (будет изменён после выбора организации)
         UserPrincipal principal = new UserPrincipal(
             user.getId(),
             user.getEmail(),
-            new UUID(0L, 0L), // Системный tenant, изменится после выбора организации
-            Set.of("USER")
+            SYSTEM_TENANT_ID,
+            DEFAULT_USER_ROLES
         );
 
         // Генерируем access token
