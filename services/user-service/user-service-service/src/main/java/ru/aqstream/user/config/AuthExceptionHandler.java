@@ -12,6 +12,12 @@ import ru.aqstream.user.api.exception.InvalidCredentialsException;
 import ru.aqstream.user.api.exception.InvalidTelegramAuthException;
 import ru.aqstream.user.api.exception.TelegramIdAlreadyExistsException;
 import ru.aqstream.user.api.exception.TooManyVerificationRequestsException;
+import ru.aqstream.user.api.exception.AccessDeniedException;
+import ru.aqstream.user.api.exception.OrganizationRequestAlreadyReviewedException;
+import ru.aqstream.user.api.exception.OrganizationRequestNotFoundException;
+import ru.aqstream.user.api.exception.PendingRequestAlreadyExistsException;
+import ru.aqstream.user.api.exception.SlugAlreadyExistsException;
+import ru.aqstream.user.api.exception.UserNotFoundException;
 
 /**
  * Обработчик исключений аутентификации.
@@ -73,6 +79,80 @@ public class AuthExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyVerificationRequestsException ex) {
         return ResponseEntity
             .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    // === Organization Request Exceptions ===
+
+    /**
+     * Обрабатывает запрос на организацию не найден.
+     * HTTP 404 Not Found
+     */
+    @ExceptionHandler(OrganizationRequestNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOrganizationRequestNotFound(
+        OrganizationRequestNotFoundException ex
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает наличие активного запроса.
+     * HTTP 409 Conflict
+     */
+    @ExceptionHandler(PendingRequestAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handlePendingRequestAlreadyExists(
+        PendingRequestAlreadyExistsException ex
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает занятый slug.
+     * HTTP 409 Conflict
+     */
+    @ExceptionHandler(SlugAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleSlugAlreadyExists(SlugAlreadyExistsException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает уже рассмотренный запрос.
+     * HTTP 409 Conflict
+     */
+    @ExceptionHandler(OrganizationRequestAlreadyReviewedException.class)
+    public ResponseEntity<ErrorResponse> handleOrganizationRequestAlreadyReviewed(
+        OrganizationRequestAlreadyReviewedException ex
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает отказ в доступе.
+     * HTTP 403 Forbidden
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    /**
+     * Обрабатывает пользователь не найден.
+     * HTTP 404 Not Found
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
     }
 }

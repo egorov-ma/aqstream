@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `in_progress` |
+| Статус | `done` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Аутентификация](../../business/roadmap.md#фаза-2-core) |
 
@@ -75,8 +75,8 @@
 - [x] Integration тесты написаны
 - [ ] Email шаблоны созданы (TODO: интеграция с notification-service)
 - [x] Миграции созданы
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Code review пройден
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

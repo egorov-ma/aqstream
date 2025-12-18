@@ -78,6 +78,9 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "is_admin", nullable = false)
+    private boolean admin = false;
+
     // === Фабричные методы ===
 
     /**

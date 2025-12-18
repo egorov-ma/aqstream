@@ -266,11 +266,15 @@ public class AuthService {
         // Создаём UserPrincipal для JWT
         // При регистрации/входе пользователь пока не связан с организацией,
         // используем системный tenant (будет изменён после выбора организации)
+        Set<String> roles = user.isAdmin()
+            ? Set.of("USER", "ADMIN")
+            : DEFAULT_USER_ROLES;
+
         UserPrincipal principal = new UserPrincipal(
             user.getId(),
             user.getEmail(),
             SYSTEM_TENANT_ID,
-            DEFAULT_USER_ROLES
+            roles
         );
 
         // Генерируем access token

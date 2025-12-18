@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Добавляем поле is_admin для роли Администратора платформы -->
+    <changeSet id="007-add-is-admin-to-users" author="aqstream">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="user_service" tableName="users" columnName="is_admin"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="user_service" tableName="users">
+            <column name="is_admin" type="BOOLEAN" defaultValueBoolean="false"
+                    remarks="Является ли пользователь администратором платформы">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn schemaName="user_service" tableName="users" columnName="is_admin"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

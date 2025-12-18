@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Таблица запросов на создание организаций -->
+    <changeSet id="006-create-organization-requests-table" author="aqstream">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists schemaName="user_service" tableName="organization_requests"/>
+            </not>
+        </preConditions>
+
+        <createTable schemaName="user_service" tableName="organization_requests"
+                     remarks="Запросы на создание организаций. Глобальная таблица (без tenant_id)">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v4()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <!-- Заявитель -->
+            <column name="user_id" type="UUID"
+                    remarks="Пользователь, подавший запрос">
+                <constraints nullable="false"
+                             foreignKeyName="fk_organization_requests_user"
+                             references="user_service.users(id)"/>
+            </column>
+
+            <!-- Данные организации -->
+            <column name="name" type="VARCHAR(255)"
+                    remarks="Желаемое название организации">
+                <constraints nullable="false"/>
+            </column>
+            <column name="slug" type="VARCHAR(50)"
+                    remarks="Желаемый URL-slug (lowercase, цифры, дефис)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"
+                    remarks="Описание организации"/>
+
+            <!-- Статус -->
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDING"
+                    remarks="Статус: PENDING, APPROVED, REJECTED">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Рассмотрение -->
+            <column name="reviewed_by" type="UUID"
+                    remarks="Админ, рассмотревший запрос">
+                <constraints foreignKeyName="fk_organization_requests_reviewer"
+                             references="user_service.users(id)"/>
+            </column>
+            <column name="review_comment" type="TEXT"
+                    remarks="Комментарий админа (причина отклонения)"/>
+            <column name="reviewed_at" type="TIMESTAMP WITH TIME ZONE"
+                    remarks="Когда рассмотрено"/>
+
+            <!-- Аудит -->
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Уникальность slug среди PENDING запросов -->
+        <sql>
+            CREATE UNIQUE INDEX idx_organization_requests_pending_slug
+                ON user_service.organization_requests (LOWER(slug))
+                WHERE status = 'PENDING';
+        </sql>
+
+        <!-- Один PENDING запрос на пользователя -->
+        <sql>
+            CREATE UNIQUE INDEX idx_organization_requests_pending_user
+                ON user_service.organization_requests (user_id)
+                WHERE status = 'PENDING';
+        </sql>
+
+        <!-- Индекс для поиска по статусу -->
+        <createIndex schemaName="user_service" tableName="organization_requests"
+                     indexName="idx_organization_requests_status">
+            <column name="status"/>
+        </createIndex>
+
+        <!-- Индекс для поиска по user_id -->
+        <createIndex schemaName="user_service" tableName="organization_requests"
+                     indexName="idx_organization_requests_user_id">
+            <column name="user_id"/>
+        </createIndex>
+
+        <!-- Триггер для updated_at -->
+        <sql splitStatements="false">
+            CREATE TRIGGER trigger_organization_requests_updated_at
+                BEFORE UPDATE ON user_service.organization_requests
+                FOR EACH ROW
+                EXECUTE FUNCTION user_service.update_updated_at_column();
+        </sql>
+
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trigger_organization_requests_updated_at ON user_service.organization_requests;</sql>
+            <dropTable schemaName="user_service" tableName="organization_requests"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Check constraint: status валидный -->
+    <changeSet id="006-organization-requests-check-constraint" author="aqstream">
+        <sql>
+            ALTER TABLE user_service.organization_requests
+                ADD CONSTRAINT chk_organization_requests_status
+                CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'));
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE user_service.organization_requests
+                    DROP CONSTRAINT IF EXISTS chk_organization_requests_status;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <!-- Check constraint: slug формат -->
+    <changeSet id="006-organization-requests-slug-format" author="aqstream">
+        <sql>
+            ALTER TABLE user_service.organization_requests
+                ADD CONSTRAINT chk_organization_requests_slug_format
+                CHECK (slug ~ '^[a-z0-9][a-z0-9-]*[a-z0-9]$' OR slug ~ '^[a-z0-9]$');
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE user_service.organization_requests
+                    DROP CONSTRAINT IF EXISTS chk_organization_requests_slug_format;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

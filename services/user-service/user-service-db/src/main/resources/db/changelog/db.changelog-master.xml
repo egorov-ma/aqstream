@@ -14,5 +14,7 @@
     <include file="db/changelog/changes/003-create-refresh-tokens-table.xml"/>
     <include file="db/changelog/changes/004-add-telegram-chat-id.xml"/>
     <include file="db/changelog/changes/005-create-verification-tokens-table.xml"/>
+    <include file="db/changelog/changes/006-create-organization-requests-table.xml"/>
+    <include file="db/changelog/changes/007-add-is-admin-to-users.xml"/>
 
 </databaseChangeLog>
