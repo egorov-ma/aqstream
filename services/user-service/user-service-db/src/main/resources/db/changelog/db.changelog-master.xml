@@ -19,5 +19,7 @@
     <include file="db/changelog/changes/008-create-organizations-table.xml"/>
     <include file="db/changelog/changes/009-create-organization-members-table.xml"/>
     <include file="db/changelog/changes/010-create-organization-invites-table.xml"/>
+    <include file="db/changelog/changes/011-create-groups-table.xml"/>
+    <include file="db/changelog/changes/012-create-group-members-table.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Таблица групп для приватных событий внутри организаций -->
+    <changeSet id="011-create-groups-table" author="aqstream">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists schemaName="user_service" tableName="groups"/>
+            </not>
+        </preConditions>
+
+        <createTable schemaName="user_service" tableName="groups"
+                     remarks="Группы для приватных событий внутри организаций">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v4()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="organization_id" type="UUID" remarks="FK -> organizations">
+                <constraints nullable="false"
+                             foreignKeyName="fk_groups_organization_id"
+                             references="user_service.organizations(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <column name="name" type="VARCHAR(100)" remarks="Название группы">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="description" type="TEXT" remarks="Описание группы"/>
+
+            <column name="invite_code" type="VARCHAR(8)" remarks="Уникальный код приглашения (8 символов)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_groups_invite_code"/>
+            </column>
+
+            <column name="created_by" type="UUID" remarks="FK -> users (создатель группы)">
+                <constraints nullable="false"
+                             foreignKeyName="fk_groups_created_by"
+                             references="user_service.users(id)"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Индексы для быстрого поиска -->
+        <createIndex schemaName="user_service" tableName="groups"
+                     indexName="idx_groups_organization_id">
+            <column name="organization_id"/>
+        </createIndex>
+
+        <createIndex schemaName="user_service" tableName="groups"
+                     indexName="idx_groups_invite_code">
+            <column name="invite_code"/>
+        </createIndex>
+
+        <!-- Триггер для updated_at -->
+        <sql splitStatements="false">
+            CREATE TRIGGER trigger_groups_updated_at
+                BEFORE UPDATE ON user_service.groups
+                FOR EACH ROW
+                EXECUTE FUNCTION user_service.update_updated_at_column();
+        </sql>
+
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trigger_groups_updated_at ON user_service.groups;</sql>
+            <dropTable schemaName="user_service" tableName="groups"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
