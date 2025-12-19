@@ -26,6 +26,7 @@ dependencies {
     implementation("org.liquibase:liquibase-core:$liquibaseVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(project(":common:common-test"))
 
     // Testcontainers
     val testcontainersVersion: String by project

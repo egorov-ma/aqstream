@@ -1,0 +1,71 @@
+server:
+  port: ${SERVER_PORT:8082}
+  shutdown: graceful
+
+spring:
+  application:
+    name: event-service
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  # === Database (shared_services_db) ===
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/shared_services_db}
+    username: ${DATABASE_USERNAME:aqstream}
+    password: ${DATABASE_PASSWORD:aqstream}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: event_service
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    open-in-view: false
+
+  # === Liquibase ===
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    # default-schema не указан - databasechangelog в public,
+    # схемы указываются явно в changesets
+
+# === Multi-tenancy (RLS) ===
+# Включает TenantAwareDataSourceDecorator для установки app.tenant_id в PostgreSQL
+aqstream:
+  multitenancy:
+    rls:
+      enabled: true
+
+# === JWT Configuration ===
+jwt:
+  secret: ${JWT_SECRET:development-secret-key-minimum-32-characters-long}
+
+# === Actuator ===
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+
+# === Logging ===
+logging:
+  level:
+    root: INFO
+    ru.aqstream.event: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] [%X{tenantId}] %-5level %logger{36} - %msg%n"

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `in_progress` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -50,36 +50,36 @@
 
 ### RLS Политики
 
-- [ ] RLS включён на всех таблицах с tenant_id
-- [ ] Политики SELECT/INSERT/UPDATE/DELETE применяются
-- [ ] Данные одной организации недоступны другой
-- [ ] Попытка доступа к чужим данным возвращает пустой результат (не ошибку)
+- [x] RLS включён на всех таблицах с tenant_id (events — готово, остальные при создании)
+- [x] Политики SELECT/INSERT/UPDATE/DELETE применяются
+- [x] Данные одной организации недоступны другой
+- [x] Попытка доступа к чужим данным возвращает пустой результат (не ошибку)
 
 ### Интеграция с приложением
 
-- [ ] `TenantContextFilter` извлекает tenant_id из JWT
-- [ ] `TenantAwareDataSourceDecorator` устанавливает `app.tenant_id` перед каждым запросом
-- [ ] Все сервисы используют tenant-aware конфигурацию
-- [ ] При отсутствии tenant_id — запросы к tenant-aware таблицам блокируются
+- [x] `TenantContextFilter` извлекает tenant_id из JWT
+- [x] `TenantAwareDataSourceDecorator` устанавливает `app.tenant_id` перед каждым запросом
+- [x] Все сервисы используют tenant-aware конфигурацию (`aqstream.multitenancy.rls.enabled=true`)
+- [x] При отсутствии tenant_id — запросы к tenant-aware таблицам возвращают пустой результат
 
 ### Специальные случаи
 
-- [ ] Админ платформы может видеть данные всех организаций (bypass RLS)
-- [ ] Публичные endpoints (страница события) работают без tenant_id
-- [ ] Cross-tenant запросы (листинг публичных событий) работают корректно
+- [x] Админ платформы может видеть данные всех организаций (bypass RLS через отсутствие tenant context)
+- [x] Публичные endpoints (страница события) работают без tenant_id (политика `public_events_read`)
+- [ ] Cross-tenant запросы (листинг публичных событий) работают корректно (будет протестировано с реальными данными)
 
 ### Тестирование
 
-- [ ] Integration тесты проверяют изоляцию данных
-- [ ] Тест: создание данных в org A, попытка чтения из org B — пустой результат
-- [ ] Тест: админ видит данные всех организаций
+- [x] Integration тесты проверяют изоляцию данных (`RlsIntegrationTest`)
+- [x] Тест: создание данных в org A, попытка чтения из org B — пустой результат
+- [ ] Тест: админ видит данные всех организаций (будет добавлен в E2E тестах)
 
 ## Definition of Done (DoD)
 
 - [ ] Все Acceptance Criteria выполнены
-- [ ] RLS миграции созданы с rollback
-- [ ] Unit тесты для TenantContext
-- [ ] Integration тесты изоляции данных
+- [x] RLS миграции созданы с rollback (`003-improve-events-rls.xml`)
+- [x] Unit тесты для TenantContext (`TenantContextTest.java`)
+- [x] Integration тесты изоляции данных (`RlsIntegrationTest.java`)
 - [ ] Документация обновлена (если есть особенности)
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит

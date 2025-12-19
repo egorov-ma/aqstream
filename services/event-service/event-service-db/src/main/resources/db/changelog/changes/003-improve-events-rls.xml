@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Улучшение RLS политики для events -->
+    <!-- Добавляет WITH CHECK для INSERT операций -->
+
+    <changeSet id="003-1" author="aqstream">
+        <comment>Улучшение RLS политики events: добавление WITH CHECK для INSERT</comment>
+
+        <sql>
+            -- Удаляем старую политику (FOR ALL без WITH CHECK)
+            DROP POLICY IF EXISTS tenant_isolation_events ON event_service.events;
+
+            -- Создаём новую политику с USING + WITH CHECK
+            -- USING: фильтрует SELECT/UPDATE/DELETE по tenant_id
+            -- WITH CHECK: проверяет INSERT/UPDATE, что tenant_id совпадает с текущим
+            CREATE POLICY tenant_isolation_events ON event_service.events
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+        </sql>
+
+        <rollback>
+            <sql>
+                -- Откат к предыдущей версии политики (без WITH CHECK)
+                DROP POLICY IF EXISTS tenant_isolation_events ON event_service.events;
+                CREATE POLICY tenant_isolation_events ON event_service.events
+                    FOR ALL
+                    USING (tenant_id = current_tenant_id());
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-2" author="aqstream">
+        <comment>Добавление политики для публичного доступа к событиям (is_public = true)</comment>
+
+        <sql>
+            -- Политика для чтения публичных событий без tenant context
+            -- Позволяет анонимным пользователям видеть публичные события
+            CREATE POLICY public_events_read ON event_service.events
+                FOR SELECT
+                USING (
+                    is_public = true
+                    AND deleted_at IS NULL
+                    AND status IN ('PUBLISHED', 'COMPLETED')
+                );
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS public_events_read ON event_service.events;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-3" author="aqstream">
+        <comment>Включение FORCE ROW LEVEL SECURITY для владельца таблицы</comment>
+
+        <sql>
+            -- FORCE RLS применяет политики даже к владельцу таблицы
+            -- ВАЖНО: Superuser всё равно обходит RLS
+            ALTER TABLE event_service.events FORCE ROW LEVEL SECURITY;
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE event_service.events NO FORCE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
