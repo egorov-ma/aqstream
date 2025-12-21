@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Регистрации](../../business/roadmap.md#фаза-2-core) |
 
@@ -45,51 +45,51 @@
 
 ### Создание регистрации
 
-- [ ] Пользователь регистрируется на событие (`POST /api/v1/events/{id}/registrations`)
-- [ ] Выбирает тип билета
-- [ ] Заполняет: first_name, last_name, email
-- [ ] Поддержка custom_fields (JSONB) для дополнительных полей формы
-- [ ] Генерируется уникальный confirmation_code (8 символов)
-- [ ] Для бесплатных билетов статус сразу CONFIRMED
-- [ ] Один пользователь — одна регистрация на событие
-- [ ] sold_count в TicketType увеличивается атомарно
+- [x] Пользователь регистрируется на событие (`POST /api/v1/events/{id}/registrations`)
+- [x] Выбирает тип билета
+- [x] Заполняет: first_name, last_name, email
+- [x] Поддержка custom_fields (JSONB) для дополнительных полей формы
+- [x] Генерируется уникальный confirmation_code (8 символов)
+- [x] Для бесплатных билетов статус сразу CONFIRMED
+- [x] Один пользователь — одна регистрация на событие
+- [x] sold_count в TicketType увеличивается атомарно
 
 ### Валидации
 
-- [ ] Событие в статусе PUBLISHED
-- [ ] Тип билета активен и в периоде продаж
-- [ ] Есть доступные билеты (available > 0)
+- [x] Событие в статусе PUBLISHED
+- [x] Тип билета активен и в периоде продаж
+- [x] Есть доступные билеты (available > 0)
 - [ ] Для приватных событий — пользователь член группы или организации
-- [ ] Email валиден
+- [x] Email валиден
 
 ### Просмотр и отмена
 
-- [ ] Список своих регистраций (`GET /api/v1/registrations/my`)
-- [ ] Детали регистрации (`GET /api/v1/registrations/{id}`)
-- [ ] Отмена участником (`DELETE /api/v1/registrations/{id}`)
-- [ ] Отмена организатором (с указанием причины)
-- [ ] При отмене — sold_count уменьшается, место возвращается
+- [x] Список своих регистраций (`GET /api/v1/registrations/my`)
+- [x] Детали регистрации (`GET /api/v1/registrations/{id}`)
+- [x] Отмена участником (`DELETE /api/v1/registrations/{id}`)
+- [x] Отмена организатором (с указанием причины)
+- [x] При отмене — sold_count уменьшается, место возвращается
 
 ### Для организатора
 
-- [ ] Список регистраций события (`GET /api/v1/events/{id}/registrations`)
-- [ ] Фильтры: ticket_type, status
-- [ ] Поиск по имени/email
+- [x] Список регистраций события (`GET /api/v1/events/{id}/registrations`)
+- [x] Фильтры: ticket_type, status
+- [x] Поиск по имени/email
 - [ ] Экспорт (CSV) — можно в Phase 3
 
 ### События RabbitMQ
 
-- [ ] `registration.created` → уведомление участнику (билет с QR)
-- [ ] `registration.cancelled` → уведомление
+- [x] `registration.created` → уведомление участнику (билет с QR)
+- [x] `registration.cancelled` → уведомление
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны
-- [ ] Integration тесты (concurrent registration, overselling prevention)
-- [ ] Миграции созданы с RLS
-- [ ] Code review пройден
+- [ ] Все Acceptance Criteria выполнены (2 AC заблокированы: приватные события, CSV экспорт)
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны
+- [x] Integration тесты (concurrent registration, overselling prevention)
+- [x] Миграции созданы с RLS
+- [x] Code review пройден
 - [ ] CI/CD pipeline проходит
 
 ## Технические детали

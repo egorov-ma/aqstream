@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы registrations -->
+    <!-- Регистрации участников на события -->
+
+    <changeSet id="006-1" author="aqstream">
+        <comment>Создание таблицы registrations</comment>
+
+        <createTable tableName="registrations" schemaName="event_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_registrations"/>
+            </column>
+
+            <!-- Tenant для RLS -->
+            <column name="tenant_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Foreign keys -->
+            <column name="event_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ticket_type_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <!-- NULL для анонимных регистраций (Phase 3+) -->
+            </column>
+
+            <!-- Status -->
+            <column name="status" type="varchar(20)" defaultValue="CONFIRMED">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Confirmation code для check-in -->
+            <column name="confirmation_code" type="varchar(8)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Participant info -->
+            <column name="first_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Custom fields from registration form -->
+            <column name="custom_fields" type="jsonb" defaultValue="{}">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Reservation/cancellation -->
+            <column name="expires_at" type="timestamptz">
+                <!-- Для RESERVED статуса (Phase 3) -->
+            </column>
+            <column name="cancelled_at" type="timestamptz"/>
+            <column name="cancellation_reason" type="text"/>
+
+            <!-- Audit fields -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="registrations" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="006-2" author="aqstream">
+        <comment>Foreign keys и индексы для registrations</comment>
+
+        <!-- Foreign key на events -->
+        <addForeignKeyConstraint
+            constraintName="fk_registrations_event"
+            baseTableSchemaName="event_service"
+            baseTableName="registrations"
+            baseColumnNames="event_id"
+            referencedTableSchemaName="event_service"
+            referencedTableName="events"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <!-- Foreign key на ticket_types -->
+        <addForeignKeyConstraint
+            constraintName="fk_registrations_ticket_type"
+            baseTableSchemaName="event_service"
+            baseTableName="registrations"
+            baseColumnNames="ticket_type_id"
+            referencedTableSchemaName="event_service"
+            referencedTableName="ticket_types"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <!-- Уникальный confirmation_code -->
+        <addUniqueConstraint
+            constraintName="uq_registrations_confirmation_code"
+            schemaName="event_service"
+            tableName="registrations"
+            columnNames="confirmation_code"/>
+
+        <!-- Один пользователь — одна регистрация на событие (для зарегистрированных пользователей) -->
+        <sql>
+            CREATE UNIQUE INDEX uq_registrations_event_user
+                ON event_service.registrations (event_id, user_id)
+                WHERE user_id IS NOT NULL AND status != 'CANCELLED';
+        </sql>
+
+        <!-- Индекс на event_id для списка регистраций -->
+        <createIndex indexName="idx_registrations_event_id" tableName="registrations" schemaName="event_service">
+            <column name="event_id"/>
+        </createIndex>
+
+        <!-- Индекс на user_id для "мои регистрации" -->
+        <createIndex indexName="idx_registrations_user_id" tableName="registrations" schemaName="event_service">
+            <column name="user_id"/>
+        </createIndex>
+
+        <!-- Индекс на tenant_id для RLS -->
+        <createIndex indexName="idx_registrations_tenant_id" tableName="registrations" schemaName="event_service">
+            <column name="tenant_id"/>
+        </createIndex>
+
+        <!-- Индекс на confirmation_code для check-in -->
+        <createIndex indexName="idx_registrations_confirmation_code" tableName="registrations" schemaName="event_service">
+            <column name="confirmation_code"/>
+        </createIndex>
+
+        <!-- Индекс для фильтрации по статусу -->
+        <createIndex indexName="idx_registrations_event_status" tableName="registrations" schemaName="event_service">
+            <column name="event_id"/>
+            <column name="status"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_registrations_event_status" tableName="registrations" schemaName="event_service"/>
+            <dropIndex indexName="idx_registrations_confirmation_code" tableName="registrations" schemaName="event_service"/>
+            <dropIndex indexName="idx_registrations_tenant_id" tableName="registrations" schemaName="event_service"/>
+            <dropIndex indexName="idx_registrations_user_id" tableName="registrations" schemaName="event_service"/>
+            <dropIndex indexName="idx_registrations_event_id" tableName="registrations" schemaName="event_service"/>
+            <sql>DROP INDEX IF EXISTS event_service.uq_registrations_event_user;</sql>
+            <dropUniqueConstraint constraintName="uq_registrations_confirmation_code" schemaName="event_service" tableName="registrations"/>
+            <dropForeignKeyConstraint baseTableSchemaName="event_service" baseTableName="registrations" constraintName="fk_registrations_ticket_type"/>
+            <dropForeignKeyConstraint baseTableSchemaName="event_service" baseTableName="registrations" constraintName="fk_registrations_event"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="006-3" author="aqstream">
+        <comment>Включение RLS для registrations</comment>
+
+        <sql>
+            -- Включаем RLS
+            ALTER TABLE event_service.registrations ENABLE ROW LEVEL SECURITY;
+
+            -- Политика для tenant isolation (USING + WITH CHECK)
+            CREATE POLICY tenant_isolation_registrations ON event_service.registrations
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+
+            -- FORCE RLS для владельца таблицы
+            ALTER TABLE event_service.registrations FORCE ROW LEVEL SECURITY;
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_registrations ON event_service.registrations;
+                ALTER TABLE event_service.registrations NO FORCE ROW LEVEL SECURITY;
+                ALTER TABLE event_service.registrations DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="006-4" author="aqstream">
+        <comment>CHECK constraints для registrations</comment>
+
+        <sql>
+            -- Валидный статус
+            ALTER TABLE event_service.registrations
+                ADD CONSTRAINT chk_registrations_status
+                CHECK (status IN ('CONFIRMED', 'CANCELLED', 'RESERVED', 'PENDING', 'EXPIRED'));
+
+            -- Email формат (базовая проверка)
+            ALTER TABLE event_service.registrations
+                ADD CONSTRAINT chk_registrations_email_format
+                CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+
+            -- confirmation_code — 8 символов
+            ALTER TABLE event_service.registrations
+                ADD CONSTRAINT chk_registrations_confirmation_code_length
+                CHECK (length(confirmation_code) = 8);
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE event_service.registrations DROP CONSTRAINT IF EXISTS chk_registrations_confirmation_code_length;
+                ALTER TABLE event_service.registrations DROP CONSTRAINT IF EXISTS chk_registrations_email_format;
+                ALTER TABLE event_service.registrations DROP CONSTRAINT IF EXISTS chk_registrations_status;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
