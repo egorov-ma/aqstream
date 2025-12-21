@@ -1,5 +1,7 @@
 package ru.aqstream.user.service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +13,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aqstream.common.api.PageResponse;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.user.api.dto.CreateOrganizationRequestRequest;
+import ru.aqstream.user.api.event.OrganizationRequestApprovedEvent;
+import ru.aqstream.user.api.event.OrganizationRequestCreatedEvent;
+import ru.aqstream.user.api.event.OrganizationRequestRejectedEvent;
 import ru.aqstream.user.api.dto.OrganizationRequestDto;
 import ru.aqstream.user.api.dto.OrganizationRequestStatus;
 import ru.aqstream.user.api.dto.RejectOrganizationRequestRequest;
@@ -23,6 +29,7 @@ import ru.aqstream.user.api.exception.SlugAlreadyExistsException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
 import ru.aqstream.user.db.entity.OrganizationRequest;
 import ru.aqstream.user.db.entity.User;
+import ru.aqstream.user.db.repository.OrganizationRepository;
 import ru.aqstream.user.db.repository.OrganizationRequestRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
@@ -37,6 +44,8 @@ public class OrganizationRequestService {
     private final OrganizationRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final OrganizationRequestMapper requestMapper;
+    private final EventPublisher eventPublisher;
+    private final OrganizationRepository organizationRepository;
 
     /**
      * Создаёт запрос на создание организации.
@@ -62,7 +71,18 @@ public class OrganizationRequestService {
             throw new SlugAlreadyExistsException(normalizedSlug);
         }
 
-        // TODO: проверить slug в таблице organizations когда она будет создана
+        // Проверяем уникальность slug в таблице organizations
+        if (organizationRepository.existsBySlug(normalizedSlug)) {
+            log.debug("Slug уже используется организацией: slug={}", normalizedSlug);
+            throw new SlugAlreadyExistsException(normalizedSlug);
+        }
+
+        // Проверяем уникальность slug среди активных резерваций (одобренные запросы за последние 7 дней)
+        Instant reservationCutoff = Instant.now().minus(OrganizationRequest.SLUG_RESERVATION_DAYS, ChronoUnit.DAYS);
+        if (requestRepository.existsActiveReservationBySlug(normalizedSlug, reservationCutoff)) {
+            log.debug("Slug зарезервирован другим пользователем: slug={}", normalizedSlug);
+            throw new SlugAlreadyExistsException(normalizedSlug);
+        }
 
         // Получаем пользователя
         User user = userRepository.findById(userId)
@@ -79,7 +99,13 @@ public class OrganizationRequestService {
 
         log.info("Запрос на организацию создан: requestId={}, userId={}", orgRequest.getId(), userId);
 
-        // TODO: Опубликовать событие organization.request.created для уведомления админов
+        // Публикуем событие для уведомления админов
+        eventPublisher.publish(new OrganizationRequestCreatedEvent(
+            orgRequest.getId(),
+            userId,
+            orgRequest.getName(),
+            orgRequest.getSlug()
+        ));
 
         return requestMapper.toDto(orgRequest);
     }
@@ -181,7 +207,14 @@ public class OrganizationRequestService {
 
         log.info("Запрос одобрен: requestId={}, userId={}", requestId, request.getUserId());
 
-        // TODO: Опубликовать событие organization.request.approved для уведомления пользователя
+        // Публикуем событие для уведомления пользователя
+        eventPublisher.publish(new OrganizationRequestApprovedEvent(
+            request.getId(),
+            request.getUserId(),
+            request.getName(),
+            request.getSlug(),
+            adminId
+        ));
 
         return requestMapper.toDto(request);
     }
@@ -213,7 +246,14 @@ public class OrganizationRequestService {
 
         log.info("Запрос отклонён: requestId={}, userId={}", requestId, orgRequest.getUserId());
 
-        // TODO: Опубликовать событие organization.request.rejected для уведомления пользователя
+        // Публикуем событие для уведомления пользователя
+        eventPublisher.publish(new OrganizationRequestRejectedEvent(
+            orgRequest.getId(),
+            orgRequest.getUserId(),
+            orgRequest.getName(),
+            request.comment(),
+            adminId
+        ));
 
         return requestMapper.toDto(orgRequest);
     }

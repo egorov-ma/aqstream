@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.user.api.event.EmailVerificationRequestedEvent;
+import ru.aqstream.user.api.event.PasswordResetRequestedEvent;
 import ru.aqstream.user.api.exception.EmailAlreadyVerifiedException;
 import ru.aqstream.user.api.exception.InvalidVerificationTokenException;
 import ru.aqstream.user.api.exception.TooManyVerificationRequestsException;
@@ -41,6 +44,7 @@ public class VerificationService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordService passwordService;
+    private final EventPublisher eventPublisher;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -282,8 +286,7 @@ public class VerificationService {
     }
 
     /**
-     * Отправляет письмо верификации email.
-     * TODO: Интеграция с notification-service
+     * Отправляет письмо верификации email через notification-service.
      */
     private void sendVerificationEmail(User user, String token) {
         String verificationLink = frontendUrl + "/verify-email?token=" + token;
@@ -296,13 +299,17 @@ public class VerificationService {
         log.info("Token expires in: {} hours", VerificationToken.EMAIL_VERIFICATION_EXPIRATION_HOURS);
         log.info("==========================");
 
-        // TODO: Отправить событие EmailVerificationRequested в RabbitMQ
-        // для обработки notification-service
+        // Публикуем событие для notification-service
+        eventPublisher.publish(new EmailVerificationRequestedEvent(
+            user.getId(),
+            user.getEmail(),
+            token,
+            verificationLink
+        ));
     }
 
     /**
-     * Отправляет письмо для сброса пароля.
-     * TODO: Интеграция с notification-service
+     * Отправляет письмо для сброса пароля через notification-service.
      */
     private void sendPasswordResetEmail(User user, String token) {
         String resetLink = frontendUrl + "/reset-password?token=" + token;
@@ -315,7 +322,12 @@ public class VerificationService {
         log.info("Token expires in: {} hour", VerificationToken.PASSWORD_RESET_EXPIRATION_HOURS);
         log.info("======================");
 
-        // TODO: Отправить событие PasswordResetRequested в RabbitMQ
-        // для обработки notification-service
+        // Публикуем событие для notification-service
+        eventPublisher.publish(new PasswordResetRequestedEvent(
+            user.getId(),
+            user.getEmail(),
+            token,
+            resetLink
+        ));
     }
 }

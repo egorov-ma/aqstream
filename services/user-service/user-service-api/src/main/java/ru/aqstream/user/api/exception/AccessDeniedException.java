@@ -1,12 +1,12 @@
 package ru.aqstream.user.api.exception;
 
-import ru.aqstream.common.api.exception.AqStreamException;
+import ru.aqstream.common.api.exception.ForbiddenException;
 
 /**
  * Исключение: доступ запрещён.
  * HTTP статус: 403 Forbidden
  */
-public class AccessDeniedException extends AqStreamException {
+public class AccessDeniedException extends ForbiddenException {
 
     private static final String CODE = "access_denied";
 

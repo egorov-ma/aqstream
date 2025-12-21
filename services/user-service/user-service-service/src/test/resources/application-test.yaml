@@ -21,6 +21,11 @@ jwt:
   access-token-expiration: 15m
   refresh-token-expiration: 7d
 
+# Telegram для тестов
+telegram:
+  bot:
+    token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+
 logging:
   level:
     root: WARN

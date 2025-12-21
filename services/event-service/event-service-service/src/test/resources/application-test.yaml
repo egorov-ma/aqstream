@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16:///test_db?TC_TMPFS=/testtmpfs:rw
+    username: test
+    password: test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: event_service
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+# JWT для тестов
+jwt:
+  secret: test-secret-key-minimum-32-characters-long-for-hs256
+  access-token-expiration: 15m
+  refresh-token-expiration: 7d
+
+logging:
+  level:
+    root: WARN
+    ru.aqstream: DEBUG
+    org.hibernate.SQL: DEBUG

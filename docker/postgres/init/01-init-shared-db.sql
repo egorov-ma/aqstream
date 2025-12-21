@@ -51,10 +51,15 @@ BEGIN
     EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', schema_name, table_name);
 
     -- Политика для всех операций: доступ только к данным своего tenant
+    -- USING: фильтрует SELECT/UPDATE/DELETE по tenant_id
+    -- WITH CHECK: проверяет INSERT/UPDATE, что tenant_id совпадает с текущим
     EXECUTE format(
-        'CREATE POLICY %I ON %I.%I FOR ALL USING (tenant_id = current_tenant_id())',
+        'CREATE POLICY %I ON %I.%I FOR ALL USING (tenant_id = current_tenant_id()) WITH CHECK (tenant_id = current_tenant_id())',
         policy_name, schema_name, table_name
     );
+
+    -- FORCE RLS для владельца таблицы
+    EXECUTE format('ALTER TABLE %I.%I FORCE ROW LEVEL SECURITY', schema_name, table_name);
 
     RAISE NOTICE 'RLS политика создана для таблицы %', full_table_name;
 END;

@@ -1,5 +1,7 @@
 package ru.aqstream.common.security;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -8,6 +10,7 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +39,8 @@ public class JwtTokenProvider {
 
     private static final String TOKEN_TYPE_ACCESS = "access";
     private static final String TOKEN_TYPE_REFRESH = "refresh";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final SecretKey secretKey;
     private final Duration accessTokenExpiration;
@@ -180,32 +185,25 @@ public class JwtTokenProvider {
      */
     public UUID extractUserIdUnsafe(String token) {
         try {
-            // Используем jjwt для парсинга без валидации подписи
-            // Разбиваем токен и декодируем payload часть
+            // Разбиваем токен на части: header.payload.signature
             String[] parts = token.split("\\.");
             if (parts.length != 3) {
                 return null;
             }
 
             // Декодируем payload (вторая часть JWT)
-            byte[] decodedPayload = java.util.Base64.getUrlDecoder().decode(parts[1]);
+            byte[] decodedPayload = Base64.getUrlDecoder().decode(parts[1]);
             String payloadJson = new String(decodedPayload, StandardCharsets.UTF_8);
 
-            // Парсим JSON с помощью простого поиска (Jackson недоступен напрямую)
-            // Формат: {"userId":"uuid-value",...}
-            String searchKey = "\"" + CLAIM_USER_ID + "\":\"";
-            int startIndex = payloadJson.indexOf(searchKey);
-            if (startIndex < 0) {
-                return null;
-            }
-            startIndex += searchKey.length();
-            int endIndex = payloadJson.indexOf("\"", startIndex);
-            if (endIndex < 0) {
+            // Парсим JSON с помощью Jackson
+            JsonNode payload = OBJECT_MAPPER.readTree(payloadJson);
+            JsonNode userIdNode = payload.get(CLAIM_USER_ID);
+
+            if (userIdNode == null || userIdNode.isNull()) {
                 return null;
             }
 
-            String userIdStr = payloadJson.substring(startIndex, endIndex);
-            return UUID.fromString(userIdStr);
+            return UUID.fromString(userIdNode.asText());
         } catch (Exception e) {
             log.trace("Не удалось извлечь userId из токена: {}", e.getMessage());
             return null;

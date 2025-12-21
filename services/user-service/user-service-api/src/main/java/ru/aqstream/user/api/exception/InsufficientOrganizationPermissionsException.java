@@ -1,13 +1,13 @@
 package ru.aqstream.user.api.exception;
 
 import java.util.Map;
-import ru.aqstream.common.api.exception.AqStreamException;
+import ru.aqstream.common.api.exception.ForbiddenException;
 
 /**
  * Исключение при недостаточных правах на операцию в организации.
  * Преобразуется в HTTP 403 Forbidden.
  */
-public class InsufficientOrganizationPermissionsException extends AqStreamException {
+public class InsufficientOrganizationPermissionsException extends ForbiddenException {
 
     /**
      * Создаёт исключение для недостаточных прав.

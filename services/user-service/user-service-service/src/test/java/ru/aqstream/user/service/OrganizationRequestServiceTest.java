@@ -28,8 +28,13 @@ import ru.aqstream.user.api.exception.OrganizationRequestAlreadyReviewedExceptio
 import ru.aqstream.user.api.exception.OrganizationRequestNotFoundException;
 import ru.aqstream.user.api.exception.PendingRequestAlreadyExistsException;
 import ru.aqstream.user.api.exception.SlugAlreadyExistsException;
+import ru.aqstream.user.api.event.OrganizationRequestApprovedEvent;
+import ru.aqstream.user.api.event.OrganizationRequestCreatedEvent;
+import ru.aqstream.user.api.event.OrganizationRequestRejectedEvent;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.user.db.entity.OrganizationRequest;
 import ru.aqstream.user.db.entity.User;
+import ru.aqstream.user.db.repository.OrganizationRepository;
 import ru.aqstream.user.db.repository.OrganizationRequestRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
@@ -46,6 +51,12 @@ class OrganizationRequestServiceTest {
     @Mock
     private OrganizationRequestMapper requestMapper;
 
+    @Mock
+    private EventPublisher eventPublisher;
+
+    @Mock
+    private OrganizationRepository organizationRepository;
+
     private OrganizationRequestService service;
 
     private static final Faker FAKER = new Faker();
@@ -61,7 +72,9 @@ class OrganizationRequestServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrganizationRequestService(requestRepository, userRepository, requestMapper);
+        service = new OrganizationRequestService(
+            requestRepository, userRepository, requestMapper, eventPublisher, organizationRepository
+        );
 
         // Генерируем свежие тестовые данные для каждого теста
         testUserId = UUID.randomUUID();
@@ -137,6 +150,17 @@ class OrganizationRequestServiceTest {
             OrganizationRequest savedRequest = captor.getValue();
             assertThat(savedRequest.getName()).isEqualTo(testName);
             assertThat(savedRequest.getSlug()).isEqualTo(testSlug.toLowerCase());
+
+            // Проверяем содержимое опубликованного события
+            ArgumentCaptor<OrganizationRequestCreatedEvent> eventCaptor =
+                ArgumentCaptor.forClass(OrganizationRequestCreatedEvent.class);
+            verify(eventPublisher).publish(eventCaptor.capture());
+            OrganizationRequestCreatedEvent event = eventCaptor.getValue();
+            assertThat(event.getRequestId()).isEqualTo(testRequestId);
+            assertThat(event.getUserId()).isEqualTo(testUserId);
+            assertThat(event.getOrganizationName()).isEqualTo(testName);
+            assertThat(event.getSlug()).isEqualTo(testSlug.toLowerCase());
+            assertThat(event.getEventType()).isEqualTo("organization.request.created");
         }
 
         @Test
@@ -269,6 +293,18 @@ class OrganizationRequestServiceTest {
             // Then
             assertThat(result.status()).isEqualTo(OrganizationRequestStatus.APPROVED);
             verify(requestRepository).save(any(OrganizationRequest.class));
+
+            // Проверяем содержимое опубликованного события
+            ArgumentCaptor<OrganizationRequestApprovedEvent> eventCaptor =
+                ArgumentCaptor.forClass(OrganizationRequestApprovedEvent.class);
+            verify(eventPublisher).publish(eventCaptor.capture());
+            OrganizationRequestApprovedEvent event = eventCaptor.getValue();
+            assertThat(event.getRequestId()).isEqualTo(testRequestId);
+            assertThat(event.getUserId()).isEqualTo(testUserId);
+            assertThat(event.getOrganizationName()).isEqualTo(testName);
+            assertThat(event.getSlug()).isEqualTo(testSlug.toLowerCase());
+            assertThat(event.getApprovedById()).isEqualTo(testAdminId);
+            assertThat(event.getEventType()).isEqualTo("organization.request.approved");
         }
 
         @Test
@@ -317,6 +353,18 @@ class OrganizationRequestServiceTest {
             assertThat(result.status()).isEqualTo(OrganizationRequestStatus.REJECTED);
             assertThat(result.reviewComment()).isEqualTo(rejectComment);
             verify(requestRepository).save(any(OrganizationRequest.class));
+
+            // Проверяем содержимое опубликованного события
+            ArgumentCaptor<OrganizationRequestRejectedEvent> eventCaptor =
+                ArgumentCaptor.forClass(OrganizationRequestRejectedEvent.class);
+            verify(eventPublisher).publish(eventCaptor.capture());
+            OrganizationRequestRejectedEvent event = eventCaptor.getValue();
+            assertThat(event.getRequestId()).isEqualTo(testRequestId);
+            assertThat(event.getUserId()).isEqualTo(testUserId);
+            assertThat(event.getOrganizationName()).isEqualTo(testName);
+            assertThat(event.getRejectionReason()).isEqualTo(rejectComment);
+            assertThat(event.getRejectedById()).isEqualTo(testAdminId);
+            assertThat(event.getEventType()).isEqualTo("organization.request.rejected");
         }
 
         @Test

@@ -32,6 +32,7 @@ import ru.aqstream.user.api.exception.OrganizationInviteNotFoundException;
 import ru.aqstream.user.api.exception.OrganizationMemberNotFoundException;
 import ru.aqstream.user.api.exception.OrganizationNotFoundException;
 import ru.aqstream.user.api.exception.OrganizationSlugAlreadyExistsException;
+import ru.aqstream.user.api.exception.SlugReservationExpiredException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
 import ru.aqstream.user.db.entity.Organization;
 import ru.aqstream.user.db.entity.OrganizationInvite;
@@ -96,6 +97,12 @@ public class OrganizationService {
             .orElseThrow(NoApprovedRequestException::new);
 
         String slug = approvedRequest.getSlug();
+
+        // Проверяем, не истёк ли срок резервации slug (7 дней после одобрения)
+        if (approvedRequest.isSlugReservationExpired()) {
+            log.info("Срок резервации slug истёк: userId={}, slug={}", userId, slug);
+            throw new SlugReservationExpiredException(slug);
+        }
 
         // Проверяем уникальность slug среди организаций
         if (organizationRepository.existsBySlug(slug)) {

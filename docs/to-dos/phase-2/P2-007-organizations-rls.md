@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `in_progress` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -76,12 +76,12 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
+- [x] Все Acceptance Criteria выполнены (кроме E2E тестов, планируемых позже)
 - [x] RLS миграции созданы с rollback (`003-improve-events-rls.xml`)
 - [x] Unit тесты для TenantContext (`TenantContextTest.java`)
 - [x] Integration тесты изоляции данных (`RlsIntegrationTest.java`)
-- [ ] Документация обновлена (если есть особенности)
-- [ ] Code review пройден
+- [x] Документация обновлена
+- [x] Code review пройден
 - [ ] CI/CD pipeline проходит
 
 ## Технические детали

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - События](../../business/roadmap.md#фаза-2-core) |
 
@@ -47,43 +47,43 @@
 
 ### CRUD
 
-- [ ] Создание типа билета (`POST /api/v1/events/{id}/ticket-types`)
-- [ ] Название (name) — произвольный текст от организатора (1-100 символов)
-- [ ] Описание (description) — опционально, произвольный текст
-- [ ] Количество (quantity) — опционально, null = unlimited
-- [ ] Период продаж (sales_start, sales_end) — опционально
-- [ ] Обновление (`PUT /api/v1/events/{id}/ticket-types/{typeId}`)
-- [ ] Удаление (`DELETE ...`) — только если нет регистраций
-- [ ] Деактивация (is_active = false) — вместо удаления если есть регистрации
-- [ ] Сортировка типов (sort_order)
+- [x] Создание типа билета (`POST /api/v1/events/{id}/ticket-types`)
+- [x] Название (name) — произвольный текст от организатора (1-100 символов)
+- [x] Описание (description) — опционально, произвольный текст
+- [x] Количество (quantity) — опционально, null = unlimited
+- [x] Период продаж (sales_start, sales_end) — опционально
+- [x] Обновление (`PUT /api/v1/events/{id}/ticket-types/{typeId}`)
+- [x] Удаление (`DELETE ...`) — только если нет регистраций
+- [x] Деактивация (is_active = false) — вместо удаления если есть регистрации
+- [x] Сортировка типов (sort_order)
 
 ### Доступность
 
-- [ ] `available` вычисляется: quantity - sold_count - reserved_count
-- [ ] При quantity = null — unlimited
-- [ ] При available = 0 — тип помечается как «Распродан»
-- [ ] Проверка sales_start/sales_end при регистрации
-- [ ] Concurrent access: предотвращение overselling (optimistic locking)
+- [x] `available` вычисляется: quantity - sold_count - reserved_count
+- [x] При quantity = null — unlimited
+- [x] При available = 0 — тип помечается как «Распродан»
+- [x] Проверка sales_start/sales_end при регистрации
+- [x] Concurrent access: предотвращение overselling (optimistic locking)
 
 ### Отображение
 
-- [ ] Список типов события (`GET /api/v1/events/{id}/ticket-types`)
-- [ ] Публичный endpoint показывает только активные типы в период продаж
-- [ ] Для организатора — все типы со статистикой
+- [x] Список типов события (`GET /api/v1/events/{id}/ticket-types`)
+- [x] Публичный endpoint показывает только активные типы в период продаж
+- [x] Для организатора — все типы со статистикой
 
 ### Phase 2 ограничения
 
-- [ ] price_cents = 0 (только бесплатные)
-- [ ] reservation_minutes = null (без бронирования)
-- [ ] prepayment_percent = null (без предоплаты)
+- [x] price_cents = 0 (только бесплатные)
+- [x] reservation_minutes = null (без бронирования)
+- [x] prepayment_percent = null (без предоплаты)
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны
-- [ ] Integration тесты (concurrent registration)
-- [ ] Миграции созданы
+- [x] Все Acceptance Criteria выполнены
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны
+- [x] Integration тесты (concurrent registration)
+- [x] Миграции созданы
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит
 
@@ -126,10 +126,13 @@ CREATE INDEX idx_ticket_types_event ON event_service.ticket_types(event_id);
 ### API Endpoints
 
 ```
-GET    /api/v1/events/{id}/ticket-types              — список типов
+GET    /api/v1/events/{id}/ticket-types              — список типов (для организатора)
 POST   /api/v1/events/{id}/ticket-types              — создание
 PUT    /api/v1/events/{id}/ticket-types/{typeId}     — обновление
 DELETE /api/v1/events/{id}/ticket-types/{typeId}     — удаление
+POST   /api/v1/events/{id}/ticket-types/{typeId}/deactivate — деактивация
+
+GET    /api/v1/public/events/{slug}/ticket-types     — публичный (активные в период продаж)
 ```
 
 ### Optimistic Locking

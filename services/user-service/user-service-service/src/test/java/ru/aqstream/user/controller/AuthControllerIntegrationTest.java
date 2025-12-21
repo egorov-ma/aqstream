@@ -27,6 +27,7 @@ import ru.aqstream.user.api.dto.VerifyEmailRequest;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.entity.VerificationToken;
 import ru.aqstream.user.db.entity.VerificationToken.TokenType;
+import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.db.repository.VerificationTokenRepository;
 
@@ -48,6 +49,9 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
 
     @Autowired
     private VerificationTokenRepository verificationTokenRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
     private static final String REGISTER_URL = "/api/v1/auth/register";
     private static final String LOGIN_URL = "/api/v1/auth/login";
@@ -530,6 +534,65 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
                     .content(objectMapper.writeValueAsString(resetRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("invalid_verification_token"));
+        }
+
+        @Test
+        @DisplayName("отзывает все refresh токены после сброса пароля")
+        void resetPassword_ValidToken_RevokesAllRefreshTokens() throws Exception {
+            // Регистрируемся и получаем refresh token
+            String email = fakeEmail();
+            String oldPassword = "Password123";
+            RegisterRequest registerRequest = new RegisterRequest(
+                email, oldPassword, FAKER.name().firstName(), null
+            );
+
+            MvcResult registerResult = mockMvc.perform(post(REGISTER_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+            // Извлекаем refresh token от регистрации
+            String responseJson = registerResult.getResponse().getContentAsString();
+            String refreshToken = objectMapper.readTree(responseJson).get("refreshToken").asText();
+
+            // Проверяем что refresh token работает
+            RefreshTokenRequest refreshRequest = new RefreshTokenRequest(refreshToken);
+            mockMvc.perform(post(REFRESH_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(refreshRequest)))
+                .andExpect(status().isOk());
+
+            // Запрашиваем сброс пароля
+            ForgotPasswordRequest forgotRequest = new ForgotPasswordRequest(email);
+            mockMvc.perform(post(FORGOT_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(forgotRequest)))
+                .andExpect(status().isNoContent());
+
+            // Получаем токен сброса из БД
+            User user = userRepository.findByEmail(email).orElseThrow();
+            VerificationToken resetToken = verificationTokenRepository
+                .findValidTokenByUserIdAndType(user.getId(), TokenType.PASSWORD_RESET, java.time.Instant.now())
+                .orElseThrow();
+
+            // Сбрасываем пароль
+            String newPassword = "NewPassword456";
+            ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest(resetToken.getToken(), newPassword);
+            mockMvc.perform(post(RESET_PASSWORD_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resetPasswordRequest)))
+                .andExpect(status().isNoContent());
+
+            // Проверяем что старый refresh token больше не работает (отозван)
+            mockMvc.perform(post(REFRESH_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(refreshRequest)))
+                .andExpect(status().isUnauthorized());
+
+            // Проверяем в БД что нет активных refresh tokens
+            long activeTokens = refreshTokenRepository.countActiveByUserId(user.getId(), java.time.Instant.now());
+            assertThat(activeTokens).isZero();
         }
     }
 }

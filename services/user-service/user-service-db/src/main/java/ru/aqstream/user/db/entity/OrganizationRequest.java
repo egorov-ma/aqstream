@@ -123,15 +123,35 @@ public class OrganizationRequest extends BaseEntity {
     }
 
     /**
+     * Проверяет, истёк ли срок резервации slug.
+     * Slug резервируется на 7 дней после одобрения.
+     *
+     * @return true если запрос одобрен и прошло более 7 дней
+     */
+    public boolean isSlugReservationExpired() {
+        if (!isApproved() || reviewedAt == null) {
+            return false;
+        }
+        return Instant.now().isAfter(reviewedAt.plus(SLUG_RESERVATION_DAYS, java.time.temporal.ChronoUnit.DAYS));
+    }
+
+    /**
+     * Проверяет, активна ли резервация slug.
+     * Резервация активна если запрос одобрен и не прошло 7 дней.
+     *
+     * @return true если резервация активна
+     */
+    public boolean isSlugReservationActive() {
+        return isApproved() && !isSlugReservationExpired();
+    }
+
+    /**
      * Одобряет запрос.
+     * Проверка статуса должна быть выполнена в сервисе перед вызовом этого метода.
      *
      * @param admin администратор, одобривший запрос
-     * @throws IllegalStateException если запрос не в статусе PENDING
      */
     public void approve(User admin) {
-        if (!isPending()) {
-            throw new IllegalStateException("Запрос уже рассмотрен");
-        }
         this.status = OrganizationRequestStatus.APPROVED;
         this.reviewedBy = admin;
         this.reviewedAt = Instant.now();
@@ -139,15 +159,12 @@ public class OrganizationRequest extends BaseEntity {
 
     /**
      * Отклоняет запрос.
+     * Проверка статуса должна быть выполнена в сервисе перед вызовом этого метода.
      *
      * @param admin   администратор, отклонивший запрос
      * @param comment причина отклонения
-     * @throws IllegalStateException если запрос не в статусе PENDING
      */
     public void reject(User admin, String comment) {
-        if (!isPending()) {
-            throw new IllegalStateException("Запрос уже рассмотрен");
-        }
         this.status = OrganizationRequestStatus.REJECTED;
         this.reviewedBy = admin;
         this.reviewComment = comment;

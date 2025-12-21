@@ -1,6 +1,6 @@
 package ru.aqstream.user.api.exception;
 
-import ru.aqstream.common.api.exception.AqStreamException;
+import ru.aqstream.common.api.exception.UnauthorizedException;
 
 /**
  * Исключение: невалидные данные Telegram аутентификации.
@@ -12,7 +12,7 @@ import ru.aqstream.common.api.exception.AqStreamException;
  *   <li>auth_date слишком старый (более 1 часа)</li>
  * </ul>
  */
-public class InvalidTelegramAuthException extends AqStreamException {
+public class InvalidTelegramAuthException extends UnauthorizedException {
 
     private static final String CODE = "invalid_telegram_auth";
     private static final String MESSAGE = "Невалидные данные Telegram аутентификации";

@@ -2,12 +2,15 @@ package ru.aqstream.user.api.exception;
 
 import java.util.Map;
 import java.util.UUID;
-import ru.aqstream.common.api.exception.EntityNotFoundException;
+import ru.aqstream.common.api.exception.ForbiddenException;
 
 /**
- * Исключение при ненайденном члене организации.
+ * Исключение при попытке доступа к организации пользователем, не являющимся её членом.
+ *
+ * <p>Возвращает HTTP 403 Forbidden, так как организация существует,
+ * но у пользователя нет доступа к ней.</p>
  */
-public class OrganizationMemberNotFoundException extends EntityNotFoundException {
+public class OrganizationMemberNotFoundException extends ForbiddenException {
 
     /**
      * Создаёт исключение для ненайденного членства.
@@ -17,7 +20,7 @@ public class OrganizationMemberNotFoundException extends EntityNotFoundException
      */
     public OrganizationMemberNotFoundException(UUID organizationId, UUID userId) {
         super(
-            "organization_member_not_found",
+            "not_organization_member",
             "Пользователь не является членом организации",
             Map.of(
                 "organizationId", organizationId.toString(),

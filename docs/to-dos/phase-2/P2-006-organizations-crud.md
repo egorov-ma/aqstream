@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `in_progress` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -52,7 +52,7 @@
 - [x] Организация создаётся с настройками по умолчанию
 - [x] OWNER может редактировать организацию (`PUT /api/v1/organizations/{id}`)
 - [x] OWNER может удалить организацию (`DELETE /api/v1/organizations/{id}`) — soft delete
-- [ ] При удалении все события архивируются (требует event-service)
+- [ ] При удалении все события архивируются → **P2-009** (event-service слушает `organization.deleted`)
 
 ### Управление членами
 
@@ -80,23 +80,23 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
+- [x] Все Acceptance Criteria выполнены (backend часть, frontend — P2-016)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны
-- [x] Integration тесты написаны
-- [x] Миграции созданы (RLS политики — отдельная задача P2-007)
-- [ ] Events опубликованы в RabbitMQ (отдельная задача)
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Integration тесты написаны (OrganizationControllerIntegrationTest добавлен)
+- [x] Миграции созданы (RLS политики — P2-007)
+- [ ] Events опубликованы в RabbitMQ → **common-messaging** (отдельная задача после настройки Outbox)
+- [x] Code review пройден
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 
 ### Затрагиваемые компоненты
 
 - [x] Backend: `user-service-api`, `user-service-service`, `user-service-db`
-- [ ] Frontend: создание организации, управление членами, переключатель
+- [ ] Frontend: создание организации, управление членами, переключатель → **P2-016**
 - [x] Database: таблицы `organizations`, `organization_members`, `organization_invites`
-- [ ] Infrastructure: —
+- [x] Infrastructure: —
 
 ### Модель данных
 

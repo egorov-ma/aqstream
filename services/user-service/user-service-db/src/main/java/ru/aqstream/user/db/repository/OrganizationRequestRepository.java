@@ -1,5 +1,6 @@
 package ru.aqstream.user.db.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -103,4 +104,22 @@ public interface OrganizationRequestRepository extends JpaRepository<Organizatio
      */
     @Query("SELECT r FROM OrganizationRequest r WHERE r.user.id = :userId AND r.status = 'APPROVED'")
     Optional<OrganizationRequest> findApprovedByUserId(@Param("userId") UUID userId);
+
+    /**
+     * Проверяет, занят ли slug активной резервацией.
+     * Активная резервация — одобренный запрос, одобренный не более чем reservationCutoff времени назад.
+     *
+     * @param slug              URL-slug (lowercase)
+     * @param reservationCutoff минимальное время одобрения (7 дней назад)
+     * @return true если slug занят активной резервацией
+     */
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END "
+        + "FROM OrganizationRequest r "
+        + "WHERE LOWER(r.slug) = LOWER(:slug) "
+        + "AND r.status = 'APPROVED' "
+        + "AND r.reviewedAt >= :reservationCutoff")
+    boolean existsActiveReservationBySlug(
+        @Param("slug") String slug,
+        @Param("reservationCutoff") Instant reservationCutoff
+    );
 }

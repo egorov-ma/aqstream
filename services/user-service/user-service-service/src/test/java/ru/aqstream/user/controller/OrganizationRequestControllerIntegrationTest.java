@@ -5,8 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static ru.aqstream.common.test.SecurityTestUtils.adminPrincipal;
-import static ru.aqstream.common.test.SecurityTestUtils.userPrincipal;
+import static ru.aqstream.common.test.SecurityTestUtils.jwt;
+import static ru.aqstream.common.test.SecurityTestUtils.jwtAdmin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
 import ru.aqstream.user.api.dto.CreateOrganizationRequestRequest;
@@ -29,7 +30,7 @@ import ru.aqstream.user.db.repository.OrganizationRequestRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
 @IntegrationTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @DisplayName("OrganizationRequestController Integration Tests")
 class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer {
 
@@ -41,6 +42,9 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private UserRepository userRepository;
@@ -96,7 +100,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             );
 
             mockMvc.perform(post(BASE_URL)
-                    .with(userPrincipal(testUser.getId()))
+                    .with(jwt(jwtTokenProvider, testUser.getId()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -124,7 +128,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             );
 
             mockMvc.perform(post(BASE_URL)
-                    .with(userPrincipal(testUser.getId()))
+                    .with(jwt(jwtTokenProvider, testUser.getId()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
@@ -152,7 +156,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             );
 
             mockMvc.perform(post(BASE_URL)
-                    .with(userPrincipal(testUser.getId()))
+                    .with(jwt(jwtTokenProvider, testUser.getId()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
@@ -167,7 +171,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             );
 
             mockMvc.perform(post(BASE_URL)
-                    .with(userPrincipal(testUser.getId()))
+                    .with(jwt(jwtTokenProvider, testUser.getId()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -188,7 +192,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             requestRepository.save(request1);
 
             mockMvc.perform(get(BASE_URL + "/my")
-                    .with(userPrincipal(testUser.getId())))
+                    .with(jwt(jwtTokenProvider, testUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
         }
@@ -207,7 +211,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             request = requestRepository.save(request);
 
             mockMvc.perform(get(BASE_URL + "/" + request.getId())
-                    .with(userPrincipal(testUser.getId())))
+                    .with(jwt(jwtTokenProvider, testUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("My Org"));
         }
@@ -216,7 +220,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
         @DisplayName("возвращает 404 при несуществующем запросе")
         void getById_NotFound_Returns404() throws Exception {
             mockMvc.perform(get(BASE_URL + "/" + UUID.randomUUID())
-                    .with(userPrincipal(testUser.getId())))
+                    .with(jwt(jwtTokenProvider, testUser.getId())))
                 .andExpect(status().isNotFound());
         }
 
@@ -235,7 +239,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             otherUser = userRepository.save(otherUser);
 
             mockMvc.perform(get(BASE_URL + "/" + request.getId())
-                    .with(userPrincipal(otherUser.getId())))
+                    .with(jwt(jwtTokenProvider, otherUser.getId())))
                 .andExpect(status().isForbidden());
         }
 
@@ -248,7 +252,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             request = requestRepository.save(request);
 
             mockMvc.perform(get(BASE_URL + "/" + request.getId())
-                    .with(adminPrincipal(adminUser.getId())))
+                    .with(jwtAdmin(jwtTokenProvider, adminUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("User Org"));
         }
@@ -267,7 +271,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             request = requestRepository.save(request);
 
             mockMvc.perform(post(BASE_URL + "/" + request.getId() + "/approve")
-                    .with(adminPrincipal(adminUser.getId())))
+                    .with(jwtAdmin(jwtTokenProvider, adminUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
 
@@ -285,7 +289,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             request = requestRepository.save(request);
 
             mockMvc.perform(post(BASE_URL + "/" + request.getId() + "/approve")
-                    .with(userPrincipal(testUser.getId())))
+                    .with(jwt(jwtTokenProvider, testUser.getId())))
                 .andExpect(status().isForbidden());
         }
     }
@@ -307,7 +311,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             );
 
             mockMvc.perform(post(BASE_URL + "/" + request.getId() + "/reject")
-                    .with(adminPrincipal(adminUser.getId()))
+                    .with(jwtAdmin(jwtTokenProvider, adminUser.getId()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(rejectRequest)))
                 .andExpect(status().isOk())
@@ -333,7 +337,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             );
 
             mockMvc.perform(post(BASE_URL + "/" + request.getId() + "/reject")
-                    .with(userPrincipal(testUser.getId()))
+                    .with(jwt(jwtTokenProvider, testUser.getId()))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(rejectRequest)))
                 .andExpect(status().isForbidden());
@@ -354,7 +358,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
             requestRepository.save(request);
 
             mockMvc.perform(get(BASE_URL)
-                    .with(adminPrincipal(adminUser.getId())))
+                    .with(jwtAdmin(jwtTokenProvider, adminUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -364,7 +368,7 @@ class OrganizationRequestControllerIntegrationTest extends PostgresTestContainer
         @DisplayName("обычный пользователь получает 403")
         void getAll_User_Returns403() throws Exception {
             mockMvc.perform(get(BASE_URL)
-                    .with(userPrincipal(testUser.getId())))
+                    .with(jwt(jwtTokenProvider, testUser.getId())))
                 .andExpect(status().isForbidden());
         }
     }

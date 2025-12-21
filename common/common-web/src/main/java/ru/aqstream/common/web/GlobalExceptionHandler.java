@@ -22,6 +22,9 @@ import ru.aqstream.common.api.ErrorResponse;
 import ru.aqstream.common.api.exception.AqStreamException;
 import ru.aqstream.common.api.exception.ConflictException;
 import ru.aqstream.common.api.exception.EntityNotFoundException;
+import ru.aqstream.common.api.exception.ForbiddenException;
+import ru.aqstream.common.api.exception.TooManyRequestsException;
+import ru.aqstream.common.api.exception.UnauthorizedException;
 import ru.aqstream.common.api.exception.ValidationException;
 
 /**
@@ -56,6 +59,30 @@ public class GlobalExceptionHandler {
         log.debug("Конфликт: code={}, message={}", ex.getCode(), ex.getMessage());
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
+        log.debug("Ошибка аутентификации: code={}, message={}", ex.getCode(), ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
+        log.debug("Доступ запрещён: code={}, message={}", ex.getCode(), ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException ex) {
+        log.debug("Слишком много запросов: code={}, message={}", ex.getCode(), ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
     }
 

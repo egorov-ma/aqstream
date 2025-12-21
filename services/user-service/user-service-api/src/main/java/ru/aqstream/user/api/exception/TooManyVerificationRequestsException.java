@@ -1,7 +1,7 @@
 package ru.aqstream.user.api.exception;
 
 import java.util.Map;
-import ru.aqstream.common.api.exception.AqStreamException;
+import ru.aqstream.common.api.exception.TooManyRequestsException;
 
 /**
  * Исключение: слишком много запросов на верификацию.
@@ -10,7 +10,7 @@ import ru.aqstream.common.api.exception.AqStreamException;
  * <p>Используется для rate limiting запросов на отправку писем
  * подтверждения email и сброса пароля.</p>
  */
-public class TooManyVerificationRequestsException extends AqStreamException {
+public class TooManyVerificationRequestsException extends TooManyRequestsException {
 
     private static final String CODE = "too_many_requests";
     private static final String MESSAGE = "Слишком много запросов. Попробуйте через %d минут";

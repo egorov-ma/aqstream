@@ -14,7 +14,12 @@ public class PasswordService {
 
     private static final int BCRYPT_STRENGTH = 12;
 
-    // Пароль должен содержать минимум одну букву и одну цифру
+    /**
+     * Регулярное выражение для валидации пароля.
+     * Требует наличие минимум одной буквы (латинской или кириллической) и одной цифры.
+     * Lookahead: (?=.*[A-Za-zА-Яа-яЁё]) — хотя бы одна буква
+     * Lookahead: (?=.*\d) — хотя бы одна цифра
+     */
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-zА-Яа-яЁё])(?=.*\\d).+$");
     private static final int MIN_PASSWORD_LENGTH = 8;
     private static final int MAX_PASSWORD_LENGTH = 100;

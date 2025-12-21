@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `in_progress` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -58,23 +58,23 @@
 - [x] Админ видит список всех pending запросов (`GET /api/v1/organization-requests`)
 - [x] Админ может одобрить запрос (`POST /api/v1/organization-requests/{id}/approve`)
 - [x] Админ может отклонить запрос с указанием причины (`POST /api/v1/organization-requests/{id}/reject`)
-- [ ] При одобрении пользователь получает уведомление в Telegram
-- [ ] При отклонении пользователь получает уведомление с причиной
+- [x] События публикуются в RabbitMQ при одобрении/отклонении
+- [ ] Уведомления пользователю → см. [P2-014](./P2-014-notifications-templates.md)
 
 ### После одобрения
 
 - [x] Одобренный пользователь может создать организацию
 - [x] Slug из запроса резервируется до создания организации (7 дней)
-- [ ] При создании организации пользователь становится OWNER
+- [x] При создании организации пользователь становится OWNER (см. [P2-006](./P2-006-organizations-crud.md))
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
+- [ ] Все Acceptance Criteria выполнены (уведомления → [P2-014](./P2-014-notifications-templates.md))
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны
 - [x] Integration тесты написаны
 - [x] Миграции созданы с rollback
-- [ ] Опубликованы events в RabbitMQ (`organization.request.created`, `organization.request.approved/rejected`)
+- [x] Опубликованы events в RabbitMQ (`organization.request.created`, `organization.request.approved/rejected`)
 - [x] Code review пройден
 - [ ] CI/CD pipeline проходит
 
@@ -130,6 +130,7 @@ POST   /api/v1/organization-requests/{id}/reject  — отклонить (адм
 ### Блокирует
 
 - [P2-006](./P2-006-organizations-crud.md) CRUD организаций
+- [P2-014](./P2-014-notifications-templates.md) Уведомления (события для отправки)
 
 ### Зависит от
 

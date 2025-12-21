@@ -22,6 +22,7 @@ import ru.aqstream.user.api.exception.CannotRemoveGroupCreatorException;
 import ru.aqstream.user.api.exception.GroupMemberNotFoundException;
 import ru.aqstream.user.api.exception.GroupNotFoundException;
 import ru.aqstream.user.api.exception.InsufficientGroupPermissionsException;
+import ru.aqstream.user.api.exception.InviteCodeGenerationException;
 import ru.aqstream.user.api.exception.OrganizationMemberNotFoundException;
 import ru.aqstream.user.api.exception.OrganizationNotFoundException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
@@ -397,7 +398,7 @@ public class GroupService {
             }
         }
         // Крайне маловероятная ситуация
-        throw new RuntimeException("Не удалось сгенерировать уникальный инвайт-код");
+        throw new InviteCodeGenerationException();
     }
 
     private String generateUniqueInviteCode() {
@@ -407,7 +408,7 @@ public class GroupService {
                 return code;
             }
         }
-        throw new RuntimeException("Не удалось сгенерировать уникальный инвайт-код");
+        throw new InviteCodeGenerationException();
     }
 
     private GroupDto toDtoWithMemberCount(Group group) {

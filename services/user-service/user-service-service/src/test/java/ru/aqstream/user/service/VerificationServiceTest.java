@@ -27,6 +27,7 @@ import ru.aqstream.user.api.exception.TooManyVerificationRequestsException;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.entity.VerificationToken;
 import ru.aqstream.user.db.entity.VerificationToken.TokenType;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.db.repository.VerificationTokenRepository;
@@ -47,6 +48,9 @@ class VerificationServiceTest {
     @Mock
     private PasswordService passwordService;
 
+    @Mock
+    private EventPublisher eventPublisher;
+
     private VerificationService verificationService;
 
     private static final Faker FAKER = new Faker();
@@ -66,7 +70,8 @@ class VerificationServiceTest {
             userRepository,
             verificationTokenRepository,
             refreshTokenRepository,
-            passwordService
+            passwordService,
+            eventPublisher
         );
 
         ReflectionTestUtils.setField(verificationService, "frontendUrl", "http://localhost:3000");

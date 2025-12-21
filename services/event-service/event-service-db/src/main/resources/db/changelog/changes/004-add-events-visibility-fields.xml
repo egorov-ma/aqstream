@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Добавление полей для видимости участников и приватных событий -->
+
+    <changeSet id="004-1" author="aqstream">
+        <comment>Добавление поля participants_visibility для настройки видимости списка участников</comment>
+
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="participants_visibility" type="varchar(20)" defaultValue="CLOSED">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="events" schemaName="event_service" columnName="participants_visibility"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="004-2" author="aqstream">
+        <comment>Добавление поля group_id для приватных событий</comment>
+
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="group_id" type="uuid">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Индекс для фильтрации по группе -->
+        <createIndex indexName="idx_events_group_id" tableName="events" schemaName="event_service">
+            <column name="group_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_events_group_id" tableName="events" schemaName="event_service"/>
+            <dropColumn tableName="events" schemaName="event_service" columnName="group_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

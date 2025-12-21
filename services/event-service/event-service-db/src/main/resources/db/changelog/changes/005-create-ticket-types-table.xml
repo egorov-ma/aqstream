@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы ticket_types -->
+    <!-- Типы билетов принадлежат Event, RLS применяется через связь с events -->
+
+    <changeSet id="005-1" author="aqstream">
+        <comment>Создание таблицы ticket_types</comment>
+
+        <createTable tableName="ticket_types" schemaName="event_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_ticket_types"/>
+            </column>
+
+            <!-- Foreign key to events -->
+            <column name="event_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Business fields -->
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="price_cents" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="varchar(3)" defaultValue="RUB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="integer">
+                <!-- NULL = unlimited -->
+            </column>
+            <column name="sold_count" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reserved_count" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reservation_minutes" type="integer">
+                <!-- NULL = без резервации (Phase 3) -->
+            </column>
+            <column name="prepayment_percent" type="integer">
+                <!-- NULL = полная оплата (Phase 3) -->
+            </column>
+            <column name="sales_start" type="timestamptz"/>
+            <column name="sales_end" type="timestamptz"/>
+            <column name="sort_order" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="integer" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Audit fields -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="ticket_types" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="005-2" author="aqstream">
+        <comment>Foreign key и индексы для ticket_types</comment>
+
+        <!-- Foreign key на events -->
+        <addForeignKeyConstraint
+            constraintName="fk_ticket_types_event"
+            baseTableSchemaName="event_service"
+            baseTableName="ticket_types"
+            baseColumnNames="event_id"
+            referencedTableSchemaName="event_service"
+            referencedTableName="events"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <!-- Индекс на event_id для быстрого поиска -->
+        <createIndex indexName="idx_ticket_types_event_id" tableName="ticket_types" schemaName="event_service">
+            <column name="event_id"/>
+        </createIndex>
+
+        <!-- Индекс для сортировки по sort_order -->
+        <createIndex indexName="idx_ticket_types_event_sort" tableName="ticket_types" schemaName="event_service">
+            <column name="event_id"/>
+            <column name="sort_order"/>
+        </createIndex>
+
+        <!-- Индекс для поиска активных типов -->
+        <createIndex indexName="idx_ticket_types_active" tableName="ticket_types" schemaName="event_service">
+            <column name="event_id"/>
+            <column name="is_active"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_ticket_types_active" tableName="ticket_types" schemaName="event_service"/>
+            <dropIndex indexName="idx_ticket_types_event_sort" tableName="ticket_types" schemaName="event_service"/>
+            <dropIndex indexName="idx_ticket_types_event_id" tableName="ticket_types" schemaName="event_service"/>
+            <dropForeignKeyConstraint baseTableSchemaName="event_service" baseTableName="ticket_types" constraintName="fk_ticket_types_event"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="005-3" author="aqstream">
+        <comment>Constraint на проверку price_cents >= 0</comment>
+
+        <sql>
+            ALTER TABLE event_service.ticket_types
+                ADD CONSTRAINT chk_ticket_types_price_cents_non_negative
+                CHECK (price_cents >= 0);
+
+            ALTER TABLE event_service.ticket_types
+                ADD CONSTRAINT chk_ticket_types_quantity_positive
+                CHECK (quantity IS NULL OR quantity > 0);
+
+            ALTER TABLE event_service.ticket_types
+                ADD CONSTRAINT chk_ticket_types_sold_count_non_negative
+                CHECK (sold_count >= 0);
+
+            ALTER TABLE event_service.ticket_types
+                ADD CONSTRAINT chk_ticket_types_reserved_count_non_negative
+                CHECK (reserved_count >= 0);
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE event_service.ticket_types DROP CONSTRAINT IF EXISTS chk_ticket_types_reserved_count_non_negative;
+                ALTER TABLE event_service.ticket_types DROP CONSTRAINT IF EXISTS chk_ticket_types_sold_count_non_negative;
+                ALTER TABLE event_service.ticket_types DROP CONSTRAINT IF EXISTS chk_ticket_types_quantity_positive;
+                ALTER TABLE event_service.ticket_types DROP CONSTRAINT IF EXISTS chk_ticket_types_price_cents_non_negative;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

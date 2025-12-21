@@ -3,13 +3,13 @@ package ru.aqstream.user.api.exception;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import ru.aqstream.common.api.exception.AqStreamException;
+import ru.aqstream.common.api.exception.ForbiddenException;
 
 /**
  * Исключение: аккаунт заблокирован после нескольких неудачных попыток входа.
  * HTTP статус: 403 Forbidden
  */
-public class AccountLockedException extends AqStreamException {
+public class AccountLockedException extends ForbiddenException {
 
     private static final String CODE = "account_locked";
 

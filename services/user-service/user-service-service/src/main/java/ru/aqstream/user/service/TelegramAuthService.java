@@ -22,6 +22,7 @@ import ru.aqstream.user.api.dto.TelegramAuthRequest;
 import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.exception.InvalidTelegramAuthException;
 import ru.aqstream.user.api.exception.TelegramIdAlreadyExistsException;
+import ru.aqstream.user.api.exception.UserNotFoundException;
 import ru.aqstream.user.api.util.TelegramUtils;
 import ru.aqstream.user.db.entity.RefreshToken;
 import ru.aqstream.user.db.entity.User;
@@ -48,6 +49,12 @@ public class TelegramAuthService {
      * Максимальное количество активных сессий на пользователя.
      */
     public static final int MAX_ACTIVE_SESSIONS = 10;
+
+    /**
+     * Системный tenant для пользователей без привязки к организации.
+     * Используется для Telegram-only пользователей и новых регистраций.
+     */
+    private static final UUID SYSTEM_TENANT = new UUID(0L, 0L);
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -145,7 +152,7 @@ public class TelegramAuthService {
 
         // Находим пользователя
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalStateException("Пользователь не найден: " + userId));
+            .orElseThrow(() -> new UserNotFoundException(userId));
 
         // Привязываем Telegram
         user.setTelegramId(telegramId);
@@ -280,7 +287,7 @@ public class TelegramAuthService {
         UserPrincipal principal = new UserPrincipal(
             user.getId(),
             user.getEmail(), // может быть null для Telegram-only пользователей
-            new UUID(0L, 0L), // Системный tenant
+            SYSTEM_TENANT,
             Set.of("USER")
         );
 

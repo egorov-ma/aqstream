@@ -58,6 +58,8 @@
 - [ ] `event.reminder` — напоминание о событии (за 24ч)
 - [ ] `event.changed` — изменение даты/места
 - [ ] `event.cancelled` — отмена события
+- [ ] `organization.request.approved` — уведомление об одобрении запроса на создание организации
+- [ ] `organization.request.rejected` — уведомление об отклонении с причиной
 
 ### Email шаблоны (аутентификация)
 
@@ -72,6 +74,8 @@
 - [ ] `RegistrationCancelledEvent` → `registration.cancelled`
 - [ ] `EventChangedEvent` → `event.changed` (всем участникам)
 - [ ] `EventCancelledEvent` → `event.cancelled` (всем участникам)
+- [ ] `OrganizationRequestApprovedEvent` → `organization.request.approved` (уведомление пользователю)
+- [ ] `OrganizationRequestRejectedEvent` → `organization.request.rejected` (уведомление с причиной)
 
 ### Event Listeners (Email)
 
@@ -255,6 +259,7 @@ public class EventReminderScheduler {
 ### Зависит от
 
 - [P2-004](./P2-004-auth-email-verification.md) Email verification (события для email)
+- [P2-005](./P2-005-organizations-requests.md) Organization Requests (события одобрения/отклонения)
 - [P2-011](./P2-011-registrations-crud.md) Регистрации (события)
 - [P2-012](./P2-012-registrations-qr-code.md) QR-код
 - [P2-013](./P2-013-notifications-telegram-bot.md) Telegram Bot

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - События](../../business/roadmap.md#фаза-2-core) |
 
@@ -45,13 +45,13 @@
 
 ### Создание события
 
-- [ ] OWNER/MODERATOR могут создать событие (`POST /api/v1/events`)
-- [ ] Обязательные поля: title, starts_at
-- [ ] Опциональные поля: description (Markdown), ends_at, location_type, location_address/url, cover_image_id
-- [ ] Событие создаётся в статусе DRAFT
-- [ ] Генерируется уникальный slug в рамках организации
-- [ ] Настройка видимости участников (CLOSED по умолчанию)
-- [ ] Привязка к группе (опционально, для приватных событий)
+- [x] OWNER/MODERATOR могут создать событие (`POST /api/v1/events`)
+- [x] Обязательные поля: title, starts_at
+- [x] Опциональные поля: description (Markdown), ends_at, location_type, location_address/url, cover_image_id
+- [x] Событие создаётся в статусе DRAFT
+- [x] Генерируется уникальный slug в рамках организации
+- [x] Настройка видимости участников (CLOSED по умолчанию)
+- [x] Привязка к группе (опционально, для приватных событий)
 
 ### Жизненный цикл
 
@@ -61,40 +61,40 @@ Draft → Published → Completed
 Cancelled  Cancelled
 ```
 
-- [ ] `POST /api/v1/events/{id}/publish` — публикация (Draft → Published)
-- [ ] `POST /api/v1/events/{id}/unpublish` — снятие с публикации (Published → Draft)
-- [ ] `POST /api/v1/events/{id}/cancel` — отмена (любой статус → Cancelled)
-- [ ] `POST /api/v1/events/{id}/complete` — завершение (Published → Completed)
-- [ ] Нельзя публиковать событие с датой в прошлом
+- [x] `POST /api/v1/events/{id}/publish` — публикация (Draft → Published)
+- [x] `POST /api/v1/events/{id}/unpublish` — снятие с публикации (Published → Draft)
+- [x] `POST /api/v1/events/{id}/cancel` — отмена (любой статус → Cancelled)
+- [x] `POST /api/v1/events/{id}/complete` — завершение (Published → Completed)
+- [x] Нельзя публиковать событие с датой в прошлом
 - [ ] При отмене — все регистрации отменяются, участники уведомляются
 
 ### Редактирование
 
-- [ ] В статусе DRAFT можно редактировать всё
+- [x] В статусе DRAFT можно редактировать всё
 - [ ] В статусе PUBLISHED нельзя изменять типы билетов с регистрациями
 - [ ] При изменении даты/места — уведомление участникам
 
 ### Видимость
 
-- [ ] Публичные события — видны всем (если организация публичная)
+- [x] Публичные события — видны всем (если организация публичная)
 - [ ] Приватные события (с group_id) — только участникам группы + OWNER/MODERATOR
-- [ ] Участники видят список зарегистрированных только при OPEN visibility
+- [x] Участники видят список зарегистрированных только при OPEN visibility
 
 ### Запросы
 
-- [ ] Список событий организации (`GET /api/v1/events`)
-- [ ] Фильтры: status, date range, group_id
-- [ ] Публичная страница события (`GET /api/v1/events/{slug}` или `/{id}`)
-- [ ] Pagination через PageResponse
+- [x] Список событий организации (`GET /api/v1/events`)
+- [x] Фильтры: status, date range, group_id
+- [x] Публичная страница события (`GET /api/v1/events/{slug}` или `/{id}`)
+- [x] Pagination через PageResponse
 
 ## Definition of Done (DoD)
 
 - [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны (80%+ coverage)
-- [ ] Integration тесты написаны
-- [ ] Миграции созданы с RLS
-- [ ] Events опубликованы в RabbitMQ
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны (80%+ coverage)
+- [x] Integration тесты написаны
+- [x] Миграции созданы с RLS
+- [x] Events опубликованы в RabbitMQ
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит
 
