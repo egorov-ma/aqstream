@@ -6,12 +6,10 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yml'
-      - '.markdownlint.json'
   pull_request:
     branches: [main]
     paths:
       - 'docs/**'
-      - '.markdownlint.json'
   workflow_dispatch:
 
 jobs:
@@ -27,10 +25,8 @@ jobs:
 
       - name: Validate Markdown
         run: |
-          npx markdownlint-cli2 "docs/**/*.md" \
-            --ignore "docs/_internal/**" \
-            --ignore "docs/to-dos/**" \
-            --ignore "**/node_modules/**"
+          cd docs && npx markdownlint-cli2 "**/*.md" \
+            --config "_internal/.markdownlint-cli2.jsonc"
         continue-on-error: true
 
       - name: Validate OpenAPI (if specs exist)
