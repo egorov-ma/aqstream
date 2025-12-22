@@ -109,6 +109,14 @@ public class Registration extends TenantAwareEntity {
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
 
+    // === Check-in ===
+
+    /**
+     * Время регистрации на входе (check-in).
+     */
+    @Column(name = "checked_in_at")
+    private Instant checkedInAt;
+
     // === Фабричные методы ===
 
     /**
@@ -209,5 +217,41 @@ public class Registration extends TenantAwareEntity {
      */
     public void setCustomFields(Map<String, Object> customFields) {
         this.customFields = customFields != null ? customFields : Map.of();
+    }
+
+    // === Check-in методы ===
+
+    /**
+     * Проверяет, прошёл ли участник check-in.
+     *
+     * @return true если участник уже зарегистрировался на входе
+     */
+    public boolean isCheckedIn() {
+        return checkedInAt != null;
+    }
+
+    /**
+     * Проверяет, можно ли выполнить check-in.
+     * Check-in возможен только для подтверждённых регистраций, которые ещё не прошли check-in.
+     *
+     * @return true если можно выполнить check-in
+     */
+    public boolean isCheckInAllowed() {
+        return isConfirmed() && !isCheckedIn();
+    }
+
+    /**
+     * Выполняет check-in участника.
+     *
+     * @throws IllegalStateException если check-in невозможен
+     */
+    public void checkIn() {
+        if (!isConfirmed()) {
+            throw new IllegalStateException("Check-in возможен только для подтверждённых регистраций");
+        }
+        if (isCheckedIn()) {
+            throw new IllegalStateException("Участник уже прошёл check-in");
+        }
+        this.checkedInAt = Instant.now();
     }
 }

@@ -14,5 +14,6 @@
     <include file="db/changelog/changes/004-add-events-visibility-fields.xml"/>
     <include file="db/changelog/changes/005-create-ticket-types-table.xml"/>
     <include file="db/changelog/changes/006-create-registrations-table.xml"/>
+    <include file="db/changelog/changes/007-add-registration-check-in.xml"/>
 
 </databaseChangeLog>

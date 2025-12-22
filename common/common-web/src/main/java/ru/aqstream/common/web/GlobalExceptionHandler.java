@@ -23,6 +23,7 @@ import ru.aqstream.common.api.exception.AqStreamException;
 import ru.aqstream.common.api.exception.ConflictException;
 import ru.aqstream.common.api.exception.EntityNotFoundException;
 import ru.aqstream.common.api.exception.ForbiddenException;
+import ru.aqstream.common.api.exception.InternalServerException;
 import ru.aqstream.common.api.exception.TooManyRequestsException;
 import ru.aqstream.common.api.exception.UnauthorizedException;
 import ru.aqstream.common.api.exception.ValidationException;
@@ -83,6 +84,14 @@ public class GlobalExceptionHandler {
         log.debug("Слишком много запросов: code={}, message={}", ex.getCode(), ex.getMessage());
         return ResponseEntity
             .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
+    }
+
+    @ExceptionHandler(InternalServerException.class)
+    public ResponseEntity<ErrorResponse> handleInternalServer(InternalServerException ex) {
+        log.error("Внутренняя ошибка сервера: code={}, message={}", ex.getCode(), ex.getMessage(), ex);
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage(), ex.getDetails()));
     }
 

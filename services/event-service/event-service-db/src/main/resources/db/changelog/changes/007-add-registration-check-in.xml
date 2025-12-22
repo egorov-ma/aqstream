@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Добавление поля checked_in_at для check-in функционала -->
+    <!-- P2-012: QR-код для билета -->
+
+    <changeSet id="007-1" author="aqstream">
+        <comment>Добавление поля checked_in_at для отметки времени check-in</comment>
+
+        <addColumn tableName="registrations" schemaName="event_service">
+            <column name="checked_in_at" type="timestamptz">
+                <!-- NULL означает, что участник ещё не прошёл check-in -->
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="registrations" schemaName="event_service" columnName="checked_in_at"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="007-2" author="aqstream">
+        <comment>Индекс для поиска участников, прошедших check-in</comment>
+
+        <!-- Индекс для статистики check-in по событию -->
+        <createIndex indexName="idx_registrations_event_checked_in" tableName="registrations" schemaName="event_service">
+            <column name="event_id"/>
+            <column name="checked_in_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_registrations_event_checked_in" tableName="registrations" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

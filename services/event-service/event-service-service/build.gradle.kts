@@ -7,6 +7,7 @@ val mapstructVersion: String by project
 val lombokVersion: String by project
 val lombokMapstructBindingVersion: String by project
 val openApiVersion: String by project
+val zxingVersion: String by project
 
 dependencyManagement {
     imports {
@@ -45,6 +46,10 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:$lombokMapstructBindingVersion")
+
+    // QR Code Generation
+    implementation("com.google.zxing:core:$zxingVersion")
+    implementation("com.google.zxing:javase:$zxingVersion")
 
     testImplementation(project(":common:common-test"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
