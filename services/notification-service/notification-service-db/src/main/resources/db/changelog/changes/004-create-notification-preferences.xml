@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы notification_preferences -->
+
+    <changeSet id="004-1" author="aqstream">
+        <comment>Создание таблицы notification_preferences для настроек уведомлений пользователя</comment>
+
+        <createTable tableName="notification_preferences" schemaName="notification_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_notification_preferences"/>
+            </column>
+
+            <!-- User reference -->
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Settings as JSONB -->
+            <column name="settings" type="jsonb" defaultValue='{"event_reminder": true, "registration_updates": true, "event_changes": true, "organization_updates": true}'>
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Audit fields -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="notification_preferences" schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="004-2" author="aqstream">
+        <comment>Индексы для таблицы notification_preferences</comment>
+
+        <!-- Уникальный индекс на user_id -->
+        <createIndex indexName="idx_notification_preferences_user_id"
+                     tableName="notification_preferences"
+                     schemaName="notification_service"
+                     unique="true">
+            <column name="user_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_notification_preferences_user_id"
+                       tableName="notification_preferences"
+                       schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

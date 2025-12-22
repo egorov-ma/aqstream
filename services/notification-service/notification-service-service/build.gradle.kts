@@ -17,11 +17,19 @@ dependencies {
     implementation(project(":services:notification-service:notification-service-api"))
     implementation(project(":services:notification-service:notification-service-db"))
     implementation(project(":services:user-service:user-service-client"))
+    implementation(project(":services:user-service:user-service-api"))
+    implementation(project(":services:event-service:event-service-api"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+
+    // OpenAPI / Swagger
+    val openApiVersion: String by project
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
 
     // OpenFeign for inter-service communication
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
@@ -29,6 +37,10 @@ dependencies {
     // Telegram Bot API
     val telegramBotApiVersion: String by project
     implementation("com.github.pengrad:java-telegram-bot-api:$telegramBotApiVersion")
+
+    // Mustache Template Engine
+    val jmustacheVersion: String by project
+    implementation("com.samskivert:jmustache:$jmustacheVersion")
 
     // MapStruct
     val mapstructVersion: String by project

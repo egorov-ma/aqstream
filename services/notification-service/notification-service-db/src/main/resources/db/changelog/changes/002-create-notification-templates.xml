@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы notification_templates -->
+
+    <changeSet id="002-1" author="aqstream">
+        <comment>Создание таблицы notification_templates для хранения шаблонов уведомлений</comment>
+
+        <createTable tableName="notification_templates" schemaName="notification_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_notification_templates"/>
+            </column>
+
+            <!-- Business fields -->
+            <column name="code" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="channel" type="varchar(20)" defaultValue="TELEGRAM">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subject" type="varchar(255)">
+                <!-- Тема письма для EMAIL канала, для TELEGRAM не используется -->
+            </column>
+            <column name="body" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="variables" type="jsonb" defaultValue="{}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_system" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Audit fields -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="notification_templates" schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-2" author="aqstream">
+        <comment>Индексы для таблицы notification_templates</comment>
+
+        <!-- Уникальный индекс на code + channel -->
+        <createIndex indexName="idx_notification_templates_code_channel"
+                     tableName="notification_templates"
+                     schemaName="notification_service"
+                     unique="true">
+            <column name="code"/>
+            <column name="channel"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_notification_templates_code_channel"
+                       tableName="notification_templates"
+                       schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

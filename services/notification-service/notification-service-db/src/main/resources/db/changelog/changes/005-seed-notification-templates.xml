@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Системные шаблоны уведомлений -->
+
+    <changeSet id="005-1" author="aqstream" context="!test">
+        <comment>Telegram шаблоны для регистраций</comment>
+
+        <!-- registration.confirmed -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="registration.confirmed"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[🎫 *Билет на событие*
+
+Привет, {{firstName}}!
+
+Вы успешно зарегистрировались на *{{eventTitle}}*.
+
+📋 *Детали:*
+• Код билета: `{{confirmationCode}}`
+• Тип: {{ticketTypeName}}
+• Дата: {{eventDate}}
+
+[Подробнее о событии]({{eventUrl}})]]></column>
+            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"confirmationCode\": \"Код подтверждения\", \"ticketTypeName\": \"Тип билета\", \"eventDate\": \"Дата события\", \"eventUrl\": \"Ссылка на событие\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <!-- registration.cancelled -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="registration.cancelled"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[❌ *Регистрация отменена*
+
+Привет, {{firstName}}!
+
+Ваша регистрация на *{{eventTitle}}* ({{eventDate}}) была отменена.
+
+{{#cancelledByOrganizer}}
+Причина: организатор отменил вашу регистрацию.
+{{/cancelledByOrganizer}}
+{{^cancelledByOrganizer}}
+Регистрация отменена по вашему запросу.
+{{/cancelledByOrganizer}}
+{{#cancellationReason}}
+
+Комментарий: {{cancellationReason}}
+{{/cancellationReason}}]]></column>
+            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\", \"cancelledByOrganizer\": \"Отменено организатором\", \"cancellationReason\": \"Причина отмены\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="notification_templates" schemaName="notification_service">
+                <where>code IN ('registration.confirmed', 'registration.cancelled') AND channel = 'TELEGRAM'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="005-2" author="aqstream" context="!test">
+        <comment>Telegram шаблоны для событий</comment>
+
+        <!-- event.reminder -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="event.reminder"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[⏰ *Напоминание о событии*
+
+Привет, {{firstName}}!
+
+Завтра состоится *{{eventTitle}}*!
+
+📅 Дата: {{eventDate}}
+{{#eventLocation}}
+📍 Место: {{eventLocation}}
+{{/eventLocation}}
+
+[Подробнее]({{eventUrl}})]]></column>
+            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\", \"eventLocation\": \"Место проведения\", \"eventUrl\": \"Ссылка на событие\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <!-- event.cancelled -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="event.cancelled"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[⚠️ *Событие отменено*
+
+Привет, {{firstName}}!
+
+К сожалению, событие *{{eventTitle}}* ({{eventDate}}) было отменено организатором.
+
+Приносим извинения за неудобства.]]></column>
+            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <!-- event.changed -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="event.changed"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[📝 *Изменения в событии*
+
+Привет, {{firstName}}!
+
+В событии *{{eventTitle}}* произошли изменения.
+
+📅 Дата: {{eventDate}}
+{{#eventLocation}}
+📍 Место: {{eventLocation}}
+{{/eventLocation}}
+
+[Подробнее]({{eventUrl}})]]></column>
+            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\", \"eventLocation\": \"Место проведения\", \"eventUrl\": \"Ссылка на событие\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="notification_templates" schemaName="notification_service">
+                <where>code IN ('event.reminder', 'event.cancelled', 'event.changed') AND channel = 'TELEGRAM'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="005-3" author="aqstream" context="!test">
+        <comment>Telegram шаблоны для организаций</comment>
+
+        <!-- organization.request.approved -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="organization.request.approved"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[✅ *Организация одобрена*
+
+Поздравляем! Ваш запрос на создание организации *{{organizationName}}* одобрен.
+
+Теперь вы можете создавать события и приглашать участников.
+
+[Перейти в организацию]({{organizationUrl}})]]></column>
+            <column name="variables" valueComputed="'{\"organizationName\": \"Название организации\", \"organizationUrl\": \"Ссылка на организацию\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <!-- organization.request.rejected -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="organization.request.rejected"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[❌ *Запрос отклонён*
+
+К сожалению, ваш запрос на создание организации *{{organizationName}}* был отклонён.
+
+{{#rejectionReason}}
+Причина: {{rejectionReason}}
+{{/rejectionReason}}
+
+Вы можете подать новый запрос после исправления замечаний.]]></column>
+            <column name="variables" valueComputed="'{\"organizationName\": \"Название организации\", \"rejectionReason\": \"Причина отклонения\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="notification_templates" schemaName="notification_service">
+                <where>code IN ('organization.request.approved', 'organization.request.rejected') AND channel = 'TELEGRAM'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="005-4" author="aqstream" context="!test">
+        <comment>Email шаблоны для аутентификации</comment>
+
+        <!-- auth.email-verification -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="auth.email-verification"/>
+            <column name="channel" value="EMAIL"/>
+            <column name="subject" value="Подтвердите ваш email — AqStream"/>
+            <column name="body"><![CDATA[<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение email</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">AqStream</h1>
+
+        <p>Здравствуйте!</p>
+
+        <p>Для подтверждения вашего email-адреса перейдите по ссылке:</p>
+
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="{{verificationUrl}}"
+               style="background-color: #2563eb; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; display: inline-block;">
+                Подтвердить email
+            </a>
+        </p>
+
+        <p>Или скопируйте эту ссылку в браузер:</p>
+        <p style="word-break: break-all; color: #666;">{{verificationUrl}}</p>
+
+        <p>Ссылка действительна 24 часа.</p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="color: #666; font-size: 12px;">
+            Если вы не регистрировались на AqStream, просто проигнорируйте это письмо.
+        </p>
+    </div>
+</body>
+</html>]]></column>
+            <column name="variables" valueComputed="'{\"verificationUrl\": \"Ссылка для подтверждения\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <!-- auth.password-reset -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="auth.password-reset"/>
+            <column name="channel" value="EMAIL"/>
+            <column name="subject" value="Сброс пароля — AqStream"/>
+            <column name="body"><![CDATA[<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Сброс пароля</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">AqStream</h1>
+
+        <p>Здравствуйте!</p>
+
+        <p>Вы запросили сброс пароля для вашего аккаунта.</p>
+
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="{{resetUrl}}"
+               style="background-color: #2563eb; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; display: inline-block;">
+                Сбросить пароль
+            </a>
+        </p>
+
+        <p>Или скопируйте эту ссылку в браузер:</p>
+        <p style="word-break: break-all; color: #666;">{{resetUrl}}</p>
+
+        <p>Ссылка действительна 1 час.</p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="color: #666; font-size: 12px;">
+            Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.
+            Ваш пароль останется без изменений.
+        </p>
+    </div>
+</body>
+</html>]]></column>
+            <column name="variables" valueComputed="'{\"resetUrl\": \"Ссылка для сброса пароля\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="notification_templates" schemaName="notification_service">
+                <where>code IN ('auth.email-verification', 'auth.password-reset') AND channel = 'EMAIL'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="005-5" author="aqstream" context="!test">
+        <comment>Telegram шаблон приветствия</comment>
+
+        <!-- user.welcome -->
+        <insert tableName="notification_templates" schemaName="notification_service">
+            <column name="id" valueComputed="gen_random_uuid()"/>
+            <column name="code" value="user.welcome"/>
+            <column name="channel" value="TELEGRAM"/>
+            <column name="body"><![CDATA[👋 *Добро пожаловать в AqStream!*
+
+Привет, {{firstName}}!
+
+Теперь вы можете:
+• Регистрироваться на события
+• Получать билеты и напоминания
+• Следить за изменениями
+
+Хорошего дня! 🎉]]></column>
+            <column name="variables" valueComputed="'{\"firstName\": \"Имя пользователя\"}'::jsonb"/>
+            <column name="is_system" valueBoolean="true"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="notification_templates" schemaName="notification_service">
+                <where>code = 'user.welcome' AND channel = 'TELEGRAM'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -33,6 +33,13 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.xml
 
+  # === RabbitMQ ===
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
   # === Mail (для Email уведомлений) ===
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
@@ -53,6 +60,12 @@ telegram:
   webhook-url: ${TELEGRAM_WEBHOOK_URL:}
   deeplink-base-url: ${TELEGRAM_DEEPLINK_BASE_URL:https://t.me/}
   long-polling-timeout: ${TELEGRAM_LONG_POLLING_TIMEOUT:30}
+
+# === Notification Settings ===
+notification:
+  base-url: ${FRONTEND_URL:https://aqstream.ru}
+  reminder:
+    cron: ${NOTIFICATION_REMINDER_CRON:0 0 * * * *}
 
 # === JWT Configuration (для валидации токенов) ===
 jwt:
