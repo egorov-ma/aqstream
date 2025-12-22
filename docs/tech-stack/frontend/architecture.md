@@ -18,7 +18,7 @@
 
 ## Структура проекта
 
-```
+```text
 frontend/
 ├── app/                      # Next.js App Router
 │   ├── (auth)/               # Auth pages (login, register)
@@ -52,7 +52,7 @@ frontend/
 
 ### Route Groups
 
-```
+```text
 app/
 ├── (auth)/                   # Без layout dashboard
 │   ├── layout.tsx            # Auth layout (минимальный)

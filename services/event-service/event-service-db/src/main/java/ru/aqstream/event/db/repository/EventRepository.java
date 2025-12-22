@@ -147,4 +147,17 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
      * @return количество событий
      */
     long countByTenantIdAndStatus(UUID tenantId, EventStatus status);
+
+    // === Массовые операции ===
+
+    /**
+     * Находит все активные события организации (не отменённые и не завершённые).
+     * Используется при удалении организации для архивирования событий.
+     *
+     * @param tenantId идентификатор организации
+     * @return список событий
+     */
+    @Query("SELECT e FROM Event e WHERE e.tenantId = :tenantId "
+        + "AND e.status NOT IN ('CANCELLED', 'COMPLETED')")
+    java.util.List<Event> findActiveByTenantId(@Param("tenantId") UUID tenantId);
 }

@@ -119,6 +119,7 @@ flowchart LR
 | Остальные | 500 Internal Server Error |
 
 **Формат ответа:**
+
 ```json
 {
   "code": "error_code",

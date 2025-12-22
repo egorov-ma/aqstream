@@ -4,7 +4,7 @@
 
 ## Структура сервиса
 
-```
+```text
 {service-name}/
 ├── {service-name}-api/       # DTO, Events, Exceptions (shared)
 ├── {service-name}-service/   # Controllers, Services, Mappers
@@ -18,7 +18,7 @@
 
 Публичные контракты, используемые другими сервисами.
 
-```
+```text
 api/dto/           → CreateXxxRequest, UpdateXxxRequest, XxxDto
 api/event/         → XxxCreatedEvent extends DomainEvent
 api/exception/     → XxxNotFoundException extends EntityNotFoundException
@@ -28,7 +28,7 @@ api/exception/     → XxxNotFoundException extends EntityNotFoundException
 
 Persistence layer.
 
-```
+```text
 db/entity/         → XxxEntity extends TenantAwareEntity
 db/repository/     → XxxRepository extends JpaRepository
 db/changelog/      → Liquibase migrations
@@ -38,7 +38,7 @@ db/changelog/      → Liquibase migrations
 
 Business logic и web layer.
 
-```
+```text
 controller/        → XxxController (@RestController)
 service/           → XxxService (@Service, @Transactional)
 mapper/            → XxxMapper (@Mapper componentModel="spring")
@@ -48,6 +48,7 @@ config/            → Configuration classes
 ## Ключевые паттерны
 
 **Controller:**
+
 ```java
 @RestController
 @RequestMapping("/api/v1/examples")
@@ -63,6 +64,7 @@ public class ExampleController {
 ```
 
 **Service:**
+
 ```java
 @Service
 @RequiredArgsConstructor

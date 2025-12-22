@@ -21,6 +21,7 @@ import ru.aqstream.event.api.event.RegistrationCancelledEvent;
 import ru.aqstream.event.api.event.RegistrationCreatedEvent;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.api.exception.EventRegistrationClosedException;
+import ru.aqstream.event.api.exception.PrivateEventAccessDeniedException;
 import ru.aqstream.event.api.exception.RegistrationAccessDeniedException;
 import ru.aqstream.event.api.exception.RegistrationAlreadyExistsException;
 import ru.aqstream.event.api.exception.RegistrationNotCancellableException;
@@ -29,6 +30,7 @@ import ru.aqstream.event.api.exception.TicketTypeNotFoundException;
 import ru.aqstream.event.api.exception.TicketTypeSalesNotOpenException;
 import ru.aqstream.event.api.exception.TicketTypeSoldOutException;
 import ru.aqstream.event.db.entity.Event;
+import ru.aqstream.user.client.UserClient;
 import ru.aqstream.event.db.entity.Registration;
 import ru.aqstream.event.db.entity.TicketType;
 import ru.aqstream.event.db.repository.EventRepository;
@@ -56,6 +58,7 @@ public class RegistrationService {
     private final TicketTypeRepository ticketTypeRepository;
     private final RegistrationMapper registrationMapper;
     private final EventPublisher eventPublisher;
+    private final UserClient userClient;
     private final SecureRandom secureRandom = new SecureRandom();
 
     // ==================== Создание регистрации ====================
@@ -83,6 +86,16 @@ public class RegistrationService {
 
         // Находим событие и проверяем возможность регистрации
         Event event = findEventForRegistration(eventId, tenantId);
+
+        // Для приватных событий проверяем членство в группе
+        if (event.getGroupId() != null) {
+            boolean isMember = userClient.isGroupMember(event.getGroupId(), userId);
+            if (!isMember) {
+                log.warn("Попытка регистрации на приватное событие без членства в группе: "
+                    + "eventId={}, groupId={}, userId={}", eventId, event.getGroupId(), userId);
+                throw new PrivateEventAccessDeniedException(eventId, event.getGroupId(), userId);
+            }
+        }
 
         // Проверяем, не зарегистрирован ли пользователь уже
         if (registrationRepository.existsActiveByEventIdAndUserId(eventId, userId)) {

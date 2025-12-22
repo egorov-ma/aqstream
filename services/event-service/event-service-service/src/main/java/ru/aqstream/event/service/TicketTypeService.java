@@ -93,12 +93,19 @@ public class TicketTypeService {
     /**
      * Обновляет тип билета.
      *
+     * <p>Для опубликованных событий с регистрациями запрещено:
+     * <ul>
+     *   <li>Уменьшать количество билетов ниже проданного</li>
+     * </ul>
+     * </p>
+     *
      * @param eventId      идентификатор события
      * @param ticketTypeId идентификатор типа билета
      * @param request      данные для обновления
      * @return обновлённый тип билета
-     * @throws TicketTypeNotFoundException если тип билета не найден
-     * @throws EventNotEditableException   если событие нельзя редактировать
+     * @throws TicketTypeNotFoundException        если тип билета не найден
+     * @throws EventNotEditableException          если событие нельзя редактировать
+     * @throws TicketTypeHasRegistrationsException если пытаемся уменьшить количество ниже проданного
      */
     @Transactional
     public TicketTypeDto update(UUID eventId, UUID ticketTypeId, UpdateTicketTypeRequest request) {
@@ -106,10 +113,22 @@ public class TicketTypeService {
         log.info("Обновление типа билета: ticketTypeId={}, eventId={}", ticketTypeId, eventId);
 
         // Проверяем возможность редактирования события
-        findEventByIdForEdit(eventId, tenantId);
+        Event event = findEventByIdForEdit(eventId, tenantId);
 
         // Находим тип билета
         TicketType ticketType = findTicketTypeById(ticketTypeId, eventId);
+
+        // Для опубликованных событий проверяем ограничения по регистрациям
+        int registrationCount = ticketType.getSoldCount() + ticketType.getReservedCount();
+        if (event.isPublished() && registrationCount > 0) {
+            // Нельзя уменьшать количество ниже проданного
+            if (request.quantity() != null && request.quantity() < registrationCount) {
+                log.warn("Попытка уменьшить количество билетов ниже проданного: "
+                    + "ticketTypeId={}, requested={}, sold={}",
+                    ticketTypeId, request.quantity(), registrationCount);
+                throw new TicketTypeHasRegistrationsException(ticketTypeId, registrationCount);
+            }
+        }
 
         // Обновляем только переданные поля
         if (request.name() != null) {

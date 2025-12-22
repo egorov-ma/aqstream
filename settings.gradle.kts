@@ -31,6 +31,7 @@ include("services:user-service:user-service-client")
 include("services:event-service:event-service-api")
 include("services:event-service:event-service-service")
 include("services:event-service:event-service-db")
+include("services:event-service:event-service-client")
 
 // Payment Service
 include("services:payment-service:payment-service-api")

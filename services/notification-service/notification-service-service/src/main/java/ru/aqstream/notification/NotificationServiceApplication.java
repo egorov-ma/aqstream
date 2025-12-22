@@ -12,7 +12,7 @@ import ru.aqstream.notification.config.TelegramProperties;
  * Точка входа для Notification Service.
  */
 @SpringBootApplication
-@EnableFeignClients(basePackages = "ru.aqstream.user.client")
+@EnableFeignClients(basePackages = {"ru.aqstream.user.client", "ru.aqstream.event.client"})
 @EnableScheduling
 @EnableConfigurationProperties({TelegramProperties.class, NotificationProperties.class})
 public class NotificationServiceApplication {

@@ -46,4 +46,15 @@ public interface UserClient {
      */
     @DeleteMapping("/api/v1/internal/users/telegram-chat")
     void clearTelegramChatId(@RequestParam("chatId") String chatId);
+
+    /**
+     * Проверяет членство пользователя в группе.
+     * Используется для проверки доступа к приватным событиям.
+     *
+     * @param groupId ID группы
+     * @param userId  ID пользователя
+     * @return true если пользователь член группы
+     */
+    @GetMapping("/api/v1/internal/users/groups/{groupId}/members/{userId}/exists")
+    Boolean isGroupMember(@PathVariable("groupId") UUID groupId, @PathVariable("userId") UUID userId);
 }

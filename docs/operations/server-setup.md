@@ -5,7 +5,7 @@
 ## Требования к ВМ
 
 | Параметр | Минимум | Рекомендуется |
-|----------|---------|---------------|
+| ---------- | --------- | --------------- |
 | CPU | 2 vCPU | 4 vCPU |
 | RAM | 4 GB | 8 GB |
 | Диск | 20 GB SSD | 40 GB SSD |
@@ -108,7 +108,7 @@ curl ifconfig.me
 ### Шаг 9. Добавить A-записи в DNS
 
 | Subdomain | Тип | Значение |
-|-----------|-----|----------|
+| ----------- | ----- | ---------- |
 | `@` | A | IP сервера |
 | `www` | A | IP сервера |
 | `api` | A | IP сервера |
@@ -237,7 +237,7 @@ ssh -i ~/.ssh/github_actions root@ВАШ_IP "echo OK"
 GitHub → Settings → Secrets and variables → Actions → New repository secret
 
 | Secret | Значение |
-|--------|----------|
+| -------- | ---------- |
 | `SSH_HOST` | IP сервера |
 | `SSH_USER` | `root` |
 | `SSH_KEY` | Содержимое `cat ~/.ssh/github_actions` |
@@ -247,7 +247,7 @@ GitHub → Settings → Secrets and variables → Actions → New repository sec
 ### Частые ошибки CI/CD
 
 | Ошибка | Решение |
-|--------|---------|
+| -------- | --------- |
 | `passphrase protected` | Создать ключ с `-N ""` |
 | `no supported methods` | Добавить публичный ключ на сервер |
 | `Permission denied` | Проверить `SSH_USER` |
@@ -257,17 +257,17 @@ GitHub → Settings → Secrets and variables → Actions → New repository sec
 ## Проверка готовности
 
 | URL | Ожидаемый результат |
-|-----|---------------------|
-| https://api.aqstream.ru/actuator/health | `{"status":"UP"}` |
-| https://docs.aqstream.ru | Документация |
-| https://aqstream.ru | Frontend |
+| ----- | --------------------- |
+| <https://api.aqstream.ru/actuator/health> | `{"status":"UP"}` |
+| <https://docs.aqstream.ru> | Документация |
+| <https://aqstream.ru> | Frontend |
 
 ---
 
 ## Полезные команды
 
 | Команда | Описание |
-|---------|----------|
+| --------- | ---------- |
 | `make infra-up` | Запустить инфраструктуру |
 | `make infra-down` | Остановить инфраструктуру |
 | `make health` | Проверить сервисы |

@@ -5,11 +5,12 @@
 ## Обзор окружений
 
 | Environment | Назначение | URL |
-|-------------|-----------|-----|
+| ------------- | ----------- | ----- |
 | Local | Локальная разработка | localhost |
 | Production | Продакшен | aqstream.ru |
 
 **Production URLs:**
+
 - Frontend: `https://aqstream.ru`
 - API Gateway: `https://api.aqstream.ru`
 - Documentation: `https://docs.aqstream.ru`
@@ -47,7 +48,7 @@ cd frontend && pnpm dev
 ### Порты
 
 | Сервис | Порт |
-|--------|------|
+| -------- | ------ |
 | Frontend | 3000 |
 | Gateway | 8080 |
 | User Service | 8081 |
@@ -113,19 +114,19 @@ make infra-reset
 ### Docker Compose файлы
 
 | Файл | Назначение |
-|------|-----------|
+| ------ | ----------- |
 | `docker-compose.yml` | Основная конфигурация инфраструктуры |
 | `docker-compose.override.yml` | Dev-специфичные настройки (verbose logging) |
 
 ### Полезные URL
 
 | URL | Описание | Credentials |
-|-----|----------|-------------|
-| http://localhost:3000 | Frontend | — |
-| http://localhost:8080/swagger-ui.html | API Docs (Gateway) | — |
-| http://localhost:8082/swagger-ui.html | Event Service API | — |
-| http://localhost:15672 | RabbitMQ Management | guest/guest |
-| http://localhost:9001 | MinIO Console | minioadmin/minioadmin |
+| ----- | ---------- | ------------- |
+| <http://localhost:3000> | Frontend | — |
+| <http://localhost:8080/swagger-ui.html> | API Docs (Gateway) | — |
+| <http://localhost:8082/swagger-ui.html> | Event Service API | — |
+| <http://localhost:15672> | RabbitMQ Management | guest/guest |
+| <http://localhost:9001> | MinIO Console | minioadmin/minioadmin |
 
 ## Production
 
@@ -211,16 +212,20 @@ TELEGRAM_BOT_USERNAME=...
    - Скопируйте полученный токен
 
 2. **Настройка команд бота:**
-   ```
+
+   ```text
    /setcommands
    ```
+
    Выберите вашего бота и отправьте:
-   ```
+
+   ```text
    start - Начать работу с ботом
    help - Показать справку
    ```
 
 3. **Настройка переменных окружения:**
+
    ```bash
    # Токен от @BotFather (формат: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)
    TELEGRAM_BOT_TOKEN=your-bot-token
@@ -241,10 +246,12 @@ TELEGRAM_BOT_USERNAME=...
    - Отправьте `/start` — должно прийти приветственное сообщение
 
 **Режимы работы:**
+
 - **Long Polling** (по умолчанию) — бот опрашивает Telegram API. Подходит для разработки.
 - **Webhook** — Telegram отправляет updates на ваш сервер. Требует HTTPS. Рекомендуется для production.
 
 **Для локальной разработки с webhook:**
+
 ```bash
 # Используйте ngrok для туннелирования
 ngrok http 8084

@@ -1,12 +1,19 @@
 package ru.aqstream.notification.listener;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.event.EventCancelledEvent;
 import ru.aqstream.event.api.event.RegistrationCancelledEvent;
 import ru.aqstream.event.api.event.RegistrationCreatedEvent;
+import ru.aqstream.event.client.EventClient;
 import ru.aqstream.notification.config.NotificationProperties;
 import ru.aqstream.notification.db.entity.NotificationPreference;
 import ru.aqstream.notification.service.NotificationService;
@@ -14,11 +21,7 @@ import ru.aqstream.user.api.event.EmailVerificationRequestedEvent;
 import ru.aqstream.user.api.event.OrganizationRequestApprovedEvent;
 import ru.aqstream.user.api.event.OrganizationRequestRejectedEvent;
 import ru.aqstream.user.api.event.PasswordResetRequestedEvent;
-
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
+import ru.aqstream.user.api.event.UserRegisteredEvent;
 
 /**
  * Слушатель событий RabbitMQ для отправки уведомлений.
@@ -39,6 +42,7 @@ public class NotificationEventListener {
 
     private final NotificationService notificationService;
     private final NotificationProperties notificationProperties;
+    private final EventClient eventClient;
 
     // === Registration Events ===
 
@@ -106,16 +110,64 @@ public class NotificationEventListener {
 
     /**
      * Обрабатывает отмену события.
-     * Уведомление всем участникам отправляется через отдельный batch процесс.
+     * Отправляет уведомление всем активным участникам.
      */
     @RabbitListener(queues = NOTIFICATION_QUEUE, id = "event-cancelled")
     public void handleEventCancelled(EventCancelledEvent event) {
-        log.info("Получено событие EventCancelledEvent: eventId={}", event.getEventId());
+        log.info("Получено событие EventCancelledEvent: eventId={}, tenantId={}",
+            event.getEventId(), event.getTenantId());
 
-        // TODO: Реализовать массовую отправку уведомлений всем участникам
-        // Требуется получить список registrations через EventClient
-        // и отправить уведомление каждому участнику с rate limiting
-        log.warn("Массовая рассылка при отмене события не реализована: eventId={}", event.getEventId());
+        try {
+            // Получаем список всех активных регистраций через EventClient
+            List<RegistrationDto> registrations = eventClient.findActiveRegistrations(
+                event.getEventId(),
+                event.getTenantId()
+            );
+
+            log.info("Массовая рассылка при отмене события: eventId={}, участников={}",
+                event.getEventId(), registrations.size());
+
+            // Отправляем уведомление каждому участнику
+            int sentCount = 0;
+            int failedCount = 0;
+
+            for (RegistrationDto registration : registrations) {
+                try {
+                    Map<String, Object> variables = new HashMap<>();
+                    variables.put("firstName", registration.firstName());
+                    variables.put("eventTitle", event.getTitle());
+                    variables.put("eventDate", formatDate(event.getStartsAt()));
+
+                    notificationService.sendTelegram(
+                        registration.userId(),
+                        "event.cancelled",
+                        variables,
+                        NotificationPreference.EVENT_CHANGES
+                    );
+                    sentCount++;
+
+                    // Rate limiting: небольшая задержка между отправками
+                    if (sentCount % 30 == 0) {
+                        Thread.sleep(1000); // 1 секунда каждые 30 сообщений
+                    }
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.warn("Прерывание массовой рассылки: eventId={}", event.getEventId());
+                    break;
+                } catch (Exception e) {
+                    failedCount++;
+                    log.debug("Ошибка отправки уведомления: userId={}, error={}",
+                        registration.userId(), e.getMessage());
+                }
+            }
+
+            log.info("Массовая рассылка завершена: eventId={}, отправлено={}, ошибок={}",
+                event.getEventId(), sentCount, failedCount);
+
+        } catch (Exception e) {
+            log.error("Ошибка обработки EventCancelledEvent: eventId={}, error={}",
+                event.getEventId(), e.getMessage(), e);
+        }
     }
 
     // === Organization Request Events ===
@@ -167,6 +219,38 @@ public class NotificationEventListener {
         } catch (Exception e) {
             log.error("Ошибка обработки OrganizationRequestRejectedEvent: requestId={}, error={}",
                 event.getRequestId(), e.getMessage(), e);
+        }
+    }
+
+    // === User Events ===
+
+    /**
+     * Обрабатывает регистрацию нового пользователя.
+     * Отправляет приветственное уведомление через Telegram (если есть chat_id).
+     */
+    @RabbitListener(queues = NOTIFICATION_QUEUE, id = "user-registered")
+    public void handleUserRegistered(UserRegisteredEvent event) {
+        log.info("Получено событие UserRegisteredEvent: userId={}, source={}",
+            event.getUserId(), event.getSource());
+
+        try {
+            // Отправляем приветственное уведомление только если есть Telegram chat_id
+            if (event.getTelegramChatId() != null) {
+                Map<String, Object> variables = new HashMap<>();
+                variables.put("firstName", event.getFirstName());
+
+                notificationService.sendTelegram(
+                    event.getUserId(),
+                    "user.welcome",
+                    variables
+                );
+            } else {
+                log.debug("Пропуск приветственного уведомления - нет Telegram chat_id: userId={}",
+                    event.getUserId());
+            }
+        } catch (Exception e) {
+            log.error("Ошибка обработки UserRegisteredEvent: userId={}, error={}",
+                event.getUserId(), e.getMessage(), e);
         }
     }
 

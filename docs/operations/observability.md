@@ -5,7 +5,7 @@
 ## Стек
 
 | Компонент | Технология | Порт |
-|-----------|------------|------|
+| ----------- | ------------ | ------ |
 | Metrics | Prometheus | 9090 |
 | Visualization | Grafana | 3001 |
 | Logs | Loki + Promtail | 3100 |
@@ -16,13 +16,14 @@
 **Endpoint:** `/actuator/prometheus`
 
 | Метрика | Описание |
-|---------|----------|
+| --------- | ---------- |
 | `http_server_requests_seconds` | Latency HTTP |
 | `jvm_memory_used_bytes` | Memory |
 | `hikaricp_connections_active` | DB connections |
 | `rabbitmq_consumed_total` | Messages |
 
 **Custom метрики:**
+
 ```java
 @Component
 public class RegistrationMetrics {
@@ -54,7 +55,7 @@ response.setHeader("X-Correlation-ID", correlationId);
 ## Health Checks
 
 | Endpoint | Назначение |
-|----------|------------|
+| ---------- | ------------ |
 | `/actuator/health` | Общий статус |
 | `/actuator/health/liveness` | Проверка что приложение живо |
 | `/actuator/health/readiness` | Проверка что приложение готово принимать трафик |

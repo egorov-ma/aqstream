@@ -14,10 +14,10 @@ flowchart LR
 ## Workflows
 
 | Файл | Триггер | Действие |
-|------|---------|----------|
-| `.github/workflows/ci.yml` (Build & Test) | PR, Push to main, Manual | Lint, Test, Build |
-| `.github/workflows/deploy-production.yml` | Push to main, Manual | Build images, Deploy production |
-| `.github/workflows/docs.yml` | Push to main (docs/**), Manual | Validate, Build, Deploy docs |
+| ------ | --------- | ---------- |
+| `ci.yml` | PR, Push to main | Lint, Test, Build |
+| `deploy-production.yml` | Push to main | Build, Deploy |
+| `docs.yml` | Push (docs/**) | Validate, Build, Deploy |
 
 Все workflows поддерживают ручной запуск через `workflow_dispatch`.
 
@@ -72,7 +72,7 @@ concurrency:
 ## Quality Gates
 
 | Check | Required | Description |
-|-------|----------|-------------|
+| ------- | ---------- | ------------- |
 | Backend Lint (Checkstyle) | Yes | Code style |
 | Backend Tests | Yes | JUnit 5 |
 | Frontend Lint (ESLint) | Yes | Code style |
@@ -98,7 +98,7 @@ concurrency:
 
 ### Image Tags
 
-```
+```text
 ghcr.io/egorov-ma/aqstream/gateway:abc1234
 ghcr.io/egorov-ma/aqstream/gateway:latest
 ```
@@ -136,7 +136,7 @@ jobs:
 ## GitHub Secrets
 
 | Secret | Description | Required For |
-|--------|-------------|--------------|
+| -------- | ------------- | -------------- |
 | `GITHUB_TOKEN` | Автоматически предоставляется | GHCR push |
 | `SSH_HOST` | IP-адрес или домен сервера | deploy-production, docs |
 | `SSH_USER` | Пользователь SSH | deploy-production, docs |

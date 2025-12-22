@@ -22,6 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.user.api.dto.AuthResponse;
@@ -59,6 +60,9 @@ class AuthServiceTest {
     @Mock
     private VerificationService verificationService;
 
+    @Mock
+    private EventPublisher eventPublisher;
+
     private AuthService authService;
 
     private static final Faker FAKER = new Faker();
@@ -89,7 +93,8 @@ class AuthServiceTest {
             passwordService,
             jwtTokenProvider,
             userMapper,
-            verificationService
+            verificationService,
+            eventPublisher
         );
 
         // Устанавливаем значения @Value полей через reflection

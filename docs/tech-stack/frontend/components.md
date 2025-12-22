@@ -4,7 +4,7 @@
 
 ## Структура компонентов
 
-```
+```text
 components/
 ├── ui/                   # shadcn/ui primitives (не трогаем)
 ├── theme-provider.tsx    # Провайдер темы (next-themes)

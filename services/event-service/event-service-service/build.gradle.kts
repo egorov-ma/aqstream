@@ -25,8 +25,10 @@ dependencies {
 
     // Feign client для user-service
     implementation(project(":services:user-service:user-service-client"))
+    implementation(project(":services:user-service:user-service-api"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")

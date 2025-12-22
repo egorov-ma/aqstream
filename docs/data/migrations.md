@@ -4,7 +4,7 @@
 
 ## Структура
 
-```
+```text
 services/event-service/event-service-db/src/main/resources/db/changelog/
 ├── db.changelog-master.xml           # Главный файл
 └── changes/

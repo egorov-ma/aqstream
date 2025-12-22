@@ -142,9 +142,15 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding eventServiceBinding(Queue eventServiceQueue, TopicExchange eventsExchange) {
+    public Binding eventServiceBindingPayment(Queue eventServiceQueue, TopicExchange eventsExchange) {
         // Event Service слушает события платежей
         return BindingBuilder.bind(eventServiceQueue).to(eventsExchange).with("payment.#");
+    }
+
+    @Bean
+    public Binding eventServiceBindingOrganization(Queue eventServiceQueue, TopicExchange eventsExchange) {
+        // Event Service слушает события организаций (для архивирования при удалении)
+        return BindingBuilder.bind(eventServiceQueue).to(eventsExchange).with("organization.#");
     }
 
     @Bean

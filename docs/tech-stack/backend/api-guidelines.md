@@ -13,13 +13,13 @@
 
 ### URL Structure
 
-```
+```text
 /api/v1/{resource}
 /api/v1/{resource}/{id}
 /api/v1/{resource}/{id}/{sub-resource}
 ```
 
-```
+```text
 ✅ ПРАВИЛЬНО
 GET  /api/v1/events
 GET  /api/v1/events/123
@@ -46,7 +46,7 @@ POST /api/v1/events/123/doPublish
 
 Для действий используем POST с глаголом:
 
-```
+```text
 POST /api/v1/events/{id}/publish
 POST /api/v1/events/{id}/cancel
 POST /api/v1/registrations/{id}/check-in
@@ -113,7 +113,7 @@ POST /api/v1/registrations/{id}/check-in
 
 ### Request
 
-```
+```text
 GET /api/v1/events?page=0&size=20&sort=startsAt,desc
 ```
 
@@ -144,7 +144,7 @@ GET /api/v1/events?page=0&size=20&sort=startsAt,desc
 
 ### Query Parameters
 
-```
+```text
 GET /api/v1/events?status=PUBLISHED&organizerId=123
 GET /api/v1/events?startsAfter=2024-06-01T00:00:00Z
 GET /api/v1/events?search=conference
@@ -179,7 +179,7 @@ public PageResponse<EventDto> list(
 
 ISO 8601 с timezone (всегда UTC в API):
 
-```
+```text
 2024-06-15T09:00:00Z
 ```
 
@@ -251,7 +251,7 @@ public record EventSummaryDto(
 
 ### URL Versioning
 
-```
+```text
 /api/v1/events
 /api/v2/events
 ```

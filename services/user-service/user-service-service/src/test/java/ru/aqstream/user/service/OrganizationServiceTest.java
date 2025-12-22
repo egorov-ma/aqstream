@@ -84,6 +84,9 @@ class OrganizationServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private ru.aqstream.common.messaging.EventPublisher eventPublisher;
+
     private OrganizationService service;
 
     private static final Faker FAKER = new Faker();
@@ -109,7 +112,8 @@ class OrganizationServiceTest {
             memberMapper,
             inviteMapper,
             jwtTokenProvider,
-            userMapper
+            userMapper,
+            eventPublisher
         );
 
         ReflectionTestUtils.setField(service, "accessTokenExpiration", Duration.ofMinutes(15));

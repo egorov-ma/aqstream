@@ -66,6 +66,9 @@ class RegistrationServiceTest {
     @Mock
     private EventPublisher eventPublisher;
 
+    @Mock
+    private ru.aqstream.user.client.UserClient userClient;
+
     private RegistrationService service;
 
     private static final Faker FAKER = new Faker();
@@ -92,7 +95,8 @@ class RegistrationServiceTest {
             eventRepository,
             ticketTypeRepository,
             registrationMapper,
-            eventPublisher
+            eventPublisher,
+            userClient
         );
 
         tenantId = UUID.randomUUID();

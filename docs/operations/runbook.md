@@ -59,7 +59,7 @@ docker compose start event-service notification-service media-service
 ## Типичные проблемы
 
 | Проблема | Диагностика | Решение |
-|----------|-------------|---------|
+| ---------- | ------------- | --------- |
 | Сервис не отвечает | `docker compose logs [service]` | `docker compose restart [service]` |
 | БД недоступна | `docker compose exec postgres-shared pg_isready -U aqstream` | `docker compose restart postgres-shared` |
 | Out of Memory | `docker stats` | Restart + увеличить лимиты |

@@ -25,7 +25,7 @@
 
 ## Структура документации
 
-```
+```text
 docs/tech-stack/backend/api/
 ├── README.md           # Этот файл
 ├── specs/              # OpenAPI спецификации (YAML)

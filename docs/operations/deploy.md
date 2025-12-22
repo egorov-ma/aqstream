@@ -227,7 +227,7 @@ docker compose up -d event-service
 
 ### GitHub Secrets
 
-```
+```text
 GITHUB_TOKEN          # GitHub Container Registry
 DATABASE_URL          # PostgreSQL connection string
 REDIS_URL             # Redis connection string

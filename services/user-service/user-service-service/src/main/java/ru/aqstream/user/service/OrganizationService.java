@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TokenHasher;
 import ru.aqstream.common.security.UserPrincipal;
@@ -34,6 +35,7 @@ import ru.aqstream.user.api.exception.OrganizationNotFoundException;
 import ru.aqstream.user.api.exception.OrganizationSlugAlreadyExistsException;
 import ru.aqstream.user.api.exception.SlugReservationExpiredException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
+import ru.aqstream.user.api.event.OrganizationDeletedEvent;
 import ru.aqstream.user.db.entity.Organization;
 import ru.aqstream.user.db.entity.OrganizationInvite;
 import ru.aqstream.user.db.entity.OrganizationMember;
@@ -69,6 +71,7 @@ public class OrganizationService {
     private final OrganizationInviteMapper inviteMapper;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
+    private final EventPublisher eventPublisher;
 
     @Value("${jwt.access-token-expiration:15m}")
     private Duration accessTokenExpiration;
@@ -192,6 +195,7 @@ public class OrganizationService {
     /**
      * Удаляет организацию (soft delete).
      * Только OWNER.
+     * Публикует событие organization.deleted для архивирования связанных данных.
      *
      * @param organizationId идентификатор организации
      * @param userId         идентификатор пользователя
@@ -210,6 +214,13 @@ public class OrganizationService {
 
         organization.softDelete();
         organizationRepository.save(organization);
+
+        // Публикуем событие для архивирования связанных данных (события и т.д.)
+        eventPublisher.publish(new OrganizationDeletedEvent(
+            organizationId,
+            organization.getName(),
+            userId
+        ));
 
         log.info("Организация удалена: organizationId={}", organizationId);
     }

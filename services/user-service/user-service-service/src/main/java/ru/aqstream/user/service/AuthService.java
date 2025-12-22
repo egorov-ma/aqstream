@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtAuthenticationException;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TokenHasher;
@@ -18,6 +19,7 @@ import ru.aqstream.user.api.dto.LoginRequest;
 import ru.aqstream.user.api.dto.RefreshTokenRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.api.dto.UserDto;
+import ru.aqstream.user.api.event.UserRegisteredEvent;
 import ru.aqstream.user.api.exception.AccountLockedException;
 import ru.aqstream.user.api.exception.EmailAlreadyExistsException;
 import ru.aqstream.user.api.exception.InvalidCredentialsException;
@@ -59,6 +61,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
     private final VerificationService verificationService;
+    private final EventPublisher eventPublisher;
 
     @Value("${jwt.access-token-expiration:15m}")
     private Duration accessTokenExpiration;
@@ -101,6 +104,14 @@ public class AuthService {
 
         // Создаём токен верификации email
         verificationService.createEmailVerificationToken(user);
+
+        // Публикуем событие для отправки приветственного уведомления
+        eventPublisher.publish(UserRegisteredEvent.forEmail(
+            user.getId(),
+            user.getFirstName(),
+            user.getLastName(),
+            user.getEmail()
+        ));
 
         // Генерируем токены
         return createAuthResponse(user, userAgent, ipAddress);

@@ -48,7 +48,7 @@ graph LR
 
 ## Структура модулей
 
-```
+```text
 common/
 ├── common-api/           # DTO, Events, Exceptions
 ├── common-security/      # JWT, Auth, TenantContext
@@ -85,6 +85,7 @@ common/
 | `JwtAuthenticationException` | Исключение аутентификации |
 
 **TenantContext API:**
+
 ```java
 TenantContext.setTenantId(uuid);  // Установить tenant
 TenantContext.getTenantId();       // Получить (или IllegalStateException)
@@ -120,6 +121,7 @@ Outbox pattern для reliable event publishing.
 | `EventPublishingException` | Исключение публикации |
 
 **Использование:**
+
 ```java
 @Transactional
 public Event create(CreateEventRequest request) {

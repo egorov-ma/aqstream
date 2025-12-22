@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":services:user-service:user-service-client"))
     implementation(project(":services:user-service:user-service-api"))
     implementation(project(":services:event-service:event-service-api"))
+    implementation(project(":services:event-service:event-service-client"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")

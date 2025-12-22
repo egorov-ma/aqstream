@@ -14,12 +14,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TokenHasher;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.user.api.dto.AuthResponse;
 import ru.aqstream.user.api.dto.TelegramAuthRequest;
 import ru.aqstream.user.api.dto.UserDto;
+import ru.aqstream.user.api.event.UserRegisteredEvent;
 import ru.aqstream.user.api.exception.InvalidTelegramAuthException;
 import ru.aqstream.user.api.exception.TelegramIdAlreadyExistsException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
@@ -60,6 +62,7 @@ public class TelegramAuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
+    private final EventPublisher eventPublisher;
 
     @Value("${telegram.bot.token:}")
     private String telegramBotToken;
@@ -115,6 +118,14 @@ public class TelegramAuthService {
             user = userRepository.save(user);
 
             log.info("Пользователь зарегистрирован через Telegram: userId={}", user.getId());
+
+            // Публикуем событие для отправки приветственного уведомления
+            eventPublisher.publish(UserRegisteredEvent.forTelegram(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getTelegramChatId()
+            ));
         }
 
         return createAuthResponse(user, userAgent, ipAddress);

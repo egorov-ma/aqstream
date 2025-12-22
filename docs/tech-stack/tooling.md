@@ -38,71 +38,71 @@
 .PHONY: up down restart status logs
 
 up:
-	docker compose up -d
+ docker compose up -d
 
 down:
-	docker compose down
+ docker compose down
 
 restart:
-	docker compose restart
+ docker compose restart
 
 status:
-	docker compose ps
+ docker compose ps
 
 logs:
-	docker compose logs -f
+ docker compose logs -f
 
 # Инфраструктура
 .PHONY: infra-up infra-down
 
 infra-up:
-	docker compose up -d postgres-shared postgres-user postgres-payment redis rabbitmq minio
+ docker compose up -d postgres-shared postgres-user postgres-payment redis rabbitmq minio
 
 infra-down:
-	docker compose down postgres-shared postgres-user postgres-payment redis rabbitmq minio
+ docker compose down postgres-shared postgres-user postgres-payment redis rabbitmq minio
 
 # Backend
 .PHONY: backend-build backend-test
 
 backend-build:
-	./gradlew build -x test
+ ./gradlew build -x test
 
 backend-test:
-	./gradlew test
+ ./gradlew test
 
 # Frontend
 .PHONY: frontend-install frontend-dev frontend-build frontend-test
 
 frontend-install:
-	cd frontend && pnpm install
+ cd frontend && pnpm install
 
 frontend-dev:
-	cd frontend && pnpm dev
+ cd frontend && pnpm dev
 
 frontend-build:
-	cd frontend && pnpm build
+ cd frontend && pnpm build
 
 frontend-test:
-	cd frontend && pnpm test
+ cd frontend && pnpm test
 
 # Quality
 .PHONY: lint format
 
 lint:
-	./gradlew checkstyleMain
-	cd frontend && pnpm lint
+ ./gradlew checkstyleMain
+ cd frontend && pnpm lint
 
 format:
-	cd frontend && pnpm format
+ cd frontend && pnpm format
 
 # Database
 .PHONY: db-migrate db-rollback
 
 db-migrate:
-	./gradlew liquibaseUpdate
+ ./gradlew liquibaseUpdate
 
 db-rollback:
-	./gradlew liquibaseRollbackCount -PliquibaseCommandValue=1
+ ./gradlew liquibaseRollbackCount -PliquibaseCommandValue=1
 ```
 
 ## Code Quality

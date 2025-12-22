@@ -25,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.user.api.dto.AuthResponse;
@@ -51,6 +52,9 @@ class TelegramAuthServiceTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private EventPublisher eventPublisher;
 
     private TelegramAuthService telegramAuthService;
 
@@ -83,7 +87,8 @@ class TelegramAuthServiceTest {
             userRepository,
             refreshTokenRepository,
             jwtTokenProvider,
-            userMapper
+            userMapper,
+            eventPublisher
         );
 
         // Устанавливаем значения @Value полей через reflection

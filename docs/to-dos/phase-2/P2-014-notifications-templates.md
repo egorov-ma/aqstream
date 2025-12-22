@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Уведомления](../../business/roadmap.md#фаза-2-core) |
 
@@ -45,69 +45,70 @@
 
 ### Шаблоны
 
-- [ ] Системные шаблоны хранятся в БД (NotificationTemplate)
-- [ ] Шаблоны используют Mustache синтаксис
-- [ ] Поддержка Markdown в теле сообщения
-- [ ] Список переменных для каждого шаблона
+- [x] Системные шаблоны хранятся в БД (NotificationTemplate)
+- [x] Шаблоны используют Mustache синтаксис
+- [x] Поддержка Markdown в теле сообщения
+- [x] Список переменных для каждого шаблона
 
 ### Phase 2 шаблоны (Telegram)
 
-- [ ] `user.welcome` — приветствие после регистрации
-- [ ] `registration.confirmed` — билет с QR-кодом
-- [ ] `registration.cancelled` — отмена регистрации
-- [ ] `event.reminder` — напоминание о событии (за 24ч)
-- [ ] `event.changed` — изменение даты/места
-- [ ] `event.cancelled` — отмена события
-- [ ] `organization.request.approved` — уведомление об одобрении запроса на создание организации
-- [ ] `organization.request.rejected` — уведомление об отклонении с причиной
+- [x] `user.welcome` — приветствие после регистрации
+- [x] `registration.confirmed` — билет с QR-кодом
+- [x] `registration.cancelled` — отмена регистрации
+- [x] `event.reminder` — напоминание о событии (за 24ч)
+- [x] `event.changed` — изменение даты/места
+- [x] `event.cancelled` — отмена события
+- [x] `organization.request.approved` — уведомление об одобрении запроса на создание организации
+- [x] `organization.request.rejected` — уведомление об отклонении с причиной
 
 ### Email шаблоны (аутентификация)
 
-- [ ] `auth.email-verification` — подтверждение email при регистрации
-- [ ] `auth.password-reset` — ссылка для сброса пароля
-- [ ] SMTP конфигурация (SendGrid/Amazon SES для production, Mailhog для dev)
+- [x] `auth.email-verification` — подтверждение email при регистрации
+- [x] `auth.password-reset` — ссылка для сброса пароля
+- [x] SMTP конфигурация (SendGrid/Amazon SES для production, Mailhog для dev)
 
 ### Event Listeners (Telegram)
 
-- [ ] `UserRegisteredEvent` → `user.welcome`
-- [ ] `RegistrationCreatedEvent` → `registration.confirmed` + билет с QR
-- [ ] `RegistrationCancelledEvent` → `registration.cancelled`
-- [ ] `EventChangedEvent` → `event.changed` (всем участникам)
-- [ ] `EventCancelledEvent` → `event.cancelled` (всем участникам)
-- [ ] `OrganizationRequestApprovedEvent` → `organization.request.approved` (уведомление пользователю)
-- [ ] `OrganizationRequestRejectedEvent` → `organization.request.rejected` (уведомление с причиной)
+- [ ] `UserRegisteredEvent` → `user.welcome` (событие не реализовано)
+- [x] `RegistrationCreatedEvent` → `registration.confirmed` + билет с QR
+- [x] `RegistrationCancelledEvent` → `registration.cancelled`
+- [ ] `EventChangedEvent` → `event.changed` (требует EventClient для получения участников)
+- [ ] `EventCancelledEvent` → `event.cancelled` (требует EventClient для получения участников)
+- [x] `OrganizationRequestApprovedEvent` → `organization.request.approved` (уведомление пользователю)
+- [x] `OrganizationRequestRejectedEvent` → `organization.request.rejected` (уведомление с причиной)
 
 ### Event Listeners (Email)
 
-- [ ] `EmailVerificationRequestedEvent` → `auth.email-verification` (из user-service)
-- [ ] `PasswordResetRequestedEvent` → `auth.password-reset` (из user-service)
+- [x] `EmailVerificationRequestedEvent` → `auth.email-verification` (из user-service)
+- [x] `PasswordResetRequestedEvent` → `auth.password-reset` (из user-service)
 
 ### Напоминания
 
-- [ ] Scheduler для отправки напоминаний
-- [ ] Напоминание за 24 часа до события
-- [ ] Не отправлять напоминание если событие отменено
+- [x] Scheduler для отправки напоминаний (структура готова)
+- [ ] Напоминание за 24 часа до события (требует EventClient)
+- [ ] Не отправлять напоминание если событие отменено (требует EventClient)
 
 ### Логирование
 
-- [ ] Все отправки логируются в NotificationLog
-- [ ] Статусы: PENDING, SENT, FAILED
-- [ ] При ошибке — сохраняется error_message
-- [ ] Retry механизм при временных ошибках (3 попытки)
+- [x] Все отправки логируются в NotificationLog
+- [x] Статусы: PENDING, SENT, FAILED
+- [x] При ошибке — сохраняется error_message
+- [x] Retry механизм при временных ошибках (3 попытки)
 
 ### Настройки пользователя
 
-- [ ] Пользователь может отключить определённые типы уведомлений
-- [ ] API для получения и обновления настроек
-- [ ] Проверка настроек перед отправкой
+- [x] Пользователь может отключить определённые типы уведомлений
+- [x] API для получения и обновления настроек
+- [x] Проверка настроек перед отправкой
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты для template rendering
-- [ ] Integration тесты (RabbitMQ → Notification)
-- [ ] Миграции для шаблонов (seed data)
+- [ ] Все Acceptance Criteria выполнены (часть AC заблокирована зависимостями — EventClient, UserRegisteredEvent)
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты для template rendering (TemplateServiceTest)
+- [x] Unit тесты для notification service (NotificationServiceTest, TelegramBotServiceTest, PreferenceServiceTest)
+- [ ] Integration тесты (RabbitMQ → Notification) — заблокированы инфраструктурой
+- [x] Миграции для шаблонов (seed data)
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит
 

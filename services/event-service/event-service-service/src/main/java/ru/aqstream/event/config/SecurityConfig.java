@@ -54,6 +54,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Actuator endpoints
                 .requestMatchers("/actuator/**").permitAll()
+                // Internal endpoints для межсервисного взаимодействия
+                // (защита на уровне сети, не доступны извне)
+                .requestMatchers("/api/v1/internal/**").permitAll()
                 // Публичные события (без авторизации)
                 .requestMatchers("/api/v1/public/**").permitAll()
                 // Swagger/OpenAPI

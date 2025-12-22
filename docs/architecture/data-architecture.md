@@ -155,7 +155,7 @@ CREATE INDEX idx_events_tenant_status ON event_service.events(tenant_id, status)
 
 ### Структура ключей
 
-```
+```text
 aqstream:{service}:{entity}:{id}
 aqstream:{service}:{entity}:list:{params_hash}
 
@@ -224,7 +224,7 @@ public class EventService {
 
 Каждый сервис управляет своими миграциями:
 
-```
+```text
 services/event-service/event-service-db/src/main/resources/
 └── db/changelog/
     ├── db.changelog-master.xml

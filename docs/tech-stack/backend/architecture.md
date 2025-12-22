@@ -59,7 +59,7 @@ public Mono<EventDto> getById(@PathVariable UUID id) {
 
 Каждый сервис состоит из 4 модулей:
 
-```
+```text
 event-service/
 ├── event-service-api/       # DTO, Events, Exceptions
 ├── event-service-service/   # Business logic, Controllers
@@ -71,7 +71,7 @@ event-service/
 
 Публичные контракты сервиса:
 
-```
+```text
 event-service-api/src/main/java/com/aqstream/event/api/
 ├── dto/
 │   ├── EventDto.java
@@ -88,7 +88,7 @@ event-service-api/src/main/java/com/aqstream/event/api/
 
 Бизнес-логика и контроллеры:
 
-```
+```text
 event-service-service/src/main/java/com/aqstream/event/
 ├── EventServiceApplication.java
 ├── controller/
@@ -106,7 +106,7 @@ event-service-service/src/main/java/com/aqstream/event/
 
 Persistence layer:
 
-```
+```text
 event-service-db/src/main/java/com/aqstream/event/db/
 ├── entity/
 │   └── EventEntity.java
