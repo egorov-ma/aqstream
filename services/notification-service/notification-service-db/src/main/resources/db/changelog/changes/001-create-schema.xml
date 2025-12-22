@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-schema" author="aqstream">
+        <comment>Создание схемы notification_service</comment>
+        <sql>
+            CREATE SCHEMA IF NOT EXISTS notification_service;
+        </sql>
+        <rollback>
+            <sql>
+                DROP SCHEMA IF EXISTS notification_service CASCADE;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

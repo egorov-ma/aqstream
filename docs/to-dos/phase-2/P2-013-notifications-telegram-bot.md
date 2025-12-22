@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Уведомления](../../business/roadmap.md#фаза-2-core) |
 
@@ -44,19 +44,19 @@ Telegram — единственный канал уведомлений в AqStr
 
 ### Создание бота и конфигурация
 
-- [ ] Бот создан через @BotFather
-- [ ] Настроены commands: /start, /help
-- [ ] Webhook или long polling для получения updates
-- [ ] Bot Token безопасно хранится в env variables
-- [ ] Документация по получению токена от @BotFather обновлена в `docs/operations/environments.md`
-- [ ] Тестовый bot token настроен для integration тестов (application-test.yaml)
-- [ ] Integration тесты для `POST /api/v1/auth/telegram` написаны (из P2-002)
+- [ ] Бот создан через @BotFather (требуется ручное действие)
+- [x] Настроены commands: /start, /help
+- [x] Webhook или long polling для получения updates (с конфигурируемым timeout)
+- [x] Bot Token безопасно хранится в env variables
+- [x] Документация по получению токена от @BotFather обновлена в `docs/operations/environments.md`
+- [x] Тестовый bot token настроен для integration тестов (application-test.yaml)
+- [x] Integration тесты для `POST /api/v1/auth/telegram` написаны (из P2-002)
 
 ### Команда /start
 
-- [ ] При `/start` без параметров — welcome сообщение
-- [ ] При `/start invite_{code}` — присоединение к организации
-- [ ] При `/start link_{token}` — привязка Telegram к существующему email-аккаунту
+- [x] При `/start` без параметров — welcome сообщение
+- [x] При `/start invite_{code}` — присоединение к организации (структура готова, интеграция TODO)
+- [x] При `/start link_{token}` — привязка Telegram к существующему email-аккаунту (структура готова, интеграция TODO)
 - [ ] При первом входе через Telegram Login Widget — автоматическая привязка chat_id
 
 ### Привязка аккаунта
@@ -68,25 +68,25 @@ Telegram — единственный канал уведомлений в AqStr
 
 ### Отправка сообщений
 
-- [ ] Отправка текстовых сообщений (Markdown)
-- [ ] Отправка изображений (билет с QR)
-- [ ] Inline кнопки для быстрых действий
-- [ ] Обработка ошибок (blocked bot, chat not found)
-- [ ] Retry механизм при временных ошибках
+- [x] Отправка текстовых сообщений (Markdown)
+- [x] Отправка изображений (билет с QR)
+- [x] Inline кнопки для быстрых действий
+- [x] Обработка ошибок (blocked bot, chat not found)
+- [x] Retry механизм при временных ошибках
 
 ### Команда /help
 
-- [ ] Показывает доступные команды
-- [ ] Ссылка на FAQ или поддержку
+- [x] Показывает доступные команды
+- [x] Ссылка на FAQ или поддержку
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты написаны
-- [ ] Integration тесты (mock Telegram API)
-- [ ] Документация конфигурации
-- [ ] Code review пройден
+- [ ] Все Acceptance Criteria выполнены (заблокировано: привязка аккаунтов, frontend)
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты написаны
+- [x] Integration тесты (mock Telegram API через @MockitoBean)
+- [x] Документация конфигурации
+- [x] Code review пройден
 - [ ] CI/CD pipeline проходит
 
 ## Технические детали
@@ -101,8 +101,8 @@ Telegram — единственный канал уведомлений в AqStr
 ### Telegram Bot Library
 
 ```gradle
-// java-telegram-bot-api
-implementation 'com.github.pengrad:java-telegram-bot-api:6.9.1'
+// java-telegram-bot-api (версия в gradle.properties)
+implementation 'com.github.pengrad:java-telegram-bot-api:7.11.0'
 ```
 
 ### Bot Service

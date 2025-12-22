@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16-alpine:///test_db
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: notification_service
+
+  liquibase:
+    enabled: false
+
+# === Telegram Bot (тестовый токен) ===
+telegram:
+  bot-token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+  bot-username: TestAqStreamBot
+  webhook-url: ""
+
+# === JWT (тестовый секрет) ===
+jwt:
+  secret: test-secret-key-minimum-32-characters-long-for-testing
+
+# === Logging ===
+logging:
+  level:
+    root: WARN
+    ru.aqstream.notification: DEBUG

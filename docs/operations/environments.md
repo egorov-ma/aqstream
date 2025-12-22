@@ -193,8 +193,62 @@ JWT_SECRET=your-secret-key
 # External Services
 PAYMENT_API_KEY=...
 PAYMENT_WEBHOOK_SECRET=...
+
+# Telegram Bot (см. секцию "Telegram Bot Setup")
 TELEGRAM_BOT_TOKEN=...
 TELEGRAM_BOT_USERNAME=...
+```
+
+### Telegram Bot Setup
+
+Для работы уведомлений через Telegram необходимо создать бота:
+
+1. **Создание бота через @BotFather:**
+   - Откройте Telegram и найдите [@BotFather](https://t.me/BotFather)
+   - Отправьте команду `/newbot`
+   - Введите имя бота (например, "AqStream Notifications")
+   - Введите username бота (должен заканчиваться на "bot", например: `AqStreamBot`)
+   - Скопируйте полученный токен
+
+2. **Настройка команд бота:**
+   ```
+   /setcommands
+   ```
+   Выберите вашего бота и отправьте:
+   ```
+   start - Начать работу с ботом
+   help - Показать справку
+   ```
+
+3. **Настройка переменных окружения:**
+   ```bash
+   # Токен от @BotFather (формат: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)
+   TELEGRAM_BOT_TOKEN=your-bot-token
+
+   # Username бота без @
+   TELEGRAM_BOT_USERNAME=AqStreamBot
+
+   # Опционально: URL для webhook (если пусто — используется long polling)
+   TELEGRAM_WEBHOOK_URL=https://api.aqstream.ru/telegram/webhook
+
+   # Опционально: таймаут long polling в секундах (по умолчанию 30)
+   TELEGRAM_LONG_POLLING_TIMEOUT=30
+   ```
+
+4. **Проверка работы:**
+   - Запустите notification-service
+   - Откройте бота в Telegram
+   - Отправьте `/start` — должно прийти приветственное сообщение
+
+**Режимы работы:**
+- **Long Polling** (по умолчанию) — бот опрашивает Telegram API. Подходит для разработки.
+- **Webhook** — Telegram отправляет updates на ваш сервер. Требует HTTPS. Рекомендуется для production.
+
+**Для локальной разработки с webhook:**
+```bash
+# Используйте ngrok для туннелирования
+ngrok http 8084
+# Укажите полученный URL в TELEGRAM_WEBHOOK_URL
 ```
 
 ### Profiles

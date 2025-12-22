@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `review` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Регистрации](../../business/roadmap.md#фаза-2-core) |
 
@@ -43,38 +43,38 @@
 
 ### Генерация QR
 
-- [ ] QR-код генерируется при создании регистрации
-- [ ] QR содержит: confirmation_code или check-in URL
-- [ ] QR-код сохраняется как изображение (PNG)
-- [ ] Размер QR достаточен для сканирования (минимум 200x200 px)
-- [ ] QR имеет высокий уровень коррекции ошибок (H level)
+- [x] QR-код генерируется при создании регистрации (QrCodeService)
+- [x] QR содержит: check-in URL (`https://aqstream.ru/check-in/{code}`)
+- [x] QR-код сохраняется как изображение (PNG)
+- [x] Размер QR достаточен для сканирования (минимум 200x200 px, по умолчанию 250x250)
+- [x] QR имеет высокий уровень коррекции ошибок (H level)
 
 ### Билет
 
-- [ ] Билет — изображение с информацией о событии + QR-код
-- [ ] Содержит: название события, дата/время, место, тип билета, confirmation_code, QR
-- [ ] Дизайн простой и читаемый
-- [ ] Отправляется в Telegram как изображение
+- [x] Билет — изображение с информацией о событии + QR-код (TicketImageService)
+- [x] Содержит: название события, дата/время, место, тип билета, confirmation_code, QR
+- [x] Дизайн простой и читаемый
+- [ ] Отправляется в Telegram как изображение — ⚠️ заблокировано P2-014
 
 ### Check-in
 
-- [ ] QR сканируется через камеру (мобильный браузер)
-- [ ] При сканировании — переход на URL проверки или вызов API
-- [ ] Отображается информация об участнике
-- [ ] Кнопка подтверждения check-in
-- [ ] Защита от повторного check-in
+- [ ] QR сканируется через камеру (мобильный браузер) — ⚠️ требует Frontend
+- [x] При сканировании — переход на URL проверки или вызов API
+- [x] Отображается информация об участнике (GET /api/v1/public/check-in/{code})
+- [ ] Кнопка подтверждения check-in — ⚠️ требует Frontend
+- [x] Защита от повторного check-in (AlreadyCheckedInException)
 
 ### Fallback
 
-- [ ] Confirmation code виден на билете (для ручного ввода)
-- [ ] Поиск по коду в интерфейсе check-in
+- [x] Confirmation code виден на билете (для ручного ввода)
+- [ ] Поиск по коду в интерфейсе check-in — ⚠️ требует Frontend
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
-- [ ] Код написан согласно code style проекта
-- [ ] Unit тесты для генерации QR
-- [ ] Integration тесты check-in flow
+- [ ] Все Acceptance Criteria выполнены (4 AC заблокированы: Telegram, Frontend)
+- [x] Код написан согласно code style проекта
+- [x] Unit тесты для генерации QR (QrCodeServiceTest)
+- [x] Integration тесты check-in flow (CheckInControllerIntegrationTest)
 - [ ] Code review пройден
 - [ ] CI/CD pipeline проходит
 
@@ -82,9 +82,9 @@
 
 ### Затрагиваемые компоненты
 
-- [x] Backend: `event-service-service` (QR generation), `notification-service` (ticket image)
+- [x] Backend: `event-service-service` (QrCodeService, TicketImageService, CheckInService, CheckInController)
 - [ ] Frontend: страница check-in, сканирование QR
-- [ ] Database: —
+- [x] Database: миграция 007-add-registration-check-in.xml (поле checked_in_at)
 - [ ] Infrastructure: —
 
 ### QR Generation

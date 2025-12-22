@@ -1,0 +1,83 @@
+server:
+  port: ${SERVER_PORT:8084}
+  shutdown: graceful
+
+spring:
+  application:
+    name: notification-service
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  # === Database ===
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/shared_services_db}
+    username: ${DATABASE_USERNAME:aqstream}
+    password: ${DATABASE_PASSWORD:aqstream}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: notification_service
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    open-in-view: false
+
+  # === Liquibase ===
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  # === Mail (для Email уведомлений) ===
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# === Telegram Bot ===
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  bot-username: ${TELEGRAM_BOT_USERNAME:AqStreamBot}
+  webhook-url: ${TELEGRAM_WEBHOOK_URL:}
+  deeplink-base-url: ${TELEGRAM_DEEPLINK_BASE_URL:https://t.me/}
+  long-polling-timeout: ${TELEGRAM_LONG_POLLING_TIMEOUT:30}
+
+# === JWT Configuration (для валидации токенов) ===
+jwt:
+  secret: ${JWT_SECRET:development-secret-key-minimum-32-characters-long}
+
+# === Actuator ===
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+
+# === Logging ===
+logging:
+  level:
+    root: INFO
+    ru.aqstream.notification: DEBUG
+    com.pengrad.telegrambot: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] %-5level %logger{36} - %msg%n"
