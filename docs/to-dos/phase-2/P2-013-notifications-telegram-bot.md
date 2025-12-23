@@ -87,7 +87,7 @@ Telegram — единственный канал уведомлений в AqStr
 - [x] Integration тесты (mock Telegram API через @MockitoBean)
 - [x] Документация конфигурации
 - [x] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

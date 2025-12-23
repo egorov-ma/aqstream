@@ -12,7 +12,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ru.aqstream.common.data.BaseEntity;
+import ru.aqstream.common.api.exception.ValidationException;
+import ru.aqstream.common.data.TenantAwareEntity;
+import ru.aqstream.event.api.exception.TicketTypeSoldOutException;
 
 /**
  * Тип билета для события.
@@ -25,13 +27,15 @@ import ru.aqstream.common.data.BaseEntity;
  * <p>Доступность вычисляется как: available = quantity - soldCount - reservedCount</p>
  *
  * <p>Для предотвращения overselling используется optimistic locking (@Version).</p>
+ *
+ * <p>tenant_id хранится напрямую для Defense in Depth и RLS политик.</p>
  */
 @Entity
 @Table(name = "ticket_types", schema = "event_service")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TicketType extends BaseEntity {
+public class TicketType extends TenantAwareEntity {
 
     // === Поля ===
 
@@ -130,6 +134,8 @@ public class TicketType extends BaseEntity {
     /**
      * Создаёт новый тип билета для события.
      *
+     * <p>tenant_id копируется из события для Defense in Depth.</p>
+     *
      * @param event событие
      * @param name  название типа билета
      * @return новый тип билета
@@ -137,6 +143,7 @@ public class TicketType extends BaseEntity {
     public static TicketType create(Event event, String name) {
         TicketType ticketType = new TicketType();
         ticketType.event = event;
+        ticketType.setTenantId(event.getTenantId()); // Defense in Depth
         ticketType.name = name;
         ticketType.priceCents = 0; // Phase 2: бесплатные билеты
         ticketType.currency = "RUB";
@@ -197,11 +204,11 @@ public class TicketType extends BaseEntity {
     /**
      * Увеличивает счётчик проданных билетов.
      *
-     * @throws IllegalStateException если билеты распроданы
+     * @throws TicketTypeSoldOutException если билеты распроданы
      */
     public void incrementSoldCount() {
         if (isSoldOut()) {
-            throw new IllegalStateException("Билеты данного типа распроданы");
+            throw new TicketTypeSoldOutException(getId());
         }
         this.soldCount++;
     }
@@ -218,11 +225,11 @@ public class TicketType extends BaseEntity {
     /**
      * Увеличивает счётчик зарезервированных билетов.
      *
-     * @throws IllegalStateException если билеты распроданы
+     * @throws TicketTypeSoldOutException если билеты распроданы
      */
     public void incrementReservedCount() {
         if (isSoldOut()) {
-            throw new IllegalStateException("Билеты данного типа распроданы");
+            throw new TicketTypeSoldOutException(getId());
         }
         this.reservedCount++;
     }
@@ -270,12 +277,13 @@ public class TicketType extends BaseEntity {
      * Нельзя установить значение меньше уже проданных.
      *
      * @param quantity новое количество (null = unlimited)
-     * @throws IllegalArgumentException если новое количество меньше проданных
+     * @throws ValidationException если новое количество меньше проданных
      */
     public void updateQuantity(Integer quantity) {
         if (quantity != null && quantity < soldCount + reservedCount) {
-            throw new IllegalArgumentException(
-                "Количество билетов не может быть меньше уже проданных/зарезервированных"
+            throw new ValidationException(
+                "Количество билетов (" + quantity + ") не может быть меньше "
+                    + "уже проданных/зарезервированных (" + (soldCount + reservedCount) + ")"
             );
         }
         this.quantity = quantity;

@@ -101,6 +101,7 @@ subprojects {
 
     val lombokVersion: String by project
     val junitVersion: String by project
+    val allureVersion: String by project
 
     dependencies {
         "compileOnly"("org.projectlombok:lombok:$lombokVersion")
@@ -111,6 +112,14 @@ subprojects {
 
         "testImplementation"("org.junit.jupiter:junit-jupiter:$junitVersion")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+
+        // Allure
+        "testImplementation"("io.qameta.allure:allure-junit5:$allureVersion")
+    }
+
+    // Настройка systemProperty для Allure
+    tasks.withType<Test> {
+        systemProperty("allure.results.directory", layout.buildDirectory.dir("allure-results").get().asFile.absolutePath)
     }
 }
 
@@ -130,5 +139,17 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         xml.required = true
         html.required = true
         html.outputLocation = layout.buildDirectory.dir("reports/jacoco/html")
+    }
+}
+
+// Корневой отчёт Allure для всех модулей
+tasks.register("allureAggregateReport") {
+    group = "verification"
+    description = "Generates aggregated Allure report for all subprojects."
+    dependsOn(subprojects.map { it.tasks.named("test") })
+
+    doLast {
+        // Allure результаты собираются из build/allure-results каждого модуля
+        println("Allure results collected. Run './gradlew allureServe' to view the report.")
     }
 }

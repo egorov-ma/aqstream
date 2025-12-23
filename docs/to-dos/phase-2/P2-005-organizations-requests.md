@@ -76,7 +76,7 @@
 - [x] Миграции созданы с rollback
 - [x] Опубликованы events в RabbitMQ (`organization.request.created`, `organization.request.approved/rejected`)
 - [x] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

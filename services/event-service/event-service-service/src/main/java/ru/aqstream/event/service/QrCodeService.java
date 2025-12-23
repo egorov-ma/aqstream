@@ -13,6 +13,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.aqstream.common.api.exception.ValidationException;
 import ru.aqstream.event.api.exception.QrCodeGenerationException;
 
 /**
@@ -63,10 +64,10 @@ public class QrCodeService {
      */
     public byte[] generateQrCode(String confirmationCode, int size) {
         if (confirmationCode == null || confirmationCode.isBlank()) {
-            throw new IllegalArgumentException("Confirmation code не может быть пустым");
+            throw new ValidationException("Confirmation code не может быть пустым");
         }
         if (size < MIN_QR_SIZE) {
-            throw new IllegalArgumentException("Размер QR-кода должен быть не менее " + MIN_QR_SIZE + " пикселей");
+            throw new ValidationException("Размер QR-кода должен быть не менее " + MIN_QR_SIZE + " пикселей");
         }
 
         // Формируем URL для check-in
@@ -101,7 +102,8 @@ public class QrCodeService {
             log.error("Ошибка генерации QR-кода: confirmationCode={}, ошибка={}", confirmationCode, e.getMessage(), e);
             throw new QrCodeGenerationException(confirmationCode, e);
         } catch (IOException e) {
-            log.error("Ошибка записи QR-кода в поток: confirmationCode={}, ошибка={}", confirmationCode, e.getMessage(), e);
+            log.error("Ошибка записи QR-кода в поток: confirmationCode={}, ошибка={}",
+                confirmationCode, e.getMessage(), e);
             throw new QrCodeGenerationException(e);
         }
     }

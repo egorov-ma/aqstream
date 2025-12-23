@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
@@ -27,6 +28,7 @@ class TenantAwareDataSourceDecoratorTest {
     private DataSource delegate;
     private Connection connection;
     private Statement statement;
+    private PreparedStatement preparedStatement;
     private TenantAwareDataSourceDecorator decorator;
 
     @BeforeEach
@@ -34,9 +36,11 @@ class TenantAwareDataSourceDecoratorTest {
         delegate = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(Statement.class);
+        preparedStatement = mock(PreparedStatement.class);
 
         when(delegate.getConnection()).thenReturn(connection);
         when(connection.createStatement()).thenReturn(statement);
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
         decorator = new TenantAwareDataSourceDecorator(delegate);
     }
@@ -47,7 +51,7 @@ class TenantAwareDataSourceDecoratorTest {
     }
 
     @Test
-    @DisplayName("При наличии TenantContext устанавливается app.tenant_id")
+    @DisplayName("При наличии TenantContext устанавливается app.tenant_id через PreparedStatement")
     void getConnection_WithTenantContext_SetsTenantId() throws Exception {
         // Given
         UUID tenantId = UUID.randomUUID();
@@ -58,7 +62,9 @@ class TenantAwareDataSourceDecoratorTest {
 
         // Then
         assertThat(result).isEqualTo(connection);
-        verify(statement).execute(String.format("SET app.tenant_id = '%s'", tenantId));
+        verify(connection).prepareStatement("SELECT set_config('app.tenant_id', ?, false)");
+        verify(preparedStatement).setString(1, tenantId.toString());
+        verify(preparedStatement).execute();
     }
 
     @Test
@@ -94,12 +100,28 @@ class TenantAwareDataSourceDecoratorTest {
     @DisplayName("При ошибке установки tenant_id соединение закрывается")
     void getConnection_WhenSetTenantIdFails_ClosesConnection() throws Exception {
         // Given
-        when(statement.execute(anyString())).thenThrow(new SQLException("Test error"));
+        UUID tenantId = UUID.randomUUID();
+        TenantContext.setTenantId(tenantId);
+        when(preparedStatement.execute()).thenThrow(new SQLException("Test error"));
 
         // When / Then
         assertThatThrownBy(() -> decorator.getConnection())
             .isInstanceOf(SQLException.class)
             .hasMessage("Test error");
+
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("При ошибке сброса tenant_id соединение закрывается")
+    void getConnection_WhenResetTenantIdFails_ClosesConnection() throws Exception {
+        // Given: TenantContext не установлен
+        when(statement.execute(anyString())).thenThrow(new SQLException("Reset error"));
+
+        // When / Then
+        assertThatThrownBy(() -> decorator.getConnection())
+            .isInstanceOf(SQLException.class)
+            .hasMessage("Reset error");
 
         verify(connection).close();
     }

@@ -72,8 +72,8 @@
 - [ ] `UserRegisteredEvent` → `user.welcome` (событие не реализовано)
 - [x] `RegistrationCreatedEvent` → `registration.confirmed` + билет с QR
 - [x] `RegistrationCancelledEvent` → `registration.cancelled`
-- [ ] `EventChangedEvent` → `event.changed` (требует EventClient для получения участников)
-- [ ] `EventCancelledEvent` → `event.cancelled` (требует EventClient для получения участников)
+- [x] `EventUpdatedEvent` → `event.changed` (handleEventUpdated в NotificationEventListener)
+- [x] `EventCancelledEvent` → `event.cancelled` (handleEventCancelled в NotificationEventListener)
 - [x] `OrganizationRequestApprovedEvent` → `organization.request.approved` (уведомление пользователю)
 - [x] `OrganizationRequestRejectedEvent` → `organization.request.rejected` (уведомление с причиной)
 
@@ -84,9 +84,9 @@
 
 ### Напоминания
 
-- [x] Scheduler для отправки напоминаний (структура готова)
-- [ ] Напоминание за 24 часа до события (требует EventClient)
-- [ ] Не отправлять напоминание если событие отменено (требует EventClient)
+- [x] Scheduler для отправки напоминаний (EventReminderScheduler)
+- [x] Напоминание за 24 часа до события (через EventClient)
+- [x] Не отправлять напоминание если событие отменено (проверка status != PUBLISHED)
 
 ### Логирование
 
@@ -103,14 +103,14 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (часть AC заблокирована зависимостями — EventClient, UserRegisteredEvent)
+- [ ] Все Acceptance Criteria выполнены (часть AC заблокирована: UserRegisteredEvent, EventChangedEvent, EventCancelledEvent)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты для template rendering (TemplateServiceTest)
 - [x] Unit тесты для notification service (NotificationServiceTest, TelegramBotServiceTest, PreferenceServiceTest)
 - [ ] Integration тесты (RabbitMQ → Notification) — заблокированы инфраструктурой
 - [x] Миграции для шаблонов (seed data)
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Code review пройден
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

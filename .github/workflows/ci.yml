@@ -89,6 +89,46 @@ jobs:
           path: '**/build/reports/tests/'
           retention-days: 7
 
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results
+          path: '**/build/allure-results/'
+          retention-days: 30
+
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always() && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Prepare Allure History
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p allure-history
+          if [ -d "gh-pages/allure" ]; then
+            cp -R gh-pages/allure/history allure-history/ || true
+          fi
+
+      - name: Generate Allure Report with History
+        uses: simple-elf/allure-report-action@v1.9
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          allure_results: '**/build/allure-results'
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+          destination_dir: allure
+
   backend-build:
     name: Backend Build
     runs-on: ubuntu-latest

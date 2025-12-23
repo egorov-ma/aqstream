@@ -28,6 +28,10 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
+
+    // DataFaker для генерации тестовых данных
+    val datafakerVersion: String by project
+    testImplementation("net.datafaker:datafaker:$datafakerVersion")
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {

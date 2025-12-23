@@ -396,6 +396,57 @@ class RlsIntegrationTest {
     }
 
     @Nested
+    @DisplayName("Superuser bypass RLS")
+    @Tag("e2e")
+    class SuperuserBypassRls {
+
+        @Test
+        @DisplayName("superuser видит данные всех tenant'ов (без RLS)")
+        void select_Superuser_SeesAllData() throws SQLException {
+            // Given: события для разных tenant'ов
+            insertEventDirectly(TENANT_A, "Event A");
+            insertEventDirectly(TENANT_B, "Event B");
+
+            // When: запрашиваем как superuser (владелец БД)
+            // Superuser НЕ подчиняется RLS политикам
+            int count;
+            try (Connection conn = getConnection();  // Соединение superuser
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(
+                     "SELECT COUNT(*) FROM event_service.test_events"
+                 )) {
+                rs.next();
+                count = rs.getInt(1);
+            }
+
+            // Then: видим ВСЕ события (bypass RLS)
+            assertThat(count).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("superuser может читать данные любого tenant")
+        void select_Superuser_CanReadAnyTenant() throws SQLException {
+            // Given: события для TENANT_A
+            insertEventDirectly(TENANT_A, "Secret Event A1");
+            insertEventDirectly(TENANT_A, "Secret Event A2");
+
+            // When: запрашиваем как superuser
+            int count;
+            try (Connection conn = getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(
+                     "SELECT COUNT(*) FROM event_service.test_events WHERE tenant_id = '" + TENANT_A + "'"
+                 )) {
+                rs.next();
+                count = rs.getInt(1);
+            }
+
+            // Then: superuser видит все данные
+            assertThat(count).isEqualTo(2);
+        }
+    }
+
+    @Nested
     @DisplayName("Переключение tenant context")
     class TenantContextSwitch {
 

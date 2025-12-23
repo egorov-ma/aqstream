@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -72,17 +72,17 @@
 
 - [x] Integration тесты проверяют изоляцию данных (`RlsIntegrationTest`)
 - [x] Тест: создание данных в org A, попытка чтения из org B — пустой результат
-- [ ] Тест: админ видит данные всех организаций (будет добавлен в E2E тестах)
+- [x] Тест: superuser видит данные всех организаций (E2E тесты добавлены)
 
 ## Definition of Done (DoD)
 
-- [x] Все Acceptance Criteria выполнены (кроме E2E тестов, планируемых позже)
+- [x] Все Acceptance Criteria выполнены
 - [x] RLS миграции созданы с rollback (`003-improve-events-rls.xml`)
 - [x] Unit тесты для TenantContext (`TenantContextTest.java`)
 - [x] Integration тесты изоляции данных (`RlsIntegrationTest.java`)
 - [x] Документация обновлена
 - [x] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

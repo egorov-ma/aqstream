@@ -63,6 +63,60 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/gateway:${{ steps.version.outputs.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/gateway:latest
 
+      - name: Build and push User Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/user-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/user-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/user-service:latest
+
+      - name: Build and push Event Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/event-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/event-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/event-service:latest
+
+      - name: Build and push Payment Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/payment-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/payment-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/payment-service:latest
+
+      - name: Build and push Notification Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/notification-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/notification-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/notification-service:latest
+
+      - name: Build and push Media Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/media-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/media-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/media-service:latest
+
+      - name: Build and push Analytics Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/analytics-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/analytics-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/analytics-service:latest
+
       - name: Log build summary
         run: |
           echo "=========================================="
@@ -73,6 +127,15 @@ jobs:
           echo "Branch: ${{ github.ref_name }}"
           echo "Built by: ${{ github.actor }}"
           echo "Time: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo ""
+          echo "Images built:"
+          echo "  - gateway:${{ steps.version.outputs.sha }}"
+          echo "  - user-service:${{ steps.version.outputs.sha }}"
+          echo "  - event-service:${{ steps.version.outputs.sha }}"
+          echo "  - payment-service:${{ steps.version.outputs.sha }}"
+          echo "  - notification-service:${{ steps.version.outputs.sha }}"
+          echo "  - media-service:${{ steps.version.outputs.sha }}"
+          echo "  - analytics-service:${{ steps.version.outputs.sha }}"
           echo "=========================================="
 
   deploy:

@@ -208,7 +208,7 @@ class OrganizationControllerIntegrationTest extends PostgresTestContainer {
             approvedRequest.reject(testUser, "Отклонено");
             requestRepository.save(approvedRequest);
 
-            CreateOrganizationRequest request = new CreateOrganizationRequest("Test Org", null);
+            CreateOrganizationRequest request = new CreateOrganizationRequest(FAKER.company().name(), null);
 
             mockMvc.perform(post(BASE_URL)
                     .with(jwt(jwtTokenProvider, testUser.getId()))

@@ -3,7 +3,6 @@ package ru.aqstream.common.data;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
@@ -73,20 +72,26 @@ public class TenantAwareDataSourceDecorator implements DataSource {
     /**
      * Устанавливает tenant_id как session variable в PostgreSQL.
      * Если tenant_id не установлен в TenantContext, сбрасывает переменную.
+     *
+     * <p>Используем PreparedStatement с set_config() для безопасной установки
+     * параметра сессии без риска SQL injection.</p>
      */
     private void setTenantIdOnConnection(Connection connection) throws SQLException {
         UUID tenantId = TenantContext.getTenantIdOptional().orElse(null);
 
-        try (Statement stmt = connection.createStatement()) {
-            if (tenantId != null) {
-                // Устанавливаем tenant_id для RLS политик
-                stmt.execute(String.format("SET app.tenant_id = '%s'", tenantId));
-                log.trace("Установлен tenant_id для соединения: {}", tenantId);
-            } else {
-                // Сбрасываем tenant_id если контекст не установлен
-                stmt.execute("RESET app.tenant_id");
-                log.trace("Сброшен tenant_id для соединения");
+        if (tenantId != null) {
+            // Используем set_config() с PreparedStatement для безопасности
+            try (var stmt = connection.prepareStatement("SELECT set_config('app.tenant_id', ?, false)")) {
+                stmt.setString(1, tenantId.toString());
+                stmt.execute();
             }
+            log.trace("Установлен tenant_id для соединения: {}", tenantId);
+        } else {
+            // Сбрасываем tenant_id если контекст не установлен
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("RESET app.tenant_id");
+            }
+            log.trace("Сброшен tenant_id для соединения");
         }
     }
 

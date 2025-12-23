@@ -90,7 +90,7 @@
 - [x] Integration тесты (concurrent registration, overselling prevention)
 - [x] Миграции созданы с RLS
 - [x] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

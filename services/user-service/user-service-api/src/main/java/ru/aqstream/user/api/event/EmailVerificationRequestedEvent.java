@@ -22,7 +22,11 @@ public class EmailVerificationRequestedEvent extends DomainEvent {
      * @param verificationToken токен верификации
      * @param verificationUrl   полная ссылка для верификации
      */
-    public EmailVerificationRequestedEvent(UUID userId, String email, String verificationToken, String verificationUrl) {
+    public EmailVerificationRequestedEvent(
+            UUID userId,
+            String email,
+            String verificationToken,
+            String verificationUrl) {
         super();
         this.userId = userId;
         this.email = email;

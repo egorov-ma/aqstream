@@ -1,9 +1,11 @@
 package ru.aqstream.event.client;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,5 +53,19 @@ public interface EventClient {
     List<RegistrationDto> findActiveRegistrations(
         @PathVariable("eventId") UUID eventId,
         @RequestParam("tenantId") UUID tenantId
+    );
+
+    /**
+     * Получает опубликованные события, которые начнутся в указанном диапазоне времени.
+     * Используется для планировщика напоминаний.
+     *
+     * @param from начало диапазона (включительно)
+     * @param to   конец диапазона (не включительно)
+     * @return список событий
+     */
+    @GetMapping("/api/v1/internal/events/upcoming")
+    List<EventDto> findUpcomingEvents(
+        @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+        @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
     );
 }

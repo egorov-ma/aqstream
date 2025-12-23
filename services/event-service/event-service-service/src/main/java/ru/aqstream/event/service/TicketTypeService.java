@@ -274,7 +274,8 @@ public class TicketTypeService {
             .orElseThrow(() -> new EventNotFoundException(slug));
 
         // Возвращаем активные типы билетов в период продаж
-        List<TicketType> ticketTypes = ticketTypeRepository.findByEventIdAndActiveIsTrueOrderBySortOrderAsc(event.getId());
+        List<TicketType> ticketTypes = ticketTypeRepository
+            .findByEventIdAndActiveIsTrueOrderBySortOrderAsc(event.getId());
         return ticketTypes.stream()
             .filter(TicketType::isSalesOpen)  // Фильтруем по периоду продаж
             .map(ticketTypeMapper::toDto)

@@ -75,8 +75,8 @@
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты для генерации QR (QrCodeServiceTest)
 - [x] Integration тесты check-in flow (CheckInControllerIntegrationTest)
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Code review пройден
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

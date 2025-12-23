@@ -3,6 +3,7 @@ package ru.aqstream.common.test;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.RabbitMQContainer;
 
 /**
  * Singleton Testcontainer для shared_services_db с поддержкой RLS.
@@ -43,6 +44,9 @@ public abstract class SharedServicesTestContainer {
     @SuppressWarnings("resource") // Singleton контейнер переиспользуется между тестами
     private static final PostgreSQLContainer<?> POSTGRES;
 
+    @SuppressWarnings("resource") // Singleton контейнер переиспользуется между тестами
+    private static final RabbitMQContainer RABBITMQ;
+
     static {
         POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("shared_services_db")
@@ -51,11 +55,16 @@ public abstract class SharedServicesTestContainer {
             .withInitScript("init-shared-services.sql")
             .withReuse(true); // Переиспользование между запусками
 
+        RABBITMQ = new RabbitMQContainer("rabbitmq:3.13-management-alpine")
+            .withReuse(true);
+
         POSTGRES.start();
+        RABBITMQ.start();
     }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
+        // PostgreSQL
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
@@ -66,6 +75,12 @@ public abstract class SharedServicesTestContainer {
 
         // Включаем RLS
         registry.add("aqstream.multitenancy.rls.enabled", () -> "true");
+
+        // RabbitMQ
+        registry.add("spring.rabbitmq.host", RABBITMQ::getHost);
+        registry.add("spring.rabbitmq.port", RABBITMQ::getAmqpPort);
+        registry.add("spring.rabbitmq.username", () -> "guest");
+        registry.add("spring.rabbitmq.password", () -> "guest");
     }
 
     /**

@@ -16,11 +16,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.event.listener.OrganizationEventListener;
+import ru.aqstream.user.client.UserClient;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.SharedServicesTestContainer;
@@ -44,8 +46,14 @@ class CheckInControllerIntegrationTest extends SharedServicesTestContainer {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private EventPublisher eventPublisher;
+
+    @MockitoBean
+    private UserClient userClient;
+
+    @MockitoBean
+    private OrganizationEventListener organizationEventListener;
 
     @Autowired
     private EventRepository eventRepository;

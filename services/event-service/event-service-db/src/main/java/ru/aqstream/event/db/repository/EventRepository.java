@@ -160,4 +160,25 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     @Query("SELECT e FROM Event e WHERE e.tenantId = :tenantId "
         + "AND e.status NOT IN ('CANCELLED', 'COMPLETED')")
     java.util.List<Event> findActiveByTenantId(@Param("tenantId") UUID tenantId);
+
+    // === Internal API (без RLS) ===
+
+    /**
+     * Находит все опубликованные события в указанном диапазоне времени.
+     * Используется для планировщика напоминаний (без ограничений по tenant).
+     *
+     * <p>ВАЖНО: Этот метод НЕ применяет RLS, так как используется
+     * внутренним API для отправки напоминаний всем пользователям.</p>
+     *
+     * @param from начало диапазона (включительно)
+     * @param to   конец диапазона (не включительно)
+     * @return список опубликованных событий
+     */
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' "
+        + "AND e.startsAt >= :from AND e.startsAt < :to "
+        + "ORDER BY e.startsAt ASC")
+    java.util.List<Event> findPublishedByStartsAtBetween(
+        @Param("from") Instant from,
+        @Param("to") Instant to
+    );
 }

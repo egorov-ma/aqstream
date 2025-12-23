@@ -1,19 +1,25 @@
 package ru.aqstream.notification.scheduler;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import ru.aqstream.notification.config.NotificationProperties;
-import ru.aqstream.notification.db.entity.NotificationPreference;
-import ru.aqstream.notification.service.NotificationService;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import ru.aqstream.event.api.dto.EventDto;
+import ru.aqstream.event.api.dto.EventStatus;
+import ru.aqstream.event.api.dto.RegistrationDto;
+import ru.aqstream.event.api.dto.RegistrationStatus;
+import ru.aqstream.event.client.EventClient;
+import ru.aqstream.notification.config.NotificationProperties;
+import ru.aqstream.notification.db.entity.NotificationPreference;
+import ru.aqstream.notification.service.NotificationService;
 
 /**
  * Планировщик отправки напоминаний о событиях.
@@ -31,8 +37,7 @@ public class EventReminderScheduler {
 
     private final NotificationService notificationService;
     private final NotificationProperties notificationProperties;
-    // TODO: Добавить EventClient для получения событий и регистраций
-    // private final EventClient eventClient;
+    private final EventClient eventClient;
 
     /**
      * Отправляет напоминания о событиях, которые начнутся через 24-25 часов.
@@ -46,33 +51,62 @@ public class EventReminderScheduler {
             Instant from = Instant.now().plus(24, ChronoUnit.HOURS);
             Instant to = from.plus(1, ChronoUnit.HOURS);
 
-            // TODO: Реализовать получение событий через EventClient
-            // List<EventSummaryDto> events = eventClient.findByStartsAtBetween(from, to);
-            //
-            // for (EventSummaryDto event : events) {
-            //     if (event.status() != EventStatus.PUBLISHED) continue;
-            //
-            //     List<RegistrationSummaryDto> registrations =
-            //         eventClient.findRegistrationsByEventId(event.id());
-            //
-            //     for (RegistrationSummaryDto reg : registrations) {
-            //         if (reg.status() == RegistrationStatus.CONFIRMED) {
-            //             sendReminder(reg, event);
-            //         }
-            //     }
-            // }
+            // Получаем опубликованные события в диапазоне
+            List<EventDto> events = eventClient.findUpcomingEvents(from, to);
+            log.info("Найдено событий для напоминаний: count={}", events.size());
 
-            log.info("Планировщик напоминаний завершён");
+            int sentCount = 0;
+            for (EventDto event : events) {
+                // Дополнительная проверка статуса (на случай race condition)
+                if (event.status() != EventStatus.PUBLISHED) {
+                    continue;
+                }
+
+                // Получаем активные регистрации
+                List<RegistrationDto> registrations =
+                    eventClient.findActiveRegistrations(event.id(), event.tenantId());
+
+                for (RegistrationDto reg : registrations) {
+                    if (reg.status() == RegistrationStatus.CONFIRMED && reg.userId() != null) {
+                        boolean sent = sendReminderToUser(reg, event);
+                        if (sent) {
+                            sentCount++;
+                        }
+                    }
+                }
+            }
+
+            log.info("Планировщик напоминаний завершён: отправлено={}", sentCount);
         } catch (Exception e) {
             log.error("Ошибка в планировщике напоминаний: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Отправляет напоминание участнику.
+     * Отправляет напоминание конкретному пользователю о регистрации.
+     *
+     * @param registration данные регистрации
+     * @param event        данные события
+     * @return true если уведомление отправлено
      */
-    private void sendReminder(
-            java.util.UUID userId,
+    private boolean sendReminderToUser(RegistrationDto registration, EventDto event) {
+        return sendReminder(
+            registration.userId(),
+            registration.firstName(),
+            event.title(),
+            event.slug(),
+            event.startsAt(),
+            event.locationAddress()
+        );
+    }
+
+    /**
+     * Отправляет напоминание участнику.
+     *
+     * @return true если уведомление отправлено
+     */
+    private boolean sendReminder(
+            UUID userId,
             String firstName,
             String eventTitle,
             String eventSlug,
@@ -98,6 +132,8 @@ public class EventReminderScheduler {
         if (sent) {
             log.debug("Напоминание отправлено: userId={}, event={}", userId, eventTitle);
         }
+
+        return sent;
     }
 
     private String formatDate(Instant instant) {

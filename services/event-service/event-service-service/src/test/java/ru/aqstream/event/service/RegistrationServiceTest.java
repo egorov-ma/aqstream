@@ -81,6 +81,9 @@ class RegistrationServiceTest {
     private String testFirstName;
     private String testLastName;
     private String testEmail;
+    private String testEventTitle;
+    private String testEventSlug;
+    private String testTicketTypeName;
 
     private Event testEvent;
     private TicketType testTicketType;
@@ -107,6 +110,9 @@ class RegistrationServiceTest {
         testFirstName = FAKER.name().firstName();
         testLastName = FAKER.name().lastName();
         testEmail = FAKER.internet().emailAddress();
+        testEventTitle = FAKER.book().title();
+        testEventSlug = "event-" + UUID.randomUUID().toString().substring(0, 8);
+        testTicketTypeName = FAKER.commerce().productName();
 
         testEvent = createTestEvent();
         testTicketType = createTestTicketType();
@@ -125,7 +131,7 @@ class RegistrationServiceTest {
 
     private Event createTestEvent() {
         Instant startsAt = Instant.now().plus(7, ChronoUnit.DAYS);
-        Event event = Event.create("Test Event", "test-event", startsAt, "Europe/Moscow");
+        Event event = Event.create(testEventTitle, testEventSlug, startsAt, "Europe/Moscow");
         setEntityId(event, eventId);
         // Публикуем событие
         event.publish();
@@ -133,7 +139,7 @@ class RegistrationServiceTest {
     }
 
     private TicketType createTestTicketType() {
-        TicketType ticketType = TicketType.create(testEvent, "Стандартный билет");
+        TicketType ticketType = TicketType.create(testEvent, testTicketTypeName);
         setEntityId(ticketType, ticketTypeId);
         // Без ограничений по периоду продаж
         ticketType.updateSalesPeriod(null, null);
@@ -159,11 +165,11 @@ class RegistrationServiceTest {
         return new RegistrationDto(
             registrationId,
             eventId,
-            "Test Event",
-            "test-event",
+            testEventTitle,
+            testEventSlug,
             Instant.now().plus(7, ChronoUnit.DAYS),
             ticketTypeId,
-            "Стандартный билет",
+            testTicketTypeName,
             userId,
             RegistrationStatus.CONFIRMED,
             "ABC12345",

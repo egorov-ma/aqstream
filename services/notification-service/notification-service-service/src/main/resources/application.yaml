@@ -67,6 +67,13 @@ notification:
   reminder:
     cron: ${NOTIFICATION_REMINDER_CRON:0 0 * * * *}
 
+# === Multi-tenancy (RLS) ===
+# Включает TenantAwareDataSourceDecorator для установки app.tenant_id в PostgreSQL
+aqstream:
+  multitenancy:
+    rls:
+      enabled: true
+
 # === JWT Configuration (для валидации токенов) ===
 jwt:
   secret: ${JWT_SECRET:development-secret-key-minimum-32-characters-long}
@@ -93,4 +100,4 @@ logging:
     ru.aqstream.notification: DEBUG
     com.pengrad.telegrambot: INFO
   pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] %-5level %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] [%X{tenantId}] %-5level %logger{36} - %msg%n"

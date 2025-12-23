@@ -15,5 +15,6 @@
     <include file="db/changelog/changes/005-create-ticket-types-table.xml"/>
     <include file="db/changelog/changes/006-create-registrations-table.xml"/>
     <include file="db/changelog/changes/007-add-registration-check-in.xml"/>
+    <include file="db/changelog/changes/008-add-ticket-types-rls.xml"/>
 
 </databaseChangeLog>

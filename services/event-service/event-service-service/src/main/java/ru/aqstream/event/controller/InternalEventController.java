@@ -2,6 +2,7 @@ package ru.aqstream.event.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -114,5 +115,36 @@ public class InternalEventController {
                 TenantContext.clear();
             }
         }
+    }
+
+    /**
+     * Получает опубликованные события, которые начнутся в указанном диапазоне времени.
+     * Используется планировщиком напоминаний.
+     *
+     * <p>Возвращает события всех организаций (без RLS) для отправки напоминаний.</p>
+     *
+     * @param from начало диапазона (включительно)
+     * @param to   конец диапазона (не включительно)
+     * @return список опубликованных событий
+     */
+    @Operation(
+        summary = "Получить предстоящие события",
+        description = "Возвращает опубликованные события в указанном временном диапазоне"
+    )
+    @GetMapping("/events/upcoming")
+    public ResponseEntity<List<EventDto>> findUpcomingEvents(
+        @RequestParam Instant from,
+        @RequestParam Instant to
+    ) {
+        log.debug("Internal: запрос предстоящих событий: from={}, to={}", from, to);
+
+        List<EventDto> events = eventRepository.findPublishedByStartsAtBetween(from, to)
+            .stream()
+            .map(eventMapper::toDto)
+            .toList();
+
+        log.info("Internal: найдено предстоящих событий: count={}", events.size());
+
+        return ResponseEntity.ok(events);
     }
 }

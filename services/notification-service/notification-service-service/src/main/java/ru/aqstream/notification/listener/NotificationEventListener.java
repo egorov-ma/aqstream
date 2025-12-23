@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.event.EventCancelledEvent;
+import ru.aqstream.event.api.event.EventUpdatedEvent;
 import ru.aqstream.event.api.event.RegistrationCancelledEvent;
 import ru.aqstream.event.api.event.RegistrationCreatedEvent;
 import ru.aqstream.event.client.EventClient;
@@ -166,6 +167,68 @@ public class NotificationEventListener {
 
         } catch (Exception e) {
             log.error("Ошибка обработки EventCancelledEvent: eventId={}, error={}",
+                event.getEventId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Обрабатывает изменения в событии.
+     * Отправляет уведомление всем активным участникам о произошедших изменениях.
+     */
+    @RabbitListener(queues = NOTIFICATION_QUEUE, id = "event-updated")
+    public void handleEventUpdated(EventUpdatedEvent event) {
+        log.info("Получено событие EventUpdatedEvent: eventId={}, tenantId={}",
+            event.getEventId(), event.getTenantId());
+
+        try {
+            // Получаем список всех активных регистраций через EventClient
+            List<RegistrationDto> registrations = eventClient.findActiveRegistrations(
+                event.getEventId(),
+                event.getTenantId()
+            );
+
+            log.info("Массовая рассылка при изменении события: eventId={}, участников={}",
+                event.getEventId(), registrations.size());
+
+            // Отправляем уведомление каждому участнику
+            int sentCount = 0;
+            int failedCount = 0;
+
+            for (RegistrationDto registration : registrations) {
+                try {
+                    Map<String, Object> variables = new HashMap<>();
+                    variables.put("firstName", registration.firstName());
+                    variables.put("eventTitle", event.getTitle());
+                    variables.put("eventDate", formatDate(event.getStartsAt()));
+
+                    notificationService.sendTelegram(
+                        registration.userId(),
+                        "event.changed",
+                        variables,
+                        NotificationPreference.EVENT_CHANGES
+                    );
+                    sentCount++;
+
+                    // Rate limiting: небольшая задержка между отправками
+                    if (sentCount % 30 == 0) {
+                        Thread.sleep(1000); // 1 секунда каждые 30 сообщений
+                    }
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.warn("Прерывание массовой рассылки: eventId={}", event.getEventId());
+                    break;
+                } catch (Exception e) {
+                    failedCount++;
+                    log.debug("Ошибка отправки уведомления: userId={}, error={}",
+                        registration.userId(), e.getMessage());
+                }
+            }
+
+            log.info("Массовая рассылка завершена: eventId={}, отправлено={}, ошибок={}",
+                event.getEventId(), sentCount, failedCount);
+
+        } catch (Exception e) {
+            log.error("Ошибка обработки EventUpdatedEvent: eventId={}, error={}",
                 event.getEventId(), e.getMessage(), e);
         }
     }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import net.datafaker.Faker;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +39,8 @@ import ru.aqstream.common.messaging.config.RabbitMQConfig;
 @Testcontainers
 class RabbitMQIntegrationTest {
 
+    private static final Faker FAKER = new Faker();
+
     @Container
     static RabbitMQContainer rabbitMQ = new RabbitMQContainer("rabbitmq:3.13-management-alpine");
 
@@ -60,7 +63,8 @@ class RabbitMQIntegrationTest {
     void sendAndReceive_NotificationQueue_Success() throws Exception {
         // Given
         String eventType = "event.created";
-        String payload = "{\"eventId\":\"" + UUID.randomUUID() + "\",\"title\":\"Test Event\"}";
+        String testTitle = FAKER.book().title();
+        String payload = "{\"eventId\":\"" + UUID.randomUUID() + "\",\"title\":\"" + testTitle + "\"}";
 
         // When
         rabbitTemplate.convertAndSend(RabbitMQConfig.EVENTS_EXCHANGE, eventType, payload);
@@ -68,7 +72,7 @@ class RabbitMQIntegrationTest {
         // Then
         boolean received = testMessageListener.awaitMessage(5, TimeUnit.SECONDS);
         assertThat(received).isTrue();
-        assertThat(testMessageListener.getLastMessage()).contains("Test Event");
+        assertThat(testMessageListener.getLastMessage()).contains(testTitle);
     }
 
     @Test

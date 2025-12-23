@@ -84,7 +84,8 @@ class TicketTypeServiceTest {
 
     private Event createTestEvent() {
         Instant startsAt = Instant.now().plus(7, ChronoUnit.DAYS);
-        Event event = Event.create("Test Event", "test-event", startsAt, "Europe/Moscow");
+        String slug = "event-" + UUID.randomUUID().toString().substring(0, 8);
+        Event event = Event.create(FAKER.book().title(), slug, startsAt, "Europe/Moscow");
         setEntityId(event, eventId);
         return event;
     }

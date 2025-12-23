@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import javax.crypto.SecretKey;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,10 +25,11 @@ import org.junit.jupiter.api.Test;
  */
 class JwtTokenValidatorTest {
 
+    private static final Faker FAKER = new Faker();
     private static final String SECRET = "test-secret-key-must-be-at-least-32-characters";
     private static final UUID USER_ID = UUID.randomUUID();
     private static final UUID TENANT_ID = UUID.randomUUID();
-    private static final String EMAIL = "test@example.com";
+    private static final String EMAIL = FAKER.internet().emailAddress();
     private static final Set<String> ROLES = Set.of("ROLE_USER", "ROLE_ADMIN");
 
     private JwtTokenValidator validator;

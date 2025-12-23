@@ -167,7 +167,8 @@ class TicketImageServiceTest {
 
     private Registration createRegistrationWithLongTitle() {
         Event event = Event.create(
-            "Очень длинное название события которое должно переноситься на несколько строк и проверяет работу переноса текста",
+            "Очень длинное название события которое должно переноситься "
+                + "на несколько строк и проверяет работу переноса текста",
             FAKER.internet().slug(),
             Instant.now().plus(7, ChronoUnit.DAYS),
             "Europe/Moscow"

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - События](../../business/roadmap.md#фаза-2-core) |
 
@@ -84,8 +84,8 @@
 - [x] Unit тесты написаны
 - [x] Integration тесты (concurrent registration)
 - [x] Миграции созданы
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Code review пройден
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

@@ -296,7 +296,8 @@ public class OrganizationController {
         @ApiResponse(responseCode = "200", description = "Приглашение принято, пользователь добавлен в организацию"),
         @ApiResponse(responseCode = "401", description = "Не авторизован"),
         @ApiResponse(responseCode = "404", description = "Приглашение не найдено"),
-        @ApiResponse(responseCode = "409", description = "Приглашение истекло, уже использовано или пользователь уже член")
+        @ApiResponse(responseCode = "409",
+            description = "Приглашение истекло, уже использовано или пользователь уже член")
     })
     @PostMapping("/join/{inviteCode}")
     public ResponseEntity<OrganizationMemberDto> acceptInvite(

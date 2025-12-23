@@ -1,6 +1,6 @@
 package ru.aqstream.user.api.exception;
 
-import ru.aqstream.common.api.exception.AqStreamException;
+import ru.aqstream.common.api.exception.ValidationException;
 
 /**
  * Исключение: неверный или истёкший токен верификации.
@@ -10,7 +10,7 @@ import ru.aqstream.common.api.exception.AqStreamException;
  * Сообщение намеренно не раскрывает причину (неверный, истёкший или уже использован)
  * для защиты от атак перебора.</p>
  */
-public class InvalidVerificationTokenException extends AqStreamException {
+public class InvalidVerificationTokenException extends ValidationException {
 
     private static final String CODE = "invalid_verification_token";
     private static final String MESSAGE = "Недействительная или истёкшая ссылка";

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Set;
 import java.util.UUID;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,9 +28,10 @@ import ru.aqstream.gateway.security.JwtValidationException;
  */
 class JwtAuthenticationFilterTest {
 
+    private static final Faker FAKER = new Faker();
     private static final UUID USER_ID = UUID.randomUUID();
     private static final UUID TENANT_ID = UUID.randomUUID();
-    private static final String EMAIL = "test@example.com";
+    private static final String EMAIL = FAKER.internet().emailAddress();
     private static final Set<String> ROLES = Set.of("ROLE_USER");
     private static final String VALID_TOKEN = "valid.jwt.token";
 

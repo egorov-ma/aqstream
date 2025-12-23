@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Добавление RLS для ticket_types -->
+    <!-- Для Defense in Depth: tenant_id хранится напрямую в таблице -->
+
+    <changeSet id="008-1" author="aqstream">
+        <comment>Добавление колонки tenant_id в ticket_types</comment>
+
+        <!-- Добавляем колонку как nullable сначала -->
+        <addColumn tableName="ticket_types" schemaName="event_service">
+            <column name="tenant_id" type="uuid"/>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="ticket_types" schemaName="event_service" columnName="tenant_id"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="008-2" author="aqstream">
+        <comment>Заполнение tenant_id из связанного события</comment>
+
+        <sql>
+            -- Копируем tenant_id из события к которому относится тип билета
+            UPDATE event_service.ticket_types tt
+            SET tenant_id = e.tenant_id
+            FROM event_service.events e
+            WHERE tt.event_id = e.id;
+        </sql>
+
+        <rollback>
+            <sql>
+                UPDATE event_service.ticket_types SET tenant_id = NULL;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="008-3" author="aqstream">
+        <comment>Добавление NOT NULL constraint на tenant_id</comment>
+
+        <addNotNullConstraint
+            tableName="ticket_types"
+            schemaName="event_service"
+            columnName="tenant_id"
+            constraintName="nn_ticket_types_tenant_id"/>
+
+        <rollback>
+            <dropNotNullConstraint
+                tableName="ticket_types"
+                schemaName="event_service"
+                columnName="tenant_id"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="008-4" author="aqstream">
+        <comment>Индекс на tenant_id для RLS</comment>
+
+        <createIndex indexName="idx_ticket_types_tenant_id" tableName="ticket_types" schemaName="event_service">
+            <column name="tenant_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_ticket_types_tenant_id" tableName="ticket_types" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="008-5" author="aqstream">
+        <comment>Включение RLS для ticket_types</comment>
+
+        <sql>
+            -- Включаем RLS
+            ALTER TABLE event_service.ticket_types ENABLE ROW LEVEL SECURITY;
+
+            -- Политика для tenant isolation (USING + WITH CHECK)
+            CREATE POLICY tenant_isolation_ticket_types ON event_service.ticket_types
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+
+            -- FORCE RLS для владельца таблицы
+            ALTER TABLE event_service.ticket_types FORCE ROW LEVEL SECURITY;
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_ticket_types ON event_service.ticket_types;
+                ALTER TABLE event_service.ticket_types NO FORCE ROW LEVEL SECURITY;
+                ALTER TABLE event_service.ticket_types DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

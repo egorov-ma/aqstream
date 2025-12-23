@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import ru.aqstream.common.api.exception.ValidationException;
 
 @DisplayName("QrCodeService")
 class QrCodeServiceTest {
@@ -70,7 +71,7 @@ class QrCodeServiceTest {
         void generateQrCode_NullCode_ThrowsException() {
             // When & Then
             assertThatThrownBy(() -> qrCodeService.generateQrCode(null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("не может быть пустым");
         }
 
@@ -79,7 +80,7 @@ class QrCodeServiceTest {
         void generateQrCode_EmptyCode_ThrowsException() {
             // When & Then
             assertThatThrownBy(() -> qrCodeService.generateQrCode(""))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("не может быть пустым");
         }
 
@@ -88,7 +89,7 @@ class QrCodeServiceTest {
         void generateQrCode_BlankCode_ThrowsException() {
             // When & Then
             assertThatThrownBy(() -> qrCodeService.generateQrCode("   "))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("не может быть пустым");
         }
 
@@ -101,7 +102,7 @@ class QrCodeServiceTest {
 
             // When & Then
             assertThatThrownBy(() -> qrCodeService.generateQrCode(confirmationCode, tooSmallSize))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining(String.valueOf(QrCodeService.MIN_QR_SIZE));
         }
 

@@ -30,7 +30,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
      * @return количество отозванных токенов
      */
     @Modifying
-    @Query("UPDATE RefreshToken t SET t.revoked = true, t.revokedAt = :now WHERE t.user.id = :userId AND t.revoked = false")
+    @Query("UPDATE RefreshToken t SET t.revoked = true, t.revokedAt = :now "
+         + "WHERE t.user.id = :userId AND t.revoked = false")
     int revokeAllByUserId(UUID userId, Instant now);
 
     /**

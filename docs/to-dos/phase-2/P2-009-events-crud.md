@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - События](../../business/roadmap.md#фаза-2-core) |
 
@@ -72,7 +72,7 @@ Cancelled  Cancelled
 
 - [x] В статусе DRAFT можно редактировать всё
 - [x] В статусе PUBLISHED нельзя изменять типы билетов с регистрациями
-- [ ] При изменении даты/места — уведомление участникам
+- [x] При изменении даты/места — уведомление участникам (EventUpdatedEvent + NotificationEventListener)
 
 ### Видимость
 
@@ -89,14 +89,14 @@ Cancelled  Cancelled
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены
+- [x] Все Acceptance Criteria выполнены
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны (80%+ coverage)
 - [x] Integration тесты написаны
 - [x] Миграции созданы с RLS
 - [x] Events опубликованы в RabbitMQ
-- [ ] Code review пройден
-- [ ] CI/CD pipeline проходит
+- [x] Code review пройден
+- [x] CI/CD pipeline проходит
 
 ## Технические детали
 

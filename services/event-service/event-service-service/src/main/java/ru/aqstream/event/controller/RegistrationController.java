@@ -54,7 +54,8 @@ public class RegistrationController {
         @ApiResponse(responseCode = "400", description = "Невалидные данные"),
         @ApiResponse(responseCode = "401", description = "Не авторизован"),
         @ApiResponse(responseCode = "404", description = "Событие или тип билета не найдены"),
-        @ApiResponse(responseCode = "409", description = "Регистрация закрыта, билеты распроданы или уже зарегистрирован")
+        @ApiResponse(responseCode = "409",
+            description = "Регистрация закрыта, билеты распроданы или уже зарегистрирован")
     })
     @PostMapping("/events/{eventId}/registrations")
     public ResponseEntity<RegistrationDto> create(
