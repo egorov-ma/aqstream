@@ -26,9 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <QueryProvider>
             {children}
             <Toaster />
+            <WelcomeScript />
           </QueryProvider>
         </ThemeProvider>
-        <WelcomeScript />
       </body>
     </html>
   );

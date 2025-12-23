@@ -117,6 +117,15 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/analytics-service:${{ steps.version.outputs.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/analytics-service:latest
 
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
+
       - name: Log build summary
         run: |
           echo "=========================================="
@@ -136,6 +145,7 @@ jobs:
           echo "  - notification-service:${{ steps.version.outputs.sha }}"
           echo "  - media-service:${{ steps.version.outputs.sha }}"
           echo "  - analytics-service:${{ steps.version.outputs.sha }}"
+          echo "  - frontend:${{ steps.version.outputs.sha }}"
           echo "=========================================="
 
   deploy:
