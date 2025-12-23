@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- Тесты могут быть длиннее и сложнее -->
+    <suppress checks="FileLength" files=".*Test\.java$"/>
+    <suppress checks="MethodLength" files=".*Test\.java$"/>
+    <suppress checks="CyclomaticComplexity" files=".*Test\.java$"/>
+
+    <!-- Event records могут иметь много параметров -->
+    <suppress checks="ParameterNumber" files=".*Event\.java$"/>
+</suppressions>

@@ -40,12 +40,18 @@ public class VersionAggregatorService {
      */
     public Mono<SystemVersionDto> aggregateVersions() {
         // Параллельный запрос ко всем сервисам
-        Mono<ServiceVersionDto> userService = fetchServiceVersion("user-service", serviceEndpoints.userService());
-        Mono<ServiceVersionDto> eventService = fetchServiceVersion("event-service", serviceEndpoints.eventService());
-        Mono<ServiceVersionDto> paymentService = fetchServiceVersion("payment-service", serviceEndpoints.paymentService());
-        Mono<ServiceVersionDto> notificationService = fetchServiceVersion("notification-service", serviceEndpoints.notificationService());
-        Mono<ServiceVersionDto> mediaService = fetchServiceVersion("media-service", serviceEndpoints.mediaService());
-        Mono<ServiceVersionDto> analyticsService = fetchServiceVersion("analytics-service", serviceEndpoints.analyticsService());
+        Mono<ServiceVersionDto> userService = fetchServiceVersion(
+            "user-service", serviceEndpoints.userService());
+        Mono<ServiceVersionDto> eventService = fetchServiceVersion(
+            "event-service", serviceEndpoints.eventService());
+        Mono<ServiceVersionDto> paymentService = fetchServiceVersion(
+            "payment-service", serviceEndpoints.paymentService());
+        Mono<ServiceVersionDto> notificationService = fetchServiceVersion(
+            "notification-service", serviceEndpoints.notificationService());
+        Mono<ServiceVersionDto> mediaService = fetchServiceVersion(
+            "media-service", serviceEndpoints.mediaService());
+        Mono<ServiceVersionDto> analyticsService = fetchServiceVersion(
+            "analytics-service", serviceEndpoints.analyticsService());
 
         // Информация об инфраструктуре
         Mono<InfrastructureVersionDto> infrastructure = infrastructureVersionService.getInfrastructureVersions();

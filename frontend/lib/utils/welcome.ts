@@ -36,35 +36,45 @@ function formatDate(dateString: string): string {
  * Выводит приветственное сообщение в консоль браузера.
  */
 export function printWelcomeMessage(): void {
-  if (typeof window === 'undefined') return;
+  // Проверяем что мы в браузере
+  if (typeof window === 'undefined') {
+    return;
+  }
 
-  const version = getFrontendVersion();
+  // Небольшая задержка чтобы консоль успела инициализироваться
+  setTimeout(() => {
+    try {
+      const version = getFrontendVersion();
 
-  // ASCII art логотип
-  console.log('%c' + AQSTREAM_ASCII, 'color: #3b82f6; font-family: monospace;');
+      // ASCII art логотип
+      console.log('%c' + AQSTREAM_ASCII, 'color: #3b82f6; font-family: monospace;');
 
-  // Название платформы
-  console.log(
-    '%cAqStream Platform',
-    'color: #3b82f6; font-size: 16px; font-weight: bold;'
-  );
+      // Название платформы
+      console.log(
+        '%cAqStream Platform',
+        'color: #3b82f6; font-size: 16px; font-weight: bold;'
+      );
 
-  // Информация о фронтенде
-  console.log(
-    `%cФронтенд: v${version.version} (${version.gitCommit})`,
-    'color: #6b7280; font-size: 12px;'
-  );
+      // Информация о фронтенде
+      console.log(
+        `%cФронтенд: v${version.version} (${version.gitCommit})`,
+        'color: #6b7280; font-size: 12px;'
+      );
 
-  console.log(
-    `%cСборка: ${formatDate(version.buildTime)}`,
-    'color: #6b7280; font-size: 12px;'
-  );
+      console.log(
+        `%cСборка: ${formatDate(version.buildTime)}`,
+        'color: #6b7280; font-size: 12px;'
+      );
 
-  // Подсказка для получения версий
-  console.log(
-    '%c\nДля информации о версиях сервисов: AqStream.versions()',
-    'color: #10b981; font-size: 11px;'
-  );
+      // Подсказка для получения версий
+      console.log(
+        '%c\nДля информации о версиях сервисов: AqStream.versions()',
+        'color: #10b981; font-size: 11px;'
+      );
+    } catch (error) {
+      console.error('[AqStream] Ошибка вывода welcome message:', error);
+    }
+  }, 100);
 }
 
 /**

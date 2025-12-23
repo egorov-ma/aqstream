@@ -1,6 +1,5 @@
 package ru.aqstream.gateway.version;
 
-import io.lettuce.core.api.StatefulRedisConnection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;

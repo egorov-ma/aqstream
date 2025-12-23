@@ -9,11 +9,16 @@ import { printWelcomeMessage, registerVersionCommand } from '@/lib/utils/welcome
  */
 export function WelcomeScript() {
   useEffect(() => {
-    // Показываем welcome message при каждой загрузке
-    printWelcomeMessage();
+    try {
+      // Показываем welcome message при каждой загрузке
+      printWelcomeMessage();
 
-    // Регистрируем глобальную команду
-    registerVersionCommand();
+      // Регистрируем глобальную команду
+      registerVersionCommand();
+    } catch (error) {
+      // Ошибки версионирования не должны ломать приложение
+      console.error('[AqStream] Ошибка инициализации welcome script:', error);
+    }
   }, []);
 
   return null;

@@ -130,6 +130,7 @@ public class EventService {
      * @return обновлённое событие
      * @throws EventNotEditableException если событие нельзя редактировать
      */
+    @SuppressWarnings("checkstyle:CyclomaticComplexity") // Partial update паттерн требует много проверок
     @Transactional
     public EventDto update(UUID eventId, UpdateEventRequest request) {
         log.info("Обновление события: eventId={}", eventId);

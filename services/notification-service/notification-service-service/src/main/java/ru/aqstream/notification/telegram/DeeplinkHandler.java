@@ -51,69 +51,55 @@ public class DeeplinkHandler {
     public void handleInvite(Long chatId, String inviteCode, User from) {
         log.info("Обработка приглашения: chatId={}, inviteCode={}", chatId, maskCode(inviteCode));
 
-        if (from == null || from.id() == null) {
-            log.warn("Не удалось получить информацию о пользователе Telegram");
-            sendInviteNotRegisteredMessage(chatId);
-            return;
-        }
-
-        String telegramId = String.valueOf(from.id());
-
-        // Ищем пользователя по telegram_id
-        Optional<UserDto> userOpt;
-        try {
-            userOpt = userClient.findByTelegramId(telegramId);
-        } catch (FeignException e) {
-            log.error("Ошибка при поиске пользователя по Telegram ID: telegramId={}, error={}",
-                telegramId, e.getMessage());
-            sendErrorMessage(chatId, "Произошла ошибка. Попробуйте позже.");
-            return;
-        }
-
+        Optional<UserDto> userOpt = findUserByTelegramId(chatId, from,
+            () -> sendInviteNotRegisteredMessage(chatId));
         if (userOpt.isEmpty()) {
-            // Пользователь не зарегистрирован через Telegram
-            log.info("Пользователь не найден по Telegram ID: telegramId={}", telegramId);
-            sendInviteNotRegisteredMessage(chatId);
             return;
         }
 
         UserDto user = userOpt.get();
+        acceptInviteForUser(chatId, inviteCode, user);
+    }
 
-        // Пытаемся принять приглашение
+    /**
+     * Принимает приглашение для пользователя.
+     */
+    private void acceptInviteForUser(Long chatId, String inviteCode, UserDto user) {
         try {
             AcceptInviteByTelegramRequest request = new AcceptInviteByTelegramRequest(
                 user.id(),
                 inviteCode
             );
             OrganizationMemberDto member = userClient.acceptInviteByTelegram(request);
-
-            String successMessage = String.format("""
-                ✅ *Добро пожаловать!*
-
-                Вы успешно присоединились к организации!
-                Ваша роль: %s
-
-                Теперь вы будете получать уведомления о событиях организации.
-                """, formatRole(member.role().name()));
-
-            messageSender.sendMessage(chatId, successMessage);
+            sendInviteSuccessMessage(chatId, member);
             log.info("Пользователь присоединился к организации: userId={}, role={}",
                 user.id(), member.role());
-
         } catch (FeignException.NotFound e) {
             log.info("Приглашение не найдено: inviteCode={}", maskCode(inviteCode));
             sendErrorMessage(chatId, "Приглашение не найдено или недействительно.");
         } catch (FeignException.Conflict e) {
-            log.info("Конфликт при принятии приглашения: userId={}, error={}",
-                user.id(), e.getMessage());
-            // Может быть: уже член организации, приглашение истекло или использовано
+            log.info("Конфликт при принятии приглашения: userId={}, error={}", user.id(), e.getMessage());
             sendErrorMessage(chatId, "Не удалось принять приглашение. "
                 + "Возможно, вы уже являетесь членом организации или приглашение недействительно.");
         } catch (FeignException e) {
-            log.error("Ошибка при принятии приглашения: userId={}, error={}",
-                user.id(), e.getMessage());
+            log.error("Ошибка при принятии приглашения: userId={}, error={}", user.id(), e.getMessage());
             sendErrorMessage(chatId, "Произошла ошибка. Попробуйте позже.");
         }
+    }
+
+    /**
+     * Отправляет сообщение об успешном принятии приглашения.
+     */
+    private void sendInviteSuccessMessage(Long chatId, OrganizationMemberDto member) {
+        String successMessage = String.format("""
+            ✅ *Добро пожаловать!*
+
+            Вы успешно присоединились к организации!
+            Ваша роль: %s
+
+            Теперь вы будете получать уведомления о событиях организации.
+            """, formatRole(member.role().name()));
+        messageSender.sendMessage(chatId, successMessage);
     }
 
     /**
@@ -239,61 +225,45 @@ public class DeeplinkHandler {
     public void handleRegistration(Long chatId, String registrationId, User from) {
         log.info("Обработка просмотра регистрации: chatId={}, registrationId={}", chatId, registrationId);
 
-        if (from == null || from.id() == null) {
-            log.warn("Не удалось получить информацию о пользователе Telegram");
-            sendRegistrationAuthRequiredMessage(chatId);
+        UUID regId = parseRegistrationId(chatId, registrationId);
+        if (regId == null) {
             return;
         }
 
-        String telegramId = String.valueOf(from.id());
-
-        // Парсим registrationId
-        UUID regId;
-        try {
-            regId = UUID.fromString(registrationId);
-        } catch (IllegalArgumentException e) {
-            log.info("Невалидный формат registrationId: {}", registrationId);
-            sendErrorMessage(chatId, "Неверный формат идентификатора регистрации.");
-            return;
-        }
-
-        // Ищем пользователя по telegram_id
-        Optional<UserDto> userOpt;
-        try {
-            userOpt = userClient.findByTelegramId(telegramId);
-        } catch (FeignException e) {
-            log.error("Ошибка при поиске пользователя: telegramId={}, error={}", telegramId, e.getMessage());
-            sendErrorMessage(chatId, "Произошла ошибка. Попробуйте позже.");
-            return;
-        }
-
+        Optional<UserDto> userOpt = findUserByTelegramId(chatId, from,
+            () -> sendRegistrationAuthRequiredMessage(chatId));
         if (userOpt.isEmpty()) {
-            log.info("Пользователь не найден по Telegram ID: telegramId={}", telegramId);
-            sendRegistrationAuthRequiredMessage(chatId);
             return;
         }
 
         UserDto user = userOpt.get();
+        showRegistrationForUser(chatId, regId, user);
+    }
 
-        // Получаем регистрацию
-        Optional<RegistrationDto> registrationOpt;
+    /**
+     * Парсит ID регистрации из строки.
+     */
+    private UUID parseRegistrationId(Long chatId, String registrationId) {
         try {
-            registrationOpt = eventClient.findRegistrationById(regId);
-        } catch (FeignException e) {
-            log.error("Ошибка при получении регистрации: regId={}, error={}", regId, e.getMessage());
-            sendErrorMessage(chatId, "Произошла ошибка. Попробуйте позже.");
-            return;
+            return UUID.fromString(registrationId);
+        } catch (IllegalArgumentException e) {
+            log.info("Невалидный формат registrationId: {}", registrationId);
+            sendErrorMessage(chatId, "Неверный формат идентификатора регистрации.");
+            return null;
         }
+    }
 
+    /**
+     * Показывает информацию о регистрации пользователю.
+     */
+    private void showRegistrationForUser(Long chatId, UUID regId, UserDto user) {
+        Optional<RegistrationDto> registrationOpt = fetchRegistration(chatId, regId);
         if (registrationOpt.isEmpty()) {
-            log.info("Регистрация не найдена: regId={}", regId);
-            sendErrorMessage(chatId, "Регистрация не найдена.");
             return;
         }
 
         RegistrationDto registration = registrationOpt.get();
 
-        // Проверяем, принадлежит ли регистрация пользователю
         if (!user.id().equals(registration.userId())) {
             log.warn("Попытка доступа к чужой регистрации: userId={}, regUserId={}, regId={}",
                 user.id(), registration.userId(), regId);
@@ -301,16 +271,32 @@ public class DeeplinkHandler {
             return;
         }
 
-        // Проверяем статус регистрации
         if (registration.status() == RegistrationStatus.CANCELLED) {
             log.info("Регистрация отменена: regId={}", regId);
             sendRegistrationCancelledMessage(chatId, registration);
             return;
         }
 
-        // Отправляем информацию о билете
         sendTicketMessage(chatId, registration);
         log.info("Отправлена информация о билете: chatId={}, regId={}", chatId, regId);
+    }
+
+    /**
+     * Получает регистрацию по ID.
+     */
+    private Optional<RegistrationDto> fetchRegistration(Long chatId, UUID regId) {
+        try {
+            Optional<RegistrationDto> registrationOpt = eventClient.findRegistrationById(regId);
+            if (registrationOpt.isEmpty()) {
+                log.info("Регистрация не найдена: regId={}", regId);
+                sendErrorMessage(chatId, "Регистрация не найдена.");
+            }
+            return registrationOpt;
+        } catch (FeignException e) {
+            log.error("Ошибка при получении регистрации: regId={}, error={}", regId, e.getMessage());
+            sendErrorMessage(chatId, "Произошла ошибка. Попробуйте позже.");
+            return Optional.empty();
+        }
     }
 
     /**
@@ -423,5 +409,41 @@ public class DeeplinkHandler {
             return "***";
         }
         return code.substring(0, 2) + "***" + code.substring(code.length() - 2);
+    }
+
+    /**
+     * Ищет пользователя по Telegram ID.
+     *
+     * @param chatId            ID чата для отправки ошибки
+     * @param from              информация о пользователе Telegram
+     * @param onNotRegistered   действие при отсутствии регистрации
+     * @return Optional с пользователем или empty при ошибке
+     */
+    private Optional<UserDto> findUserByTelegramId(Long chatId, User from, Runnable onNotRegistered) {
+        if (from == null || from.id() == null) {
+            log.warn("Не удалось получить информацию о пользователе Telegram");
+            onNotRegistered.run();
+            return Optional.empty();
+        }
+
+        String telegramId = String.valueOf(from.id());
+
+        Optional<UserDto> userOpt;
+        try {
+            userOpt = userClient.findByTelegramId(telegramId);
+        } catch (FeignException e) {
+            log.error("Ошибка при поиске пользователя по Telegram ID: telegramId={}, error={}",
+                telegramId, e.getMessage());
+            sendErrorMessage(chatId, "Произошла ошибка. Попробуйте позже.");
+            return Optional.empty();
+        }
+
+        if (userOpt.isEmpty()) {
+            log.info("Пользователь не найден по Telegram ID: telegramId={}", telegramId);
+            onNotRegistered.run();
+            return Optional.empty();
+        }
+
+        return userOpt;
     }
 }

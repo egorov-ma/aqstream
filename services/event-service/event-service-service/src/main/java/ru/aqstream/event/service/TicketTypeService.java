@@ -107,6 +107,7 @@ public class TicketTypeService {
      * @throws EventNotEditableException          если событие нельзя редактировать
      * @throws TicketTypeHasRegistrationsException если пытаемся уменьшить количество ниже проданного
      */
+    @SuppressWarnings("checkstyle:CyclomaticComplexity") // Partial update паттерн требует много проверок
     @Transactional
     public TicketTypeDto update(UUID eventId, UUID ticketTypeId, UpdateTicketTypeRequest request) {
         UUID tenantId = TenantContext.getTenantId();

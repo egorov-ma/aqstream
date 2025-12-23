@@ -218,6 +218,7 @@ public class TelegramAuthService {
      *
      * <p>Алгоритм согласно https://core.telegram.org/widgets/login#checking-authorization</p>
      */
+    @SuppressWarnings("checkstyle:CyclomaticComplexity") // Алгоритм Telegram требует условных проверок
     private String calculateTelegramHash(TelegramAuthRequest request) {
         try {
             // Собираем data-check-string в алфавитном порядке
