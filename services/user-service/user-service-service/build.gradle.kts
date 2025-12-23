@@ -1,6 +1,8 @@
 plugins {
     id("org.springframework.boot")
     id("io.spring.dependency-management")
+    // git-properties отключён из-за несовместимости с Java 25
+    // id("com.gorylenko.gradle-git-properties")
 }
 
 val mapstructVersion: String by project

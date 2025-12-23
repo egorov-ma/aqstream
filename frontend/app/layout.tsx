@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { WelcomeScript } from '@/components/welcome-script';
 import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] });
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Toaster />
           </QueryProvider>
         </ThemeProvider>
+        <WelcomeScript />
       </body>
     </html>
   );

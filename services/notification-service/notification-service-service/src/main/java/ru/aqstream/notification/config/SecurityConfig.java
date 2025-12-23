@@ -55,6 +55,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Actuator endpoints
                 .requestMatchers("/actuator/**").permitAll()
+                // Системная информация (версия сервиса)
+                .requestMatchers("/api/v1/system/**").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Остальные требуют аутентификации

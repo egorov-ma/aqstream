@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/internal/**").permitAll()
                 // Публичные события (без авторизации)
                 .requestMatchers("/api/v1/public/**").permitAll()
+                // Системная информация (версия сервиса)
+                .requestMatchers("/api/v1/system/**").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Остальные требуют аутентификации

@@ -55,6 +55,14 @@ management:
   health:
     db:
       enabled: true
+  info:
+    build:
+      enabled: true
+    git:
+      enabled: true
+      mode: full
+    java:
+      enabled: true
 
 # === Logging ===
 logging:

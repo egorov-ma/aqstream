@@ -2,6 +2,7 @@ plugins {
     java
     id("org.springframework.boot") apply false
     id("io.spring.dependency-management") apply false
+    id("com.gorylenko.gradle-git-properties") apply false
     id("checkstyle")
     id("jacoco")
 }
@@ -28,6 +29,40 @@ subprojects {
 
     group = rootProject.group
     version = rootProject.version
+
+    // Конфигурация buildInfo для Spring Boot модулей
+    plugins.withId("org.springframework.boot") {
+        configure<org.springframework.boot.gradle.dsl.SpringBootExtension> {
+            buildInfo {
+                properties {
+                    artifact.set(project.name)
+                    version.set(project.version.toString())
+                    group.set(project.group.toString())
+                    name.set(project.name)
+                    additional.set(mapOf(
+                        "description" to "AqStream ${project.name}",
+                        "java.version" to JavaVersion.current().toString()
+                    ))
+                }
+            }
+        }
+    }
+
+    // git-properties отключён из-за несовместимости с Java 25
+    // Когда плагин будет обновлён, можно раскомментировать
+    // plugins.withId("com.gorylenko.gradle-git-properties") {
+    //     configure<com.gorylenko.GitPropertiesPluginExtension> {
+    //         keys = listOf(
+    //             "git.branch",
+    //             "git.commit.id.abbrev",
+    //             "git.commit.id.full",
+    //             "git.commit.time",
+    //             "git.dirty"
+    //         )
+    //         dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+    //         dateFormatTimeZone = "UTC"
+    //     }
+    // }
 
     java {
         toolchain {

@@ -58,6 +58,8 @@ public class SecurityConfig {
                 // Internal endpoints для межсервисного взаимодействия
                 // (защита на уровне сети, не доступны извне)
                 .requestMatchers("/api/v1/internal/**").permitAll()
+                // Системная информация (версия сервиса)
+                .requestMatchers("/api/v1/system/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Actuator endpoints

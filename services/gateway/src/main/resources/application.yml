@@ -113,6 +113,14 @@ management:
   health:
     redis:
       enabled: true
+  info:
+    build:
+      enabled: true
+    git:
+      enabled: true
+      mode: full
+    java:
+      enabled: true
 
 # === Logging ===
 logging:
@@ -122,3 +130,14 @@ logging:
     org.springframework.cloud.gateway: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] %-5level %logger{36} - %msg%n"
+
+# === AqStream Configuration ===
+aqstream:
+  environment: ${AQSTREAM_ENVIRONMENT:development}
+  services:
+    user-service: ${USER_SERVICE_URL:http://localhost:8081}
+    event-service: ${EVENT_SERVICE_URL:http://localhost:8082}
+    payment-service: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+    notification-service: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+    media-service: ${MEDIA_SERVICE_URL:http://localhost:8085}
+    analytics-service: ${ANALYTICS_SERVICE_URL:http://localhost:8086}

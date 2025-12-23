@@ -1,6 +1,8 @@
 plugins {
     id("org.springframework.boot")
     id("io.spring.dependency-management")
+    // git-properties отключён из-за несовместимости с Java 25
+    // id("com.gorylenko.gradle-git-properties")
 }
 
 dependencyManagement {
@@ -10,12 +12,17 @@ dependencyManagement {
     }
 }
 
+val openApiVersion: String by project
+
 dependencies {
     implementation(project(":common:common-api"))
 
     // Spring Cloud Gateway (WebFlux-based — единственное исключение из правила Spring MVC)
     implementation("org.springframework.cloud:spring-cloud-starter-gateway")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // OpenAPI / Swagger (WebFlux version)
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:$openApiVersion")
 
     // Redis для rate limiting
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
