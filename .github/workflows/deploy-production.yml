@@ -172,8 +172,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            echo "Pulling latest images..."
             cd /app
+            echo "Updating configuration..."
+            git pull origin main
+            echo "Pulling latest images..."
             docker compose pull
             echo "Starting services..."
             docker compose up -d
