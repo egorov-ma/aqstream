@@ -170,7 +170,7 @@ services:
 
   # User Service - управление пользователями, организациями и аутентификацией
   user-service:
-    image: ghcr.io/egorovma/aqstream/user-service:latest
+    image: ghcr.io/egorov-ma/aqstream/user-service:latest
     build:
       context: ./services/user-service
       dockerfile: Dockerfile
@@ -206,7 +206,7 @@ services:
 
   # Event Service - управление событиями, регистрациями и check-in
   event-service:
-    image: ghcr.io/egorovma/aqstream/event-service:latest
+    image: ghcr.io/egorov-ma/aqstream/event-service:latest
     build:
       context: ./services/event-service
       dockerfile: Dockerfile
@@ -245,7 +245,7 @@ services:
 
   # Payment Service - обработка платежей и возвратов
   payment-service:
-    image: ghcr.io/egorovma/aqstream/payment-service:latest
+    image: ghcr.io/egorov-ma/aqstream/payment-service:latest
     build:
       context: ./services/payment-service
       dockerfile: Dockerfile
@@ -281,7 +281,7 @@ services:
 
   # Notification Service - отправка уведомлений через Email и Telegram
   notification-service:
-    image: ghcr.io/egorovma/aqstream/notification-service:latest
+    image: ghcr.io/egorov-ma/aqstream/notification-service:latest
     build:
       context: ./services/notification-service
       dockerfile: Dockerfile
@@ -327,7 +327,7 @@ services:
 
   # Media Service - загрузка и обработка файлов
   media-service:
-    image: ghcr.io/egorovma/aqstream/media-service:latest
+    image: ghcr.io/egorov-ma/aqstream/media-service:latest
     build:
       context: ./services/media-service
       dockerfile: Dockerfile
@@ -363,7 +363,7 @@ services:
 
   # Analytics Service - сбор и анализ метрик
   analytics-service:
-    image: ghcr.io/egorovma/aqstream/analytics-service:latest
+    image: ghcr.io/egorov-ma/aqstream/analytics-service:latest
     build:
       context: ./services/analytics-service
       dockerfile: Dockerfile
@@ -400,7 +400,7 @@ services:
   # === API Gateway ===
 
   gateway:
-    image: ghcr.io/egorovma/aqstream/gateway:latest
+    image: ghcr.io/egorov-ma/aqstream/gateway:latest
     build:
       context: ./services/gateway
       dockerfile: Dockerfile
@@ -437,7 +437,7 @@ services:
   # === Frontend ===
 
   frontend:
-    image: ghcr.io/egorovma/aqstream/frontend:latest
+    image: ghcr.io/egorov-ma/aqstream/frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
