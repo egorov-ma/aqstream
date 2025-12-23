@@ -172,7 +172,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /app
+            cd ~/aqstream
             echo "Updating configuration..."
             git pull origin main
             echo "Pulling latest images..."
