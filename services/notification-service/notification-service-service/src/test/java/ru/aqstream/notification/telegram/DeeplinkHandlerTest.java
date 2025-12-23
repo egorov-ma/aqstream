@@ -25,7 +25,6 @@ import ru.aqstream.user.client.UserClient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -321,7 +320,8 @@ class DeeplinkHandlerTest {
             UUID userId = UUID.randomUUID();
             UUID anotherUserId = UUID.randomUUID();
             UserDto user = createUserDto(userId);
-            RegistrationDto registration = createRegistrationDto(registrationId, anotherUserId, RegistrationStatus.CONFIRMED);
+            RegistrationDto registration = createRegistrationDto(
+                registrationId, anotherUserId, RegistrationStatus.CONFIRMED);
 
             when(userClient.findByTelegramId(String.valueOf(telegramId))).thenReturn(Optional.of(user));
             when(eventClient.findRegistrationById(registrationId)).thenReturn(Optional.of(registration));

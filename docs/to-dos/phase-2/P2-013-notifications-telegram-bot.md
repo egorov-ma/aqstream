@@ -55,16 +55,17 @@ Telegram — единственный канал уведомлений в AqStr
 ### Команда /start
 
 - [x] При `/start` без параметров — welcome сообщение
-- [x] При `/start invite_{code}` — присоединение к организации (структура готова, интеграция TODO)
-- [x] При `/start link_{token}` — привязка Telegram к существующему email-аккаунту (структура готова, интеграция TODO)
+- [x] При `/start invite_{code}` — присоединение к организации
+- [x] При `/start link_{token}` — привязка Telegram к существующему email-аккаунту
+- [x] При `/start reg_{id}` — просмотр билета регистрации
 - [ ] При первом входе через Telegram Login Widget — автоматическая привязка chat_id
 
 ### Привязка аккаунта
 
 - [ ] После авторизации через Telegram Login Widget — chat_id сохраняется
-- [ ] Пользователь с email-аккаунтом может привязать Telegram через /start link_{token}
-- [ ] Генерация link_token через веб-интерфейс (в настройках профиля)
-- [ ] Token действителен 15 минут
+- [x] Пользователь с email-аккаунтом может привязать Telegram через /start link_{token}
+- [ ] Генерация link_token через веб-интерфейс (в настройках профиля) — требует frontend
+- [x] Token действителен 15 минут
 
 ### Отправка сообщений
 
@@ -81,9 +82,9 @@ Telegram — единственный канал уведомлений в AqStr
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (заблокировано: привязка аккаунтов, frontend)
+- [ ] Все Acceptance Criteria выполнены (заблокировано: Telegram Login Widget привязка, frontend)
 - [x] Код написан согласно code style проекта
-- [x] Unit тесты написаны
+- [x] Unit тесты написаны (включая DeeplinkHandlerTest)
 - [x] Integration тесты (mock Telegram API через @MockitoBean)
 - [x] Документация конфигурации
 - [x] Code review пройден
