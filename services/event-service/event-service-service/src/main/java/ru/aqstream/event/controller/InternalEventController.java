@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RegistrationRepository;
 import ru.aqstream.event.service.EventMapper;
 import ru.aqstream.event.service.RegistrationMapper;
+import ru.aqstream.event.service.TicketImageService;
 
 /**
  * Внутренний контроллер для межсервисного взаимодействия.
@@ -42,6 +44,7 @@ public class InternalEventController {
     private final RegistrationRepository registrationRepository;
     private final EventMapper eventMapper;
     private final RegistrationMapper registrationMapper;
+    private final TicketImageService ticketImageService;
 
     /**
      * Получает событие по ID.
@@ -146,5 +149,60 @@ public class InternalEventController {
         log.info("Internal: найдено предстоящих событий: count={}", events.size());
 
         return ResponseEntity.ok(events);
+    }
+
+    /**
+     * Получает регистрацию по ID.
+     * Используется Telegram ботом для отображения билета.
+     *
+     * <p>Возвращает регистрацию без проверки RLS (нужна для deeplink /start reg_{id}).</p>
+     *
+     * @param registrationId ID регистрации
+     * @return данные регистрации или 404
+     */
+    @Operation(
+        summary = "Получить регистрацию по ID",
+        description = "Внутренний эндпоинт для Telegram бота"
+    )
+    @GetMapping("/registrations/{registrationId}")
+    public ResponseEntity<RegistrationDto> findRegistrationById(
+        @PathVariable UUID registrationId
+    ) {
+        log.debug("Internal: запрос регистрации: registrationId={}", registrationId);
+
+        return registrationRepository.findById(registrationId)
+            .map(registrationMapper::toDto)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Генерирует изображение билета для регистрации.
+     * Используется Notification Service для отправки билета в Telegram.
+     *
+     * @param registrationId ID регистрации
+     * @return PNG изображение билета или 404
+     */
+    @Operation(
+        summary = "Получить изображение билета",
+        description = "Генерирует PNG изображение билета с QR-кодом для отправки в Telegram"
+    )
+    @GetMapping(value = "/registrations/{registrationId}/ticket-image", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getTicketImage(@PathVariable UUID registrationId) {
+        log.debug("Internal: запрос изображения билета: registrationId={}", registrationId);
+
+        return registrationRepository.findById(registrationId)
+            .map(registration -> {
+                byte[] ticketImage = ticketImageService.generateTicketImage(registration);
+                log.info("Internal: билет сгенерирован: registrationId={}, bytes={}",
+                    registrationId, ticketImage.length);
+                return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_PNG)
+                    .body(ticketImage);
+            })
+            .orElseGet(() -> {
+                log.warn("Internal: регистрация не найдена: registrationId={}", registrationId);
+                return ResponseEntity.notFound().build();
+            });
     }
 }

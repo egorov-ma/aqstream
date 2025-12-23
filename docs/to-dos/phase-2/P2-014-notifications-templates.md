@@ -69,8 +69,8 @@
 
 ### Event Listeners (Telegram)
 
-- [ ] `UserRegisteredEvent` → `user.welcome` (событие не реализовано)
-- [x] `RegistrationCreatedEvent` → `registration.confirmed` + билет с QR
+- [x] `UserRegisteredEvent` → `user.welcome` (handleUserRegistered в NotificationEventListener)
+- [x] `RegistrationCreatedEvent` → `registration.confirmed` + билет с QR-кодом (изображение)
 - [x] `RegistrationCancelledEvent` → `registration.cancelled`
 - [x] `EventUpdatedEvent` → `event.changed` (handleEventUpdated в NotificationEventListener)
 - [x] `EventCancelledEvent` → `event.cancelled` (handleEventCancelled в NotificationEventListener)
@@ -103,7 +103,7 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (часть AC заблокирована: UserRegisteredEvent, EventChangedEvent, EventCancelledEvent)
+- [ ] Все Acceptance Criteria выполнены (Frontend AC заблокирован)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты для template rendering (TemplateServiceTest)
 - [x] Unit тесты для notification service (NotificationServiceTest, TelegramBotServiceTest, PreferenceServiceTest)

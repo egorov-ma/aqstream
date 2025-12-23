@@ -117,6 +117,31 @@ aqstream:
       enabled: true
 ```
 
+### Defense in Depth
+
+RLS обеспечивает изоляцию на уровне PostgreSQL, но для дополнительной безопасности рекомендуется двойная проверка tenant_id на уровне приложения:
+
+```java
+// ✅ Рекомендуется: RLS + проверка в приложении
+private Event findEventById(UUID eventId) {
+    UUID tenantId = TenantContext.getTenantId();
+    return eventRepository.findByIdAndTenantId(eventId, tenantId)
+        .orElseThrow(() -> new EventNotFoundException(eventId, tenantId));
+}
+
+// ❌ Рискованно: полагается только на RLS
+private Event findEventById(UUID eventId) {
+    return eventRepository.findById(eventId)
+        .orElseThrow(() -> new EventNotFoundException(eventId));
+}
+```
+
+**Почему это важно:**
+
+- RLS может быть отключён в некоторых средах (development, testing с superuser)
+- Ошибки конфигурации RLS могут привести к утечке данных
+- Двойная проверка гарантирует изоляцию даже при сбое одного уровня
+
 ### Таблицы без tenant_id
 
 Некоторые таблицы глобальные:

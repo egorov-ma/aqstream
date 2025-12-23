@@ -49,7 +49,7 @@ public class NotificationEventListener {
 
     /**
      * Обрабатывает создание регистрации.
-     * Отправляет билет с QR-кодом участнику.
+     * Отправляет билет с QR-кодом участнику как изображение.
      */
     @RabbitListener(queues = NOTIFICATION_QUEUE, id = "registration-created")
     public void handleRegistrationCreated(RegistrationCreatedEvent event) {
@@ -65,12 +65,30 @@ public class NotificationEventListener {
             variables.put("eventDate", formatDate(event.getEventStartsAt()));
             variables.put("eventUrl", buildEventUrl(event.getEventSlug()));
 
-            notificationService.sendTelegram(
-                event.getUserId(),
-                "registration.confirmed",
-                variables,
-                NotificationPreference.REGISTRATION_UPDATES
-            );
+            // Получаем изображение билета из event-service
+            byte[] ticketImage = eventClient.getTicketImage(event.getRegistrationId());
+
+            if (ticketImage != null && ticketImage.length > 0) {
+                // Отправляем билет как изображение
+                notificationService.sendTelegramWithImage(
+                    event.getUserId(),
+                    "registration.confirmed",
+                    variables,
+                    ticketImage,
+                    NotificationPreference.REGISTRATION_UPDATES
+                );
+                log.info("Билет отправлен с изображением: registrationId={}", event.getRegistrationId());
+            } else {
+                // Fallback: отправляем текстовое сообщение
+                log.warn("Не удалось получить изображение билета, отправляем текст: registrationId={}",
+                    event.getRegistrationId());
+                notificationService.sendTelegram(
+                    event.getUserId(),
+                    "registration.confirmed",
+                    variables,
+                    NotificationPreference.REGISTRATION_UPDATES
+                );
+            }
         } catch (Exception e) {
             log.error("Ошибка обработки RegistrationCreatedEvent: registrationId={}, error={}",
                 event.getRegistrationId(), e.getMessage(), e);

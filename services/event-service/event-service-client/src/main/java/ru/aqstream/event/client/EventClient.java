@@ -68,4 +68,24 @@ public interface EventClient {
         @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
         @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
     );
+
+    /**
+     * Получает регистрацию по ID.
+     * Используется Telegram ботом для отображения билета.
+     *
+     * @param registrationId ID регистрации
+     * @return данные регистрации или пустой Optional
+     */
+    @GetMapping("/api/v1/internal/registrations/{registrationId}")
+    Optional<RegistrationDto> findRegistrationById(@PathVariable("registrationId") UUID registrationId);
+
+    /**
+     * Получает изображение билета для регистрации.
+     * Используется для отправки билета в Telegram.
+     *
+     * @param registrationId ID регистрации
+     * @return PNG изображение билета или null если регистрация не найдена
+     */
+    @GetMapping(value = "/api/v1/internal/registrations/{registrationId}/ticket-image")
+    byte[] getTicketImage(@PathVariable("registrationId") UUID registrationId);
 }

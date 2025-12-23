@@ -69,7 +69,7 @@ backlog → ready → in_progress → review → done
 | Фаза | Статус | Описание |
 |------|--------|----------|
 | Phase 1: Foundation | ✅ Done | Инфраструктура, CI/CD, common modules |
-| Phase 2: Core | 🟡 Ready | 20 задач готовы к работе |
+| Phase 2: Core | 🟡 In Progress | Backend: 8 done, 6 review; Frontend: 6 ready |
 | Phase 3: Growth | — | Платежи, уведомления, аналитика |
 | Phase 4: Scale | — | Оптимизация, масштабирование |
 
@@ -79,35 +79,35 @@ backlog → ready → in_progress → review → done
 
 | ID | Название | Статус | Приоритет |
 |----|----------|--------|-----------|
-| [P2-001](./phase-2/P2-001-auth-email-registration.md) | Регистрация и вход по email | `ready` | critical |
-| [P2-002](./phase-2/P2-002-auth-telegram.md) | Регистрация и вход через Telegram | `ready` | critical |
-| [P2-003](./phase-2/P2-003-auth-jwt-refresh.md) | JWT токены и refresh механизм | `ready` | critical |
-| [P2-004](./phase-2/P2-004-auth-email-verification.md) | Email verification и Password reset | `ready` | high |
+| [P2-001](./phase-2/P2-001-auth-email-registration.md) | Регистрация и вход по email | `done` | critical |
+| [P2-002](./phase-2/P2-002-auth-telegram.md) | Регистрация и вход через Telegram | `done` | critical |
+| [P2-003](./phase-2/P2-003-auth-jwt-refresh.md) | JWT токены и refresh механизм | `done` | critical |
+| [P2-004](./phase-2/P2-004-auth-email-verification.md) | Email verification и Password reset | `done` | high |
 
 ### Организации (User Service)
 
 | ID | Название | Статус | Приоритет |
 |----|----------|--------|-----------|
-| [P2-005](./phase-2/P2-005-organizations-requests.md) | Запросы на создание организаций | `ready` | critical |
-| [P2-006](./phase-2/P2-006-organizations-crud.md) | CRUD организаций и управление членами | `ready` | critical |
-| [P2-007](./phase-2/P2-007-organizations-rls.md) | Row Level Security для multi-tenancy | `ready` | critical |
-| [P2-008](./phase-2/P2-008-groups-crud.md) | Группы для приватных событий | `ready` | high |
+| [P2-005](./phase-2/P2-005-organizations-requests.md) | Запросы на создание организаций | `review` | critical |
+| [P2-006](./phase-2/P2-006-organizations-crud.md) | CRUD организаций и управление членами | `review` | critical |
+| [P2-007](./phase-2/P2-007-organizations-rls.md) | Row Level Security для multi-tenancy | `done` | critical |
+| [P2-008](./phase-2/P2-008-groups-crud.md) | Группы для приватных событий | `done` | high |
 
 ### События (Event Service)
 
 | ID | Название | Статус | Приоритет |
 |----|----------|--------|-----------|
-| [P2-009](./phase-2/P2-009-events-crud.md) | CRUD событий и жизненный цикл | `ready` | critical |
-| [P2-010](./phase-2/P2-010-events-ticket-types.md) | Типы билетов (бесплатные) | `ready` | critical |
-| [P2-011](./phase-2/P2-011-registrations-crud.md) | Регистрации на события | `ready` | critical |
-| [P2-012](./phase-2/P2-012-registrations-qr-code.md) | QR-код для билета | `ready` | high |
+| [P2-009](./phase-2/P2-009-events-crud.md) | CRUD событий и жизненный цикл | `done` | critical |
+| [P2-010](./phase-2/P2-010-events-ticket-types.md) | Типы билетов (бесплатные) | `done` | critical |
+| [P2-011](./phase-2/P2-011-registrations-crud.md) | Регистрации на события | `review` | critical |
+| [P2-012](./phase-2/P2-012-registrations-qr-code.md) | QR-код для билета | `review` | high |
 
 ### Уведомления (Notification Service)
 
 | ID | Название | Статус | Приоритет |
 |----|----------|--------|-----------|
-| [P2-013](./phase-2/P2-013-notifications-telegram-bot.md) | Telegram Bot интеграция | `ready` | critical |
-| [P2-014](./phase-2/P2-014-notifications-templates.md) | Шаблоны уведомлений и отправка | `ready` | high |
+| [P2-013](./phase-2/P2-013-notifications-telegram-bot.md) | Telegram Bot интеграция | `review` | critical |
+| [P2-014](./phase-2/P2-014-notifications-templates.md) | Шаблоны уведомлений и отправка | `review` | high |
 
 ### Frontend
 

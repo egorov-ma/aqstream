@@ -54,7 +54,7 @@
 - [x] Билет — изображение с информацией о событии + QR-код (TicketImageService)
 - [x] Содержит: название события, дата/время, место, тип билета, confirmation_code, QR
 - [x] Дизайн простой и читаемый
-- [ ] Отправляется в Telegram как изображение — ⚠️ заблокировано P2-014
+- [x] Отправляется в Telegram как изображение (NotificationEventListener + EventClient.getTicketImage)
 
 ### Check-in
 
@@ -71,7 +71,7 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (4 AC заблокированы: Telegram, Frontend)
+- [ ] Все Acceptance Criteria выполнены (3 AC заблокированы: Frontend)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты для генерации QR (QrCodeServiceTest)
 - [x] Integration тесты check-in flow (CheckInControllerIntegrationTest)
