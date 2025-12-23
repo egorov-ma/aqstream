@@ -3,8 +3,7 @@
     "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
-    <!-- Тесты могут быть длиннее и сложнее -->
-    <suppress checks="FileLength" files=".*Test\.java$"/>
+    <!-- Тестовые методы могут быть длиннее и сложнее для полного покрытия сценариев -->
     <suppress checks="MethodLength" files=".*Test\.java$"/>
     <suppress checks="CyclomaticComplexity" files=".*Test\.java$"/>
 

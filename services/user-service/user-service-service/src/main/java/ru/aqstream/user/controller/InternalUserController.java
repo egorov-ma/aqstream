@@ -22,6 +22,7 @@ import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.dto.UserTelegramInfoDto;
 import ru.aqstream.user.db.repository.GroupMemberRepository;
 import ru.aqstream.user.db.repository.UserRepository;
+import ru.aqstream.user.service.OrganizationInviteService;
 import ru.aqstream.user.service.OrganizationService;
 import ru.aqstream.user.service.TelegramLinkService;
 import ru.aqstream.user.service.UserMapper;
@@ -44,6 +45,7 @@ public class InternalUserController {
     private final UserMapper userMapper;
     private final GroupMemberRepository groupMemberRepository;
     private final OrganizationService organizationService;
+    private final OrganizationInviteService inviteService;
     private final TelegramLinkService telegramLinkService;
 
     /**
@@ -172,7 +174,7 @@ public class InternalUserController {
     ) {
         log.info("Internal: принятие приглашения через Telegram: userId={}", request.userId());
 
-        OrganizationMemberDto member = organizationService.acceptInvite(
+        OrganizationMemberDto member = inviteService.acceptInvite(
             request.userId(),
             request.inviteCode()
         );

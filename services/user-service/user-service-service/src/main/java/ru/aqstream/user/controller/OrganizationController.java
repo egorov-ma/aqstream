@@ -30,6 +30,7 @@ import ru.aqstream.user.api.dto.OrganizationMemberDto;
 import ru.aqstream.user.api.dto.UpdateMemberRoleRequest;
 import ru.aqstream.user.api.dto.UpdateOrganizationRequest;
 import ru.aqstream.user.api.exception.AccessDeniedException;
+import ru.aqstream.user.service.OrganizationInviteService;
 import ru.aqstream.user.service.OrganizationService;
 
 /**
@@ -43,6 +44,7 @@ import ru.aqstream.user.service.OrganizationService;
 public class OrganizationController {
 
     private final OrganizationService organizationService;
+    private final OrganizationInviteService inviteService;
 
     // ==================== CRUD Организаций ====================
 
@@ -263,7 +265,7 @@ public class OrganizationController {
         @Valid @RequestBody InviteMemberRequest request
     ) {
         requireAuthenticated(principal);
-        OrganizationInviteDto invite = organizationService.createInvite(id, principal.userId(), request);
+        OrganizationInviteDto invite = inviteService.createInvite(id, principal.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(invite);
     }
 
@@ -284,7 +286,7 @@ public class OrganizationController {
         @PathVariable UUID id
     ) {
         requireAuthenticated(principal);
-        List<OrganizationInviteDto> invites = organizationService.getActiveInvites(id, principal.userId());
+        List<OrganizationInviteDto> invites = inviteService.getActiveInvites(id, principal.userId());
         return ResponseEntity.ok(invites);
     }
 
@@ -305,7 +307,7 @@ public class OrganizationController {
         @PathVariable String inviteCode
     ) {
         requireAuthenticated(principal);
-        OrganizationMemberDto member = organizationService.acceptInvite(principal.userId(), inviteCode);
+        OrganizationMemberDto member = inviteService.acceptInvite(principal.userId(), inviteCode);
         return ResponseEntity.ok(member);
     }
 

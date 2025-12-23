@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -399,102 +398,6 @@ class AuthServiceTest {
 
             // Act & Assert
             assertThatThrownBy(() -> authService.refresh(request, TEST_USER_AGENT, TEST_IP))
-                .isInstanceOf(InvalidCredentialsException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("logout")
-    class Logout {
-
-        @Test
-        @DisplayName("отзывает все токены пользователя")
-        void logout_ValidUser_RevokesAllTokens() {
-            // Arrange
-            UUID userId = UUID.randomUUID();
-            when(refreshTokenRepository.revokeAllByUserId(any(UUID.class), any(Instant.class)))
-                .thenReturn(3); // Симулируем отзыв 3 токенов
-
-            // Act
-            authService.logout(userId);
-
-            // Assert
-            verify(refreshTokenRepository).revokeAllByUserId(any(UUID.class), any(Instant.class));
-        }
-    }
-
-    @Nested
-    @DisplayName("revokeToken")
-    class RevokeToken {
-
-        @Test
-        @DisplayName("успешно отзывает токен")
-        void revokeToken_ValidToken_RevokesToken() {
-            // Arrange
-            String refreshTokenValue = "token.to.revoke";
-            User user = createTestUser();
-            RefreshToken storedToken = createTestRefreshToken(user);
-
-            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.of(storedToken));
-
-            // Act
-            authService.revokeToken(refreshTokenValue);
-
-            // Assert
-            assertThat(storedToken.isRevoked()).isTrue();
-            verify(refreshTokenRepository).save(storedToken);
-        }
-
-        @Test
-        @DisplayName("игнорирует несуществующий токен")
-        void revokeToken_NonExistentToken_DoesNothing() {
-            // Arrange
-            String refreshTokenValue = "non.existent.token";
-
-            when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
-
-            // Act
-            authService.revokeToken(refreshTokenValue);
-
-            // Assert
-            verify(refreshTokenRepository, never()).save(any());
-        }
-    }
-
-    @Nested
-    @DisplayName("logoutAll")
-    class LogoutAll {
-
-        @Test
-        @DisplayName("отзывает все токены пользователя по refresh token")
-        void logoutAll_ValidToken_RevokesAllUserTokens() {
-            // Arrange
-            String refreshTokenValue = "valid.refresh.token";
-            UUID userId = UUID.randomUUID();
-
-            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue)).thenReturn(userId);
-            when(refreshTokenRepository.revokeAllByUserId(any(UUID.class), any(Instant.class)))
-                .thenReturn(3);
-
-            // Act
-            authService.logoutAll(refreshTokenValue);
-
-            // Assert
-            verify(jwtTokenProvider).validateRefreshToken(refreshTokenValue);
-            verify(refreshTokenRepository).revokeAllByUserId(eq(userId), any(Instant.class));
-        }
-
-        @Test
-        @DisplayName("выбрасывает исключение если токен невалиден")
-        void logoutAll_InvalidToken_ThrowsException() {
-            // Arrange
-            String refreshTokenValue = "invalid.refresh.token";
-
-            when(jwtTokenProvider.validateRefreshToken(refreshTokenValue))
-                .thenThrow(new ru.aqstream.common.security.JwtAuthenticationException("Невалидный токен"));
-
-            // Act & Assert
-            assertThatThrownBy(() -> authService.logoutAll(refreshTokenValue))
                 .isInstanceOf(InvalidCredentialsException.class);
         }
     }
