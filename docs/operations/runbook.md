@@ -34,25 +34,24 @@ docker compose restart
 ## Бэкап PostgreSQL
 
 ```bash
-# Бэкап базы
-docker compose exec postgres-shared pg_dump -U aqstream -Fc -d shared_services_db > backup-$(date +%Y%m%d).dump
+# Бэкап всех баз одной командой (рекомендуется)
+make db-backup
+# Бэкапы сохраняются в ./backups/ с timestamp
 
-# Все базы
-for db in shared_services_db user_service_db payment_service_db analytics_service_db; do
-  docker compose exec postgres-shared pg_dump -U aqstream -Fc -d $db > backup-$db-$(date +%Y%m%d).dump
-done
+# Ручной бэкап одной базы
+docker compose exec postgres-shared pg_dump -U aqstream -Fc -d shared_services_db > backup-$(date +%Y%m%d).dump
 ```
 
 ## Восстановление
 
 ```bash
-# Остановить сервисы
+# Восстановление из бэкапа (рекомендуется)
+make db-restore BACKUP_DATE=20251223_120000
+# Требуется указать timestamp бэкапа
+
+# Ручное восстановление
 docker compose stop event-service notification-service media-service
-
-# Восстановить
 docker compose exec -T postgres-shared pg_restore -U aqstream -d shared_services_db < backup.dump
-
-# Запустить сервисы
 docker compose start event-service notification-service media-service
 ```
 

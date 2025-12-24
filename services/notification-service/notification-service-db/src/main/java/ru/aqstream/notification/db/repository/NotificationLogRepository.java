@@ -12,6 +12,7 @@ import ru.aqstream.notification.db.entity.NotificationLog;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -88,12 +89,10 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
      *
      * @param userId       ID пользователя
      * @param templateCode код шаблона
-     * @return последнее уведомление или null
+     * @return последнее уведомление или empty
      */
-    @Query("SELECT l FROM NotificationLog l WHERE l.userId = :userId "
-        + "AND l.templateCode = :templateCode ORDER BY l.createdAt DESC LIMIT 1")
-    NotificationLog findLastByUserIdAndTemplateCode(
-        @Param("userId") UUID userId,
-        @Param("templateCode") String templateCode
+    Optional<NotificationLog> findFirstByUserIdAndTemplateCodeOrderByCreatedAtDesc(
+        UUID userId,
+        String templateCode
     );
 }

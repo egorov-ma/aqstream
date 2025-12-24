@@ -272,6 +272,8 @@ GitHub → Settings → Secrets and variables → Actions → New repository sec
 | `make infra-down` | Остановить инфраструктуру |
 | `make health` | Проверить сервисы |
 | `make logs` | Логи контейнеров |
+| `make db-backup` | Бэкап всех баз данных |
+| `make db-restore BACKUP_DATE=...` | Восстановление из бэкапа |
 | `docker ps` | Статус контейнеров |
 | `sudo nginx -t` | Проверить конфиг Nginx |
 | `sudo certbot certificates` | Статус SSL |

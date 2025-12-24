@@ -43,7 +43,7 @@ BEGIN
 
     EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', schema_name, table_name);
     EXECUTE format(
-        'CREATE POLICY %I ON %I.%I FOR ALL USING (tenant_id = current_tenant_id())',
+        'CREATE POLICY %I ON %I.%I FOR ALL USING (tenant_id = current_tenant_id()) WITH CHECK (tenant_id = current_tenant_id())',
         policy_name, schema_name, table_name
     );
 

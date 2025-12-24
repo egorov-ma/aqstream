@@ -148,7 +148,9 @@ Web-слой.
 |-------|------------|
 | `@IntegrationTest` | Composite annotation для интеграционных тестов |
 | `PostgresTestContainer` | Singleton контейнер PostgreSQL |
+| `SharedServicesTestContainer` | Singleton контейнер для shared_services_db |
 | `RabbitMQTestContainer` | Singleton контейнер RabbitMQ |
+| `SecurityTestUtils` | Хелперы для JWT в тестах (jwt(), jwtAdmin()) |
 | `TestFixtures` | Хелперы для тестовых данных |
 
 ## Подключение

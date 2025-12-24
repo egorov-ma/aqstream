@@ -1,4 +1,4 @@
-.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc
+.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset db-backup db-restore docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc
 
 # Цвета для вывода
 CYAN := \033[36m
@@ -59,6 +59,32 @@ infra-reset: ## Полный сброс инфраструктуры (удале
 	docker compose down -v
 	@echo "$(GREEN)Инфраструктура сброшена$(RESET)"
 
+# === Database Backup/Restore ===
+
+BACKUP_DIR := ./backups
+BACKUP_DATE := $(shell date +%Y%m%d_%H%M%S)
+
+db-backup: ## Создать бэкап всех баз данных
+	@echo "$(CYAN)Создание бэкапа баз данных...$(RESET)"
+	@mkdir -p $(BACKUP_DIR)
+	@docker compose exec -T postgres-shared pg_dump -U $${POSTGRES_USER:-aqstream} shared_services_db > $(BACKUP_DIR)/shared_services_db_$(BACKUP_DATE).sql
+	@docker compose exec -T postgres-user pg_dump -U $${POSTGRES_USER:-aqstream} user_service_db > $(BACKUP_DIR)/user_service_db_$(BACKUP_DATE).sql
+	@docker compose exec -T postgres-payment pg_dump -U $${POSTGRES_USER:-aqstream} payment_service_db > $(BACKUP_DIR)/payment_service_db_$(BACKUP_DATE).sql
+	@docker compose exec -T postgres-analytics pg_dump -U $${POSTGRES_USER:-aqstream} analytics_service_db > $(BACKUP_DIR)/analytics_service_db_$(BACKUP_DATE).sql
+	@echo "$(GREEN)Бэкапы сохранены в $(BACKUP_DIR)/$(RESET)"
+	@ls -la $(BACKUP_DIR)/*_$(BACKUP_DATE).sql
+
+db-restore: ## Восстановить базы из бэкапа (требует BACKUP_DATE=YYYYMMDD_HHMMSS)
+	@echo "$(YELLOW)ВНИМАНИЕ: Это перезапишет текущие данные!$(RESET)"
+	@if [ -z "$(BACKUP_DATE)" ]; then echo "$(YELLOW)Укажите BACKUP_DATE, например: make db-restore BACKUP_DATE=20251223_120000$(RESET)"; exit 1; fi
+	@read -p "Продолжить восстановление из $(BACKUP_DATE)? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	@echo "$(CYAN)Восстановление баз данных...$(RESET)"
+	@docker compose exec -T postgres-shared psql -U $${POSTGRES_USER:-aqstream} -d shared_services_db < $(BACKUP_DIR)/shared_services_db_$(BACKUP_DATE).sql
+	@docker compose exec -T postgres-user psql -U $${POSTGRES_USER:-aqstream} -d user_service_db < $(BACKUP_DIR)/user_service_db_$(BACKUP_DATE).sql
+	@docker compose exec -T postgres-payment psql -U $${POSTGRES_USER:-aqstream} -d payment_service_db < $(BACKUP_DIR)/payment_service_db_$(BACKUP_DATE).sql
+	@docker compose exec -T postgres-analytics psql -U $${POSTGRES_USER:-aqstream} -d analytics_service_db < $(BACKUP_DIR)/analytics_service_db_$(BACKUP_DATE).sql
+	@echo "$(GREEN)Базы данных восстановлены$(RESET)"
+
 # === Docker Full Stack ===
 
 up: ## Запустить весь стек (инфраструктура + сервисы)
@@ -105,7 +131,7 @@ health: ## Проверить health всех сервисов
 	@docker compose exec -T postgres-payment pg_isready -U aqstream || echo "postgres-payment: недоступен"
 	@docker compose exec -T postgres-analytics pg_isready -U aqstream || echo "postgres-analytics: недоступен"
 	@echo "$(CYAN)Проверка Redis...$(RESET)"
-	@docker compose exec -T redis redis-cli ping || echo "redis: недоступен"
+	@docker compose exec -T redis redis-cli -a $${REDIS_PASSWORD:-aqstream-redis-secret} ping 2>/dev/null || echo "redis: недоступен"
 	@echo "$(CYAN)Проверка RabbitMQ...$(RESET)"
 	@docker compose exec -T rabbitmq rabbitmq-diagnostics check_running || echo "rabbitmq: недоступен"
 

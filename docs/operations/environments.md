@@ -181,6 +181,7 @@ DATABASE_PASSWORD=secret
 # Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
 
 # RabbitMQ
 RABBITMQ_HOST=localhost

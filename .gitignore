@@ -45,6 +45,10 @@ secrets/
 # ---- Docker ----
 docker-compose.override.yml
 
+# ---- Database Backups ----
+backups/
+*.sql.gz
+
 # ---- OS ----
 .DS_Store
 Thumbs.db
