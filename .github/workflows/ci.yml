@@ -11,6 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Permissions for GitHub Pages deployment
+permissions:
+  contents: write
+  pages: write
+
 jobs:
   # === Backend ===
 
@@ -113,13 +118,25 @@ jobs:
             cp -R gh-pages/allure/history allure-history/ || true
           fi
 
-      - name: Generate Allure Report with History
-        uses: simple-elf/allure-report-action@v1.9
+      - name: Install Allure CLI
         if: always() && github.ref == 'refs/heads/main'
-        with:
-          allure_results: '**/build/allure-results'
-          allure_history: allure-history
-          keep_reports: 20
+        run: |
+          curl -o allure-2.27.0.tgz -Ls https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.27.0/allure-commandline-2.27.0.tgz
+          tar -zxvf allure-2.27.0.tgz
+          echo "$PWD/allure-2.27.0/bin" >> $GITHUB_PATH
+
+      - name: Generate Allure Report
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          # Собираем все результаты в одну папку
+          mkdir -p allure-results-merged
+          find . -path '*/build/allure-results/*' -exec cp {} allure-results-merged/ \; 2>/dev/null || true
+          # Копируем историю если есть
+          if [ -d "allure-history/history" ]; then
+            cp -R allure-history/history allure-results-merged/
+          fi
+          # Генерируем отчёт
+          allure generate allure-results-merged -o allure-history --clean
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
