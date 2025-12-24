@@ -1,0 +1,29 @@
+# Build artifacts (кроме boot JAR)
+build/
+!build/libs/*-boot.jar
+
+# Source files
+src/
+*.java
+*.kt
+*.kts
+
+# IDE
+.idea/
+*.iml
+
+# Git
+.git/
+.gitignore
+
+# Gradle
+.gradle/
+gradle/
+gradlew*
+
+# Tests
+**/test/
+
+# Docs
+*.md
+LICENSE

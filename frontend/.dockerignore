@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+out/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Tests
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+coverage/
+.playwright/
+playwright-report/
+
+# Docs
+*.md
+LICENSE
+
+# Environment
+.env*
+!.env.example
+
+# Misc
+.turbo/
+.cache/
