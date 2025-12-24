@@ -261,14 +261,6 @@ jobs:
       - name: Build
         run: ./gradlew build -x test --no-daemon
 
-      - name: Debug - List built JARs
-        run: |
-          echo "=== All JAR files after build ==="
-          find . -name "*-boot.jar" -type f 2>/dev/null
-          echo ""
-          echo "=== Gateway JARs ==="
-          ls -la services/gateway/build/libs/ 2>/dev/null || echo "No gateway libs"
-
       - name: Upload JARs
         uses: actions/upload-artifact@v4
         with:
@@ -422,17 +414,6 @@ jobs:
         with:
           name: backend-jars
           path: services
-
-      - name: Debug - List downloaded JARs
-        run: |
-          echo "=== Workspace structure ==="
-          ls -la
-          echo ""
-          echo "=== services/gateway ==="
-          ls -laR services/gateway/ 2>/dev/null || echo "gateway dir not found"
-          echo ""
-          echo "=== All JAR files ==="
-          find . -name "*.jar" -type f 2>/dev/null || echo "No JAR files found"
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -592,7 +573,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          command_timeout: 10m
+          command_timeout: 15m
           script: |
             set -e
             cd ~/aqstream
