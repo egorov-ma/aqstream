@@ -1,8 +1,8 @@
-# Build artifacts (кроме boot JAR)
-build/
-!build/libs/*-boot.jar
-**/build/
-!**/build/libs/*-boot.jar
+# Build artifacts (кроме libs/)
+build/*
+!build/libs/
+**/build/*
+!**/build/libs/
 
 # Source files
 src/
