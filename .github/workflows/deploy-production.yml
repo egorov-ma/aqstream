@@ -172,6 +172,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            set -e
             cd ~/aqstream
             echo "Updating configuration..."
             git pull origin main

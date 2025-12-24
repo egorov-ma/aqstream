@@ -151,7 +151,7 @@ services:
 
   # MinIO bucket initialization (ждёт готовности и инициализирует бакет)
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-04-18T16-26-06Z
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
     container_name: aqstream-minio-init
     depends_on:
       minio:
