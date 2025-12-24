@@ -1,0 +1,702 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: 'Skip deployment (build only)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: cicd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  # ============================================
+  # STAGE 1: LINT (Fast feedback)
+  # ============================================
+
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest --no-daemon
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Backend Lint" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Checkstyle passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Checkstyle failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if frontend exists
+        id: check
+        run: |
+          if [ -f "package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Setup pnpm
+        if: steps.check.outputs.exists == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        if: steps.check.outputs.exists == 'true'
+        run: pnpm lint
+
+      - name: Run TypeScript check
+        if: steps.check.outputs.exists == 'true'
+        run: pnpm typecheck
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Frontend Lint" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check.outputs.exists }}" != "true" ]; then
+            echo "⏭️ Frontend not initialized - skipped" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ job.status }}" == "success" ]; then
+            echo "✅ ESLint + TypeScript passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ ESLint or TypeScript failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        working-directory: .
+
+  # ============================================
+  # STAGE 2: TESTS
+  # ============================================
+
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: [backend-lint]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: aqstream
+          POSTGRES_PASSWORD: aqstream
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run Tests
+        run: ./gradlew test --no-daemon
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test_db
+          SPRING_DATASOURCE_USERNAME: aqstream
+          SPRING_DATASOURCE_PASSWORD: aqstream
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: 6379
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: '**/build/reports/tests/'
+          retention-days: 7
+
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results
+          path: '**/build/allure-results/'
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Backend Tests" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: [frontend-lint]
+    if: needs.frontend-lint.outputs.exists == 'true'
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Frontend Tests" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        working-directory: .
+
+  # ============================================
+  # STAGE 3: BUILD VERIFICATION
+  # ============================================
+
+  backend-build:
+    name: Backend Build
+    runs-on: ubuntu-latest
+    needs: [backend-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Upload JARs
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jars
+          path: |
+            services/*/build/libs/*-boot.jar
+            services/*/*/build/libs/*-boot.jar
+          retention-days: 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Backend Build" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    needs: [frontend-test]
+    if: always() && (needs.frontend-test.result == 'success' || needs.frontend-test.result == 'skipped')
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if frontend exists
+        id: check
+        run: |
+          if [ -f "package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup pnpm
+        if: steps.check.outputs.exists == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        if: steps.check.outputs.exists == 'true'
+        run: pnpm build
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Frontend Build" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check.outputs.exists }}" != "true" ]; then
+            echo "⏭️ Frontend not initialized - skipped" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        working-directory: .
+
+  # ============================================
+  # STAGE 4: ALLURE REPORT (main only)
+  # ============================================
+
+  allure-report:
+    name: Allure Report
+    runs-on: ubuntu-latest
+    needs: [backend-test]
+    if: always() && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Allure Results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results-merged
+        continue-on-error: true
+
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Prepare Allure History
+        run: |
+          mkdir -p allure-history
+          if [ -d "gh-pages/allure/history" ]; then
+            cp -R gh-pages/allure/history allure-history/ || true
+          fi
+
+      - name: Install Allure CLI
+        run: |
+          curl -o allure-2.27.0.tgz -Ls https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.27.0/allure-commandline-2.27.0.tgz
+          tar -zxvf allure-2.27.0.tgz
+          echo "$PWD/allure-2.27.0/bin" >> $GITHUB_PATH
+
+      - name: Generate Allure Report
+        run: |
+          if [ -d "allure-results-merged" ]; then
+            if [ -d "allure-history/history" ]; then
+              cp -R allure-history/history allure-results-merged/
+            fi
+            allure generate allure-results-merged -o allure-report --clean
+          else
+            mkdir -p allure-report
+            echo "<html><body><h1>No test results found</h1></body></html>" > allure-report/index.html
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
+          destination_dir: allure
+
+  # ============================================
+  # STAGE 5: DOCKER BUILD (main only)
+  # ============================================
+
+  docker-build:
+    name: Docker Images
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-build]
+    if: github.ref == 'refs/heads/main' && github.event.inputs.skip_deploy != 'true'
+    outputs:
+      version: ${{ steps.version.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Backend JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jars
+          path: .
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set version
+        id: version
+        run: |
+          echo "sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "Version: ${GITHUB_SHA::7}"
+
+      - name: Build Java Base
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker/base
+          file: ./docker/base/java-base.Dockerfile
+          push: true
+          cache-from: type=gha,scope=java-base
+          cache-to: type=gha,scope=java-base,mode=max
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+
+      - name: Build Gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/gateway
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=gateway
+          cache-to: type=gha,scope=gateway,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/gateway:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/gateway:latest
+
+      - name: Build User Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/user-service
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=user-service
+          cache-to: type=gha,scope=user-service,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/user-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/user-service:latest
+
+      - name: Build Event Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/event-service
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=event-service
+          cache-to: type=gha,scope=event-service,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/event-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/event-service:latest
+
+      - name: Build Payment Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/payment-service
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=payment-service
+          cache-to: type=gha,scope=payment-service,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/payment-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/payment-service:latest
+
+      - name: Build Notification Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/notification-service
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=notification-service
+          cache-to: type=gha,scope=notification-service,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/notification-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/notification-service:latest
+
+      - name: Build Media Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/media-service
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=media-service
+          cache-to: type=gha,scope=media-service,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/media-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/media-service:latest
+
+      - name: Build Analytics Service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/analytics-service
+          push: true
+          build-args: BASE_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/java-base:latest
+          cache-from: type=gha,scope=analytics-service
+          cache-to: type=gha,scope=analytics-service,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/analytics-service:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/analytics-service:latest
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ steps.version.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
+
+      - name: Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Docker Images
+
+          | Image | Version |
+          |-------|---------|
+          | java-base | latest |
+          | gateway | ${{ steps.version.outputs.sha }} |
+          | user-service | ${{ steps.version.outputs.sha }} |
+          | event-service | ${{ steps.version.outputs.sha }} |
+          | payment-service | ${{ steps.version.outputs.sha }} |
+          | notification-service | ${{ steps.version.outputs.sha }} |
+          | media-service | ${{ steps.version.outputs.sha }} |
+          | analytics-service | ${{ steps.version.outputs.sha }} |
+          | frontend | ${{ steps.version.outputs.sha }} |
+
+          **Registry:** \`ghcr.io/${{ github.repository }}\`
+          EOF
+
+  # ============================================
+  # STAGE 6: DEPLOY (main + approval)
+  # ============================================
+
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main' && github.event.inputs.skip_deploy != 'true'
+    environment: production
+    steps:
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+            cd ~/aqstream
+
+            echo "=== Updating configuration ==="
+            git pull origin main
+
+            echo "=== Starting infrastructure ==="
+            docker compose up -d postgres-shared postgres-user postgres-payment \
+              postgres-analytics redis rabbitmq minio minio-init
+
+            echo "=== Waiting for infrastructure (15s) ==="
+            sleep 15
+
+            echo "=== Deploying services ==="
+            docker compose up -d --pull=always --no-deps \
+              gateway user-service event-service payment-service \
+              notification-service media-service analytics-service frontend
+
+            echo "=== Cleanup old images ==="
+            docker image prune -f --filter "until=2h" 2>/dev/null || true
+
+            echo "=== Deployment completed ==="
+
+      - name: Summary
+        run: |
+          echo "## Deploy Started" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ needs.docker-build.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # STAGE 7: HEALTH CHECK
+  # ============================================
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy, docker-build]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Wait for services
+        run: sleep 30
+
+      - name: Check Production Health
+        id: health
+        run: |
+          for i in {1..30}; do
+            if curl -sf https://api.aqstream.ru/actuator/health | grep -q "UP"; then
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              echo "Production is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i/30: waiting..."
+            sleep 10
+          done
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          echo "Health check failed!"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Deployment Result
+
+          **Commit:** \`${{ github.sha }}\`
+          **Version:** \`${{ needs.docker-build.outputs.version }}\`
+          **Branch:** \`${{ github.ref_name }}\`
+          **Actor:** ${{ github.actor }}
+
+          EOF
+
+          if [ "${{ steps.health.outputs.status }}" == "healthy" ]; then
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ### ✅ Production is HEALTHY
+
+          **Links:**
+          - [Application](https://aqstream.ru)
+          - [API Health](https://api.aqstream.ru/actuator/health)
+          - [Allure Reports](https://egorov-ma.github.io/aqstream/allure)
+          EOF
+          else
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ### ❌ Production is UNHEALTHY
+
+          Manual intervention required. Check server logs.
+          EOF
+          fi
+
+  # ============================================
+  # PIPELINE SUMMARY (always)
+  # ============================================
+
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [backend-lint, backend-test, backend-build, frontend-lint, frontend-build]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## CI/CD Pipeline Summary
+
+          ### Trigger
+          - **Event:** ${{ github.event_name }}
+          - **Ref:** \`${{ github.ref }}\`
+          - **SHA:** \`${{ github.sha }}\`
+
+          ### Job Results
+          | Job | Status |
+          |-----|--------|
+          | Backend Lint | ${{ needs.backend-lint.result }} |
+          | Backend Tests | ${{ needs.backend-test.result }} |
+          | Backend Build | ${{ needs.backend-build.result }} |
+          | Frontend Lint | ${{ needs.frontend-lint.result }} |
+          | Frontend Build | ${{ needs.frontend-build.result }} |
+
+          EOF
+
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "### Note" >> $GITHUB_STEP_SUMMARY
+            echo "This is a PR build. Docker build and deployment were skipped." >> $GITHUB_STEP_SUMMARY
+          fi
