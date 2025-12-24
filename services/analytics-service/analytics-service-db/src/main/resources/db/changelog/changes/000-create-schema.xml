@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание схемы analytics_service -->
+    <changeSet id="000-create-schema" author="aqstream">
+        <sql>CREATE SCHEMA IF NOT EXISTS analytics_service</sql>
+        <rollback>
+            <sql>DROP SCHEMA IF EXISTS analytics_service CASCADE</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- Extension для UUID -->
+    <changeSet id="000-uuid-extension" author="aqstream">
+        <sql>CREATE EXTENSION IF NOT EXISTS "uuid-ossp"</sql>
+        <rollback/>
+    </changeSet>
+
+</databaseChangeLog>
