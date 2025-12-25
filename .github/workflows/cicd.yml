@@ -624,24 +624,58 @@ jobs:
     needs: [deploy, docker-build]
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Wait for services
-        run: sleep 30
+      - name: Wait for services startup
+        run: |
+          echo "Waiting 60s for services to fully start..."
+          sleep 60
 
-      - name: Check Production Health
+      - name: Check Production Health via API
         id: health
         run: |
+          echo "=== Checking Gateway Health ==="
           for i in {1..30}; do
-            if curl -sf https://api.aqstream.ru/actuator/health | grep -q "UP"; then
+            RESPONSE=$(curl -sf https://api.aqstream.ru/actuator/health 2>&1 || echo "FAILED")
+            if echo "$RESPONSE" | grep -q "UP"; then
               echo "status=healthy" >> $GITHUB_OUTPUT
-              echo "Production is healthy!"
+              echo "✅ Production is healthy!"
+              echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
               exit 0
             fi
-            echo "Attempt $i/30: waiting..."
+            echo "Attempt $i/30: Gateway not ready yet..."
+            echo "Response: $RESPONSE"
             sleep 10
           done
           echo "status=unhealthy" >> $GITHUB_OUTPUT
-          echo "Health check failed!"
+          echo "❌ Health check failed after 30 attempts"
           exit 1
+
+      - name: Get detailed container status
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            cd ~/aqstream
+            echo "=== Container Status ==="
+            docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}"
+            echo ""
+            echo "=== Unhealthy/Exited Containers ==="
+            docker compose ps --filter "status=exited" --filter "health=unhealthy" --format "{{.Name}}"
+            echo ""
+            echo "=== Recent Logs from Unhealthy Services ==="
+            for container in $(docker compose ps --filter "health=unhealthy" --format "{{.Name}}" 2>/dev/null); do
+              echo "--- Logs: $container ---"
+              docker logs "$container" --tail 50 2>&1 || true
+              echo ""
+            done
+            for container in $(docker compose ps --filter "status=exited" --format "{{.Name}}" 2>/dev/null); do
+              echo "--- Logs: $container (exited) ---"
+              docker logs "$container" --tail 50 2>&1 || true
+              echo ""
+            done
 
       - name: Summary
         if: always()
@@ -669,7 +703,15 @@ jobs:
             cat >> $GITHUB_STEP_SUMMARY << 'EOF'
           ### ❌ Production is UNHEALTHY
 
-          Manual intervention required. Check server logs.
+          Check the "Get detailed container status" step above for container logs.
+
+          **Manual commands:**
+          ```bash
+          ssh user@server
+          cd ~/aqstream
+          docker compose ps
+          docker logs aqstream-<service-name> --tail 100
+          ```
           EOF
           fi
 
