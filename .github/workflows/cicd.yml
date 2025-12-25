@@ -591,7 +591,7 @@ jobs:
 
             echo "=== Starting user-service (core) ==="
             docker compose up -d --force-recreate --pull=always user-service
-            sleep 45
+            sleep 90  # Даём больше времени на старт (180M → 220M память)
 
             echo "=== Starting event-service ==="
             docker compose up -d --force-recreate --pull=always event-service
