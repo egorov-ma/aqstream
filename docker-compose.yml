@@ -181,8 +181,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.15'
-          memory: 150M
+          cpus: '0.2'
+          memory: 256M
     restart: unless-stopped
 
   # MinIO bucket initialization (ждёт готовности и инициализирует бакет)
