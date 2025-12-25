@@ -626,8 +626,8 @@ jobs:
     steps:
       - name: Wait for services startup
         run: |
-          echo "Waiting 60s for services to fully start..."
-          sleep 60
+          echo "Waiting 120s for services to fully start..."
+          sleep 120
 
       - name: Check Production Health via API
         id: health
