@@ -14,9 +14,11 @@ spring:
     username: ${DATABASE_USERNAME:aqstream}
     password: ${DATABASE_PASSWORD:aqstream}
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 20000
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
 
   jpa:
     hibernate:

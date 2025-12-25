@@ -9,8 +9,19 @@ RUN addgroup -S aqstream && adduser -S aqstream -G aqstream
 
 WORKDIR /app
 
-# JVM опции для контейнеров
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+# JVM опции для контейнеров (оптимизировано для 1vCPU/2GB)
+# - MaxRAMPercentage=60: оставляет 40% для JVM overhead
+# - UseSerialGC: меньше памяти чем G1GC для малых heap
+# - TieredStopAtLevel=1: быстрый старт, меньше JIT памяти
+# - Xss256k: уменьшает размер стека потоков
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=60.0 \
+    -XX:InitialRAMPercentage=40.0 \
+    -XX:+UseSerialGC \
+    -XX:+TieredCompilation \
+    -XX:TieredStopAtLevel=1 \
+    -Xss256k \
+    -Djava.security.egd=file:/dev/./urandom"
 
 # Дочерние образы должны:
 # 1. COPY JAR файл как app.jar

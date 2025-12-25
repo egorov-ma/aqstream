@@ -27,8 +27,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 256M
+          cpus: '0.2'
+          memory: 150M
     restart: unless-stopped
 
   # Dedicated database для User Service
@@ -53,8 +53,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 200M
+          cpus: '0.15'
+          memory: 120M
     restart: unless-stopped
 
   # Dedicated database для Payment Service
@@ -79,8 +79,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.2'
-          memory: 150M
+          cpus: '0.15'
+          memory: 100M
     restart: unless-stopped
 
   # Dedicated database для Analytics Service (TimescaleDB)
@@ -105,8 +105,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 200M
+          cpus: '0.15'
+          memory: 130M
     restart: unless-stopped
 
   # === Redis ===
@@ -118,7 +118,8 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-aqstream-redis-secret}
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-aqstream-redis-secret}
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-aqstream-redis-secret}", "ping"]
       interval: 10s
@@ -127,8 +128,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.2'
-          memory: 100M
+          cpus: '0.1'
+          memory: 64M
     restart: unless-stopped
 
   # === RabbitMQ ===
@@ -155,8 +156,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 300M
+          cpus: '0.2'
+          memory: 180M
     restart: unless-stopped
 
   # === MinIO (S3-compatible storage) ===
@@ -180,8 +181,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.2'
-          memory: 256M
+          cpus: '0.15'
+          memory: 150M
     restart: unless-stopped
 
   # MinIO bucket initialization (ждёт готовности и инициализирует бакет)
@@ -243,16 +244,16 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: 350M
+          cpus: '0.2'
+          memory: 180M
     restart: unless-stopped
 
   # Event Service - управление событиями, регистрациями и check-in
@@ -288,16 +289,16 @@ services:
       user-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: 350M
+          cpus: '0.2'
+          memory: 180M
     restart: unless-stopped
 
   # Payment Service - обработка платежей и возвратов
@@ -330,16 +331,16 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 300M
+          cpus: '0.15'
+          memory: 160M
     restart: unless-stopped
 
   # Notification Service - отправка уведомлений через Email и Telegram
@@ -382,16 +383,16 @@ services:
       event-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 250M
+          cpus: '0.15'
+          memory: 140M
     restart: unless-stopped
 
   # Media Service - загрузка и обработка файлов
@@ -424,16 +425,16 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 250M
+          cpus: '0.15'
+          memory: 140M
     restart: unless-stopped
 
   # Analytics Service - сбор и анализ метрик
@@ -466,16 +467,16 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 250M
+          cpus: '0.15'
+          memory: 140M
     restart: unless-stopped
 
   # === API Gateway ===
@@ -509,16 +510,16 @@ services:
       event-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health/liveness"]
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 120s
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 300M
+          cpus: '0.2'
+          memory: 160M
     restart: unless-stopped
 
   # === Frontend ===
@@ -539,15 +540,15 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      interval: 45s
+      timeout: 15s
+      retries: 4
+      start_period: 60s
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: 200M
+          cpus: '0.1'
+          memory: 100M
     restart: unless-stopped
 
 volumes:

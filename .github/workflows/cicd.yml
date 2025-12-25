@@ -581,17 +581,24 @@ jobs:
             echo "=== Updating configuration ==="
             git pull origin main
 
-            echo "=== Starting infrastructure ==="
-            docker compose up -d postgres-shared postgres-user postgres-payment \
-              postgres-analytics redis rabbitmq minio minio-init
+            echo "=== Starting databases ==="
+            docker compose up -d postgres-shared postgres-user postgres-payment postgres-analytics
+            sleep 20
 
-            echo "=== Waiting for infrastructure (15s) ==="
+            echo "=== Starting Redis, RabbitMQ, MinIO ==="
+            docker compose up -d redis rabbitmq minio minio-init
             sleep 15
 
-            echo "=== Deploying services ==="
-            docker compose up -d --pull=always --no-deps \
-              gateway user-service event-service payment-service \
-              notification-service media-service analytics-service frontend
+            echo "=== Starting user-service (core) ==="
+            docker compose up -d --pull=always user-service
+            sleep 45
+
+            echo "=== Starting event-service, payment-service ==="
+            docker compose up -d --pull=always event-service payment-service
+            sleep 45
+
+            echo "=== Starting remaining services ==="
+            docker compose up -d --pull=always notification-service media-service analytics-service gateway frontend
 
             echo "=== Cleanup old images ==="
             docker image prune -f --filter "until=2h" 2>/dev/null || true
