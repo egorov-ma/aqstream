@@ -525,7 +525,7 @@ services:
       resources:
         limits:
           cpus: '0.2'
-          memory: 160M
+          memory: 280M
     restart: unless-stopped
 
   # === Frontend ===
