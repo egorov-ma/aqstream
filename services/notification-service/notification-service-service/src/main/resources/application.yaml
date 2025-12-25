@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: notification-service
+  main:
+    lazy-initialization: true
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -107,7 +109,7 @@ management:
 logging:
   level:
     root: INFO
-    ru.aqstream.notification: DEBUG
+    ru.aqstream.notification: INFO
     com.pengrad.telegrambot: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] [%X{tenantId}] %-5level %logger{36} - %msg%n"

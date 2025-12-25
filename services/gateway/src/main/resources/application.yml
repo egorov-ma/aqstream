@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: gateway
+  main:
+    lazy-initialization: true
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -126,7 +128,7 @@ management:
 logging:
   level:
     root: INFO
-    ru.aqstream.gateway: DEBUG
+    ru.aqstream.gateway: INFO
     org.springframework.cloud.gateway: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] %-5level %logger{36} - %msg%n"

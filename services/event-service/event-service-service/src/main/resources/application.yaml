@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: event-service
+  main:
+    lazy-initialization: true
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -75,7 +77,7 @@ management:
 logging:
   level:
     root: INFO
-    ru.aqstream.event: DEBUG
-    org.hibernate.SQL: DEBUG
+    ru.aqstream.event: INFO
+    org.hibernate.SQL: WARN
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{correlationId}] [%X{tenantId}] %-5level %logger{36} - %msg%n"

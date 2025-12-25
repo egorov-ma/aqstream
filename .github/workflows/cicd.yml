@@ -593,12 +593,13 @@ jobs:
             docker compose up -d --force-recreate --pull=always user-service
             sleep 45
 
-            echo "=== Starting event-service, payment-service ==="
-            docker compose up -d --force-recreate --pull=always event-service payment-service
+            echo "=== Starting event-service ==="
+            docker compose up -d --force-recreate --pull=always event-service
             sleep 45
 
             echo "=== Starting remaining services ==="
-            docker compose up -d --force-recreate --pull=always notification-service media-service analytics-service gateway frontend
+            # payment-service, media-service, analytics-service отключены через profiles (пустые заглушки)
+            docker compose up -d --force-recreate --pull=always notification-service gateway frontend
 
             echo "=== Cleanup old images ==="
             docker image prune -f --filter "until=2h" 2>/dev/null || true

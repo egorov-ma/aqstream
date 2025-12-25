@@ -302,7 +302,9 @@ services:
     restart: unless-stopped
 
   # Payment Service - обработка платежей и возвратов
+  # STUB: Пока не реализован, отключён через profiles для экономии памяти
   payment-service:
+    profiles: ["full"]
     image: ghcr.io/egorov-ma/aqstream/payment-service:latest
     build:
       context: ./services/payment-service
@@ -396,7 +398,9 @@ services:
     restart: unless-stopped
 
   # Media Service - загрузка и обработка файлов
+  # STUB: Пока не реализован, отключён через profiles для экономии памяти
   media-service:
+    profiles: ["full"]
     image: ghcr.io/egorov-ma/aqstream/media-service:latest
     build:
       context: ./services/media-service
@@ -438,7 +442,9 @@ services:
     restart: unless-stopped
 
   # Analytics Service - сбор и анализ метрик
+  # STUB: Пока не реализован, отключён через profiles для экономии памяти
   analytics-service:
+    profiles: ["full"]
     image: ghcr.io/egorov-ma/aqstream/analytics-service:latest
     build:
       context: ./services/analytics-service
