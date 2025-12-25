@@ -389,12 +389,12 @@ services:
       interval: 45s
       timeout: 15s
       retries: 4
-      start_period: 120s
+      start_period: 180s
     deploy:
       resources:
         limits:
-          cpus: '0.15'
-          memory: 140M
+          cpus: '0.25'
+          memory: 280M
     restart: unless-stopped
 
   # Media Service - загрузка и обработка файлов
