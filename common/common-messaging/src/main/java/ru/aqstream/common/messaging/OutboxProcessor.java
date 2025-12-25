@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,17 @@ import org.springframework.transaction.annotation.Transactional;
  *     max-retries: 5
  *     retention-days: 7
  * </pre>
+ *
+ * <p>Для отключения в тестах: {@code outbox.processor.enabled=false}</p>
  */
 @Component
+@ConditionalOnProperty(name = "outbox.processor.enabled", havingValue = "true", matchIfMissing = true)
 public class OutboxProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxProcessor.class);
 
     private final OutboxRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
-    private final boolean enabled;
     private final int batchSize;
     private final int maxRetries;
     private final int retentionDays;
@@ -41,7 +44,6 @@ public class OutboxProcessor {
     public OutboxProcessor(
         OutboxRepository outboxRepository,
         RabbitTemplate rabbitTemplate,
-        @Value("${outbox.processor.enabled:true}") boolean enabled,
         @Value("${outbox.processor.batch-size:100}") int batchSize,
         @Value("${outbox.processor.max-retries:5}") int maxRetries,
         @Value("${outbox.processor.retention-days:7}") int retentionDays,
@@ -49,7 +51,6 @@ public class OutboxProcessor {
     ) {
         this.outboxRepository = outboxRepository;
         this.rabbitTemplate = rabbitTemplate;
-        this.enabled = enabled;
         this.batchSize = batchSize;
         this.maxRetries = maxRetries;
         this.retentionDays = retentionDays;
@@ -63,10 +64,6 @@ public class OutboxProcessor {
     @Scheduled(fixedDelayString = "${outbox.processor.interval:1000}")
     @Transactional
     public void processOutbox() {
-        if (!enabled) {
-            return;
-        }
-
         List<OutboxMessage> messages = outboxRepository.findUnprocessedMessages(maxRetries, batchSize);
 
         if (messages.isEmpty()) {
@@ -117,10 +114,6 @@ public class OutboxProcessor {
     @Scheduled(fixedDelayString = "${outbox.cleanup.interval:3600000}")
     @Transactional
     public void cleanupProcessedMessages() {
-        if (!enabled) {
-            return;
-        }
-
         Instant cutoff = Instant.now().minus(Duration.ofDays(retentionDays));
         int deleted = outboxRepository.deleteProcessedBefore(cutoff);
 

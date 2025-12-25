@@ -35,7 +35,10 @@ import ru.aqstream.common.messaging.config.RabbitMQConfig;
  * Интеграционные тесты для RabbitMQ с использованием Testcontainers.
  * Проверяют отправку и получение сообщений через RabbitMQ.
  */
-@SpringBootTest(classes = RabbitMQIntegrationTest.TestConfig.class)
+@SpringBootTest(
+    classes = RabbitMQIntegrationTest.TestConfig.class,
+    properties = "spring.main.allow-bean-definition-overriding=true"
+)
 @Testcontainers
 class RabbitMQIntegrationTest {
 
@@ -120,7 +123,8 @@ class RabbitMQIntegrationTest {
     @Configuration
     @EnableAutoConfiguration(exclude = {
         DataSourceAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class
+        HibernateJpaAutoConfiguration.class,
+        ru.aqstream.common.messaging.config.MessagingAutoConfiguration.class
     })
     @Import(RabbitMQConfig.class)
     static class TestConfig {

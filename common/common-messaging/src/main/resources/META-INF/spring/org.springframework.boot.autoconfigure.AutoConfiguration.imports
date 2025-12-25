@@ -1,2 +1,1 @@
 ru.aqstream.common.messaging.config.MessagingAutoConfiguration
-ru.aqstream.common.messaging.config.RabbitMQConfig
