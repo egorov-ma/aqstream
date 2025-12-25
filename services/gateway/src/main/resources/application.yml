@@ -5,8 +5,6 @@ server:
 spring:
   application:
     name: gateway
-  main:
-    lazy-initialization: true
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
