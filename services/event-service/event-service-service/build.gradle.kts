@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":services:event-service:event-service-db"))
 
     // Feign client для user-service
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation(project(":services:user-service:user-service-client"))
     implementation(project(":services:user-service:user-service-api"))
 
