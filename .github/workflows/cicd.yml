@@ -582,23 +582,23 @@ jobs:
             git pull origin main
 
             echo "=== Starting databases ==="
-            docker compose up -d postgres-shared postgres-user postgres-payment postgres-analytics
+            docker compose up -d --force-recreate postgres-shared postgres-user postgres-payment postgres-analytics
             sleep 20
 
             echo "=== Starting Redis, RabbitMQ, MinIO ==="
-            docker compose up -d redis rabbitmq minio minio-init
+            docker compose up -d --force-recreate redis rabbitmq minio minio-init
             sleep 15
 
             echo "=== Starting user-service (core) ==="
-            docker compose up -d --pull=always user-service
+            docker compose up -d --force-recreate --pull=always user-service
             sleep 45
 
             echo "=== Starting event-service, payment-service ==="
-            docker compose up -d --pull=always event-service payment-service
+            docker compose up -d --force-recreate --pull=always event-service payment-service
             sleep 45
 
             echo "=== Starting remaining services ==="
-            docker compose up -d --pull=always notification-service media-service analytics-service gateway frontend
+            docker compose up -d --force-recreate --pull=always notification-service media-service analytics-service gateway frontend
 
             echo "=== Cleanup old images ==="
             docker image prune -f --filter "until=2h" 2>/dev/null || true

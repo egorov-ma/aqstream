@@ -340,7 +340,7 @@ services:
       resources:
         limits:
           cpus: '0.15'
-          memory: 160M
+          memory: 180M
     restart: unless-stopped
 
   # Notification Service - отправка уведомлений через Email и Telegram
