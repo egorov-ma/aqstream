@@ -297,8 +297,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 280M
+          cpus: '0.3'
+          memory: 350M
     restart: unless-stopped
 
   # Payment Service - обработка платежей и возвратов
