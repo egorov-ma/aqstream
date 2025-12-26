@@ -346,6 +346,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend-test]
     if: always() && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -356,20 +363,6 @@ jobs:
           path: allure-results-merged
         continue-on-error: true
 
-      - name: Get Allure history
-        uses: actions/checkout@v4
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Prepare Allure History
-        run: |
-          mkdir -p allure-history
-          if [ -d "gh-pages/allure/history" ]; then
-            cp -R gh-pages/allure/history allure-history/ || true
-          fi
-
       - name: Install Allure CLI
         run: |
           curl -o allure-2.27.0.tgz -Ls https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.27.0/allure-commandline-2.27.0.tgz
@@ -378,22 +371,19 @@ jobs:
 
       - name: Generate Allure Report
         run: |
-          if [ -d "allure-results-merged" ]; then
-            if [ -d "allure-history/history" ]; then
-              cp -R allure-history/history allure-results-merged/
-            fi
-            allure generate allure-results-merged -o allure-report --clean
+          if [ -d "allure-results-merged" ] && [ -n "$(ls -A allure-results-merged 2>/dev/null)" ]; then
+            allure generate allure-results-merged -o _site/allure --clean
           else
-            mkdir -p allure-report
-            echo "<html><body><h1>No test results found</h1></body></html>" > allure-report/index.html
+            mkdir -p _site/allure
+            echo "<html><body><h1>No test results found</h1><p>Run tests to generate Allure reports.</p></body></html>" > _site/allure/index.html
           fi
 
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: allure-report
-          destination_dir: allure
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   # ============================================
   # STAGE 5: DOCKER BUILD (main only)
