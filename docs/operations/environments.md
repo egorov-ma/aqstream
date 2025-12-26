@@ -322,5 +322,7 @@ docker compose exec postgres-shared psql -U aqstream -d shared_services_db \
 
 ## Дальнейшее чтение
 
+- [GitHub Secrets](./github-secrets.md) — настройка секретов для production
+- [CI/CD Pipeline](./ci-cd.md) — автоматизация деплоя
 - [Deploy](./deploy.md) — процесс деплоя
 - [Tooling](../tech-stack/tooling.md) — инструменты

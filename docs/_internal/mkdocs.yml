@@ -108,6 +108,7 @@ nav:
     - Настройка сервера: operations/server-setup.md
     - Деплой: operations/deploy.md
     - CI/CD: operations/ci-cd.md
+    - GitHub Secrets: operations/github-secrets.md
     - GitHub Pages: operations/github-pages-setup.md
     - Observability: operations/observability.md
     - Runbook: operations/runbook.md

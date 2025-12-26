@@ -233,6 +233,7 @@ open build/reports/checkstyle/main.html
 
 ## Дальнейшее чтение
 
+- [GitHub Secrets](./github-secrets.md) — настройка секретов
 - [Deploy](./deploy.md) — процесс деплоя
 - [Environments](./environments.md) — окружения
 - [Runbook](./runbook.md) — операционные процедуры

@@ -266,6 +266,7 @@ services:
 
 ## Дальнейшее чтение
 
+- [GitHub Secrets](./github-secrets.md) — настройка секретов
 - [CI/CD](./ci-cd.md) — детали пайплайнов
 - [Observability](./observability.md) — мониторинг
 - [Runbook](./runbook.md) — операционные процедуры
