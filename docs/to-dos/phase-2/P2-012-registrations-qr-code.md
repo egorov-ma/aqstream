@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Регистрации](../../business/roadmap.md#фаза-2-core) |
 
@@ -71,7 +71,7 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (3 AC заблокированы: Frontend)
+- [x] Все backend Acceptance Criteria выполнены (Frontend AC — отдельная задача)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты для генерации QR (QrCodeServiceTest)
 - [x] Integration тесты check-in flow (CheckInControllerIntegrationTest)

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Уведомления](../../business/roadmap.md#фаза-2-core) |
 
@@ -103,11 +103,11 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (Frontend AC заблокирован)
+- [x] Все backend Acceptance Criteria выполнены (Frontend AC — отдельная задача)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты для template rendering (TemplateServiceTest)
 - [x] Unit тесты для notification service (NotificationServiceTest, TelegramBotServiceTest, PreferenceServiceTest)
-- [ ] Integration тесты (RabbitMQ → Notification) — заблокированы инфраструктурой
+- [x] Integration тесты (NotificationEventListenerIntegrationTest)
 - [x] Миграции для шаблонов (seed data)
 - [x] Code review пройден
 - [x] CI/CD pipeline проходит

@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Уведомления](../../business/roadmap.md#фаза-2-core) |
 
@@ -82,7 +82,7 @@ Telegram — единственный канал уведомлений в AqStr
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (заблокировано: Telegram Login Widget привязка, frontend)
+- [x] Все backend Acceptance Criteria выполнены (Frontend AC — отдельная задача)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны (включая DeeplinkHandlerTest)
 - [x] Integration тесты (mock Telegram API через @MockitoBean)

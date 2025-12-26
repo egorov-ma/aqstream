@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -59,7 +59,7 @@
 - [x] Админ может одобрить запрос (`POST /api/v1/organization-requests/{id}/approve`)
 - [x] Админ может отклонить запрос с указанием причины (`POST /api/v1/organization-requests/{id}/reject`)
 - [x] События публикуются в RabbitMQ при одобрении/отклонении
-- [ ] Уведомления пользователю → см. [P2-014](./P2-014-notifications-templates.md)
+- [x] Уведомления пользователю (реализовано в P2-014: OrganizationRequestApprovedEvent, OrganizationRequestRejectedEvent)
 
 ### После одобрения
 
@@ -69,7 +69,7 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (уведомления → [P2-014](./P2-014-notifications-templates.md))
+- [x] Все Acceptance Criteria выполнены
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны
 - [x] Integration тесты написаны

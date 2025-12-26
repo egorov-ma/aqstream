@@ -73,7 +73,7 @@
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны
 - [x] Integration тесты написаны
-- [ ] Email шаблоны созданы (TODO: интеграция с notification-service)
+- [x] Email шаблоны созданы (реализовано в P2-014: auth.email-verification, auth.password-reset)
 - [x] Миграции созданы
 - [x] Code review пройден
 - [x] CI/CD pipeline проходит

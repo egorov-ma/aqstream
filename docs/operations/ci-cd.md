@@ -6,20 +6,23 @@ GitHub Actions для AqStream.
 
 ```mermaid
 flowchart LR
-    PR["Pull Request"] --> CI["CI Checks"]
-    CI --> Main["Merge to main"]
-    Main --> Prod["Deploy Production"]
+    PR["Pull Request"] --> Lint["Stage 1: Lint"]
+    Lint --> Test["Stage 2: Tests"]
+    Test --> Build["Stage 3: Build"]
+    Build --> Main["Merge to main"]
+    Main --> Allure["Stage 4: Allure Report"]
+    Main --> Docker["Stage 5: Docker Build"]
+    Docker --> Deploy["Stage 6: Deploy"]
+    Deploy --> Health["Stage 7: Health Check"]
 ```
 
-## Workflows
+## Workflow
 
-| Файл | Триггер | Действие |
+| Файл | Триггер | Описание |
 | ------ | --------- | ---------- |
-| `ci.yml` | PR, Push to main | Lint, Test, Build |
-| `deploy-production.yml` | Push to main | Build, Deploy |
-| `docs.yml` | Push (docs/**) | Validate, Build, Deploy |
+| `cicd.yml` | PR, Push to main | Единый pipeline: Lint → Test → Build → Allure → Docker → Deploy → Health |
 
-Все workflows поддерживают ручной запуск через `workflow_dispatch`.
+Поддерживает ручной запуск через `workflow_dispatch` с опцией `skip_deploy`.
 
 ## CI Workflow
 
@@ -83,24 +86,38 @@ concurrency:
 
 Автоматический деплой при push в `main`:
 
-### Build Job
+### Docker Build Job
 
 1. **Build JARs** — `./gradlew bootJar`
-2. **Build Docker image** — Gateway (остальные сервисы будут добавлены позже)
-3. **Push to GHCR** — `ghcr.io/<repo>/gateway:<sha>`
+2. **Build Docker images** — все сервисы (java-base, gateway, user-service, event-service, payment-service, notification-service, media-service, analytics-service, frontend)
+3. **Push to GHCR** — `ghcr.io/<repo>/<service>:<sha>`
 
 ### Deploy Job
 
 1. **SSH** — подключение к production серверу
-2. **Pull images** — `docker compose pull`
-3. **Restart** — `docker compose up -d`
-4. **Health Check** — проверка `https://api.aqstream.ru/actuator/health`
+2. **Sequential start** — поочерёдный запуск с ожиданием:
+   - Databases (PostgreSQL, Redis, RabbitMQ, MinIO)
+   - user-service (core, 90s wait)
+   - event-service (45s wait)
+   - notification-service, gateway, frontend
+3. **Cleanup** — удаление старых Docker images
+
+### Health Check Job
+
+1. **Wait** — 120s для полного запуска
+2. **Check Gateway** — `https://api.aqstream.ru/actuator/health`
+3. **Retry** — до 30 попыток с интервалом 10s
+4. **Diagnostics** — при ошибке выводит логи контейнеров
 
 ### Image Tags
 
 ```text
-ghcr.io/egorov-ma/aqstream/gateway:abc1234
-ghcr.io/egorov-ma/aqstream/gateway:latest
+ghcr.io/egorov-ma/aqstream/java-base:latest
+ghcr.io/egorov-ma/aqstream/gateway:<sha>
+ghcr.io/egorov-ma/aqstream/user-service:<sha>
+ghcr.io/egorov-ma/aqstream/event-service:<sha>
+ghcr.io/egorov-ma/aqstream/notification-service:<sha>
+ghcr.io/egorov-ma/aqstream/frontend:<sha>
 ```
 
 ## Deploy Documentation

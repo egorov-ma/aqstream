@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Организации](../../business/roadmap.md#фаза-2-core) |
 
@@ -52,7 +52,7 @@
 - [x] Организация создаётся с настройками по умолчанию
 - [x] OWNER может редактировать организацию (`PUT /api/v1/organizations/{id}`)
 - [x] OWNER может удалить организацию (`DELETE /api/v1/organizations/{id}`) — soft delete
-- [ ] При удалении все события архивируются → **P2-009** (event-service слушает `organization.deleted`)
+- [x] При удалении все события архивируются (event-service OrganizationEventListener слушает `organization.deleted`)
 
 ### Управление членами
 
@@ -80,12 +80,12 @@
 
 ## Definition of Done (DoD)
 
-- [x] Все Acceptance Criteria выполнены (backend часть, frontend — P2-016)
+- [x] Все Acceptance Criteria выполнены (frontend — отдельная задача P2-016)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны
 - [x] Integration тесты написаны (OrganizationControllerIntegrationTest добавлен)
 - [x] Миграции созданы (RLS политики — P2-007)
-- [ ] Events опубликованы в RabbitMQ → **common-messaging** (отдельная задача после настройки Outbox)
+- [x] Events опубликованы в RabbitMQ (organization.created, organization.updated, organization.deleted, organization.member.*)
 - [x] Code review пройден
 - [x] CI/CD pipeline проходит
 

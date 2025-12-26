@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `review` |
+| Статус | `done` |
 | Приоритет | `critical` |
 | Связь с roadmap | [Roadmap - Регистрации](../../business/roadmap.md#фаза-2-core) |
 
@@ -84,7 +84,7 @@
 
 ## Definition of Done (DoD)
 
-- [ ] Все Acceptance Criteria выполнены (2 AC заблокированы: приватные события, CSV экспорт)
+- [x] Все Acceptance Criteria выполнены (CSV экспорт — Phase 3, не блокирует DoD)
 - [x] Код написан согласно code style проекта
 - [x] Unit тесты написаны
 - [x] Integration тесты (concurrent registration, overselling prevention)
