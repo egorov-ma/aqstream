@@ -61,6 +61,11 @@ coverage/
 test-results/
 playwright-report/
 
+# Allure Reports
+.allure/
+allure-report/
+allure-results/
+
 # ---- Build artifacts ----
 dist/
 target/
