@@ -3,6 +3,7 @@ plugins {
     id("org.springframework.boot") apply false
     id("io.spring.dependency-management") apply false
     id("com.gorylenko.gradle-git-properties") apply false
+    id("io.qameta.allure") apply false
     id("checkstyle")
     id("jacoco")
 }
@@ -26,6 +27,7 @@ subprojects {
     apply(plugin = "java")
     apply(plugin = "checkstyle")
     apply(plugin = "jacoco")
+    apply(plugin = "io.qameta.allure")
 
     group = rootProject.group
     version = rootProject.version
@@ -152,8 +154,9 @@ subprojects {
         "testImplementation"("io.qameta.allure:allure-junit5:$allureVersion")
     }
 
-    // Настройка systemProperty для Allure
+    // Настройка Test задач для Allure
     tasks.withType<Test> {
+        useJUnitPlatform()
         systemProperty("allure.results.directory", layout.buildDirectory.dir("allure-results").get().asFile.absolutePath)
     }
 }
