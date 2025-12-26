@@ -60,6 +60,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
+springBoot {
+    buildInfo()
+}
+
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveClassifier.set("boot")
 }
