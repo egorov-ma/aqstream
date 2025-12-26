@@ -382,6 +382,42 @@ pnpm test:e2e                     # E2E tests
 pnpm test:e2e --ui                # E2E с UI
 ```
 
+## Allure Reports
+
+Allure отчёты автоматически генерируются и публикуются на GitHub Pages после каждого прогона тестов в ветке `main`.
+
+### Доступ к отчётам
+
+**Production:** https://egorov-ma.github.io/aqstream/allure/
+
+Отчёт показывает:
+- Статистику тестов (passed/failed/broken/skipped)
+- Детали каждого теста (шаги, attachments, timing)
+- Тренды по истории запусков
+- Группировку по Suites и Behaviors
+
+### Локальная генерация
+
+```bash
+# Backend - генерация отчёта из результатов
+./gradlew test                      # Запустить тесты (результаты в build/allure-results/)
+./gradlew allureServe               # Сгенерировать и открыть отчёт в браузере
+```
+
+### CI/CD
+
+Allure Reports генерируются в workflow `.github/workflows/cicd.yml`:
+
+1. **Backend Tests** собирает результаты тестов в артефакт `allure-results`
+2. **Allure Report** job:
+   - Скачивает результаты
+   - Генерирует HTML отчёт
+   - Деплоит на GitHub Pages через `actions/deploy-pages`
+
+### Настройка
+
+Подробнее: [GitHub Pages Setup](../../operations/github-pages-setup.md)
+
 ## Дальнейшее чтение
 
 - [CI/CD](../../operations/ci-cd.md) — пайплайны

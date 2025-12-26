@@ -133,6 +133,19 @@ jobs:
 
 См. полный пример в [Server Setup](./server-setup.md).
 
+## Allure Reports
+
+Автоматическая генерация и публикация Allure отчётов о тестировании:
+
+1. **Trigger** — каждый push в `main` после успешных тестов
+2. **Collect** — Backend Tests собирает результаты в артефакт `allure-results`
+3. **Generate** — Allure Report job генерирует HTML из результатов
+4. **Deploy** — публикация на GitHub Pages через `actions/deploy-pages`
+
+**URL:** https://egorov-ma.github.io/aqstream/allure/
+
+Подробнее: [GitHub Pages Setup](./github-pages-setup.md)
+
 ## GitHub Secrets
 
 | Secret | Description | Required For |

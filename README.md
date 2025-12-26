@@ -89,6 +89,7 @@ make infra-up     # Запустить инфраструктуру (PostgreSQL,
 | https://aqstream.ru | Frontend |
 | https://api.aqstream.ru | API Gateway |
 | https://docs.aqstream.ru | Документация |
+| https://egorov-ma.github.io/aqstream/allure/ | Allure Reports (тесты) |
 
 ## Технологии
 
