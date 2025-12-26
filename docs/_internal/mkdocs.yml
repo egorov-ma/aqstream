@@ -62,7 +62,8 @@ markdown_extensions:
 
 nav:
   - Home: README.md
-  
+  - Changelog: CHANGELOG.md
+
   - Архитектура:
     - Обзор: architecture/overview.md
     - Топология сервисов: architecture/service-topology.md
