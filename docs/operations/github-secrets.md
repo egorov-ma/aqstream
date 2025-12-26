@@ -10,6 +10,99 @@
 
 ---
 
+## Нужен ли .env файл?
+
+| Окружение | .env нужен? | Откуда значения? |
+|-----------|-------------|------------------|
+| **Локально (gradlew bootRun)** | ❌ Нет | `application-local.yml` |
+| **Локально (docker compose)** | ❌ Нет | Дефолты в `docker-compose.yml` |
+| **CI/CD тесты** | ❌ Нет | Testcontainers (авто) |
+| **Production** | ✅ Да | Создаётся автоматически из GitHub Secrets |
+
+**Вывод:** Локально `.env` не нужен. На production он создаётся автоматически при каждом деплое.
+
+---
+
+## Быстрый старт (5 минут)
+
+Если у вас уже настроен сервер и получены все credentials:
+
+```bash
+# 1. Установите GitHub CLI
+brew install gh
+
+# 2. Авторизуйтесь
+gh auth login
+
+# 3. Добавьте секреты (замените значения на реальные)
+gh secret set SSH_HOST --body "194.58.xxx.xxx"
+gh secret set SSH_USER --body "deploy"
+gh secret set SSH_KEY < ~/.ssh/github_deploy
+
+gh secret set JWT_SECRET --body "$(openssl rand -base64 64 | tr -d '\n')"
+gh secret set TELEGRAM_BOT_TOKEN --body "123456789:ABC..."
+
+gh secret set DATABASE_PASSWORD --body "ваш_пароль_postgres"
+gh secret set RABBITMQ_PASSWORD --body "ваш_пароль_rabbitmq"
+gh secret set REDIS_PASSWORD --body "ваш_пароль_redis"
+
+gh secret set MINIO_ACCESS_KEY --body "ваш_minio_user"
+gh secret set MINIO_SECRET_KEY --body "ваш_minio_password"
+
+gh secret set MAIL_HOST --body "smtp.gmail.com"
+gh secret set MAIL_PORT --body "587"
+gh secret set MAIL_USERNAME --body "your@gmail.com"
+gh secret set MAIL_PASSWORD --body "xxxx xxxx xxxx xxxx"
+
+gh secret set FRONTEND_URL --body "https://aqstream.ru"
+gh secret set CORS_ALLOWED_ORIGINS --body "https://aqstream.ru"
+
+# 4. Проверьте что всё добавлено
+gh secret list
+```
+
+---
+
+## Как получить существующие значения
+
+Если секреты уже были настроены ранее:
+
+### С сервера (если есть .env)
+
+```bash
+ssh deploy@your-server.ru "cat ~/aqstream/.env"
+```
+
+### Из контейнеров (если запущены)
+
+```bash
+# PostgreSQL пароль
+ssh deploy@your-server.ru "docker exec aqstream-postgres-shared printenv POSTGRES_PASSWORD"
+
+# RabbitMQ пароль
+ssh deploy@your-server.ru "docker exec aqstream-rabbitmq printenv RABBITMQ_DEFAULT_PASS"
+
+# MinIO credentials
+ssh deploy@your-server.ru "docker exec aqstream-minio printenv MINIO_ROOT_USER"
+ssh deploy@your-server.ru "docker exec aqstream-minio printenv MINIO_ROOT_PASSWORD"
+```
+
+### Telegram Bot Token
+
+Если забыли токен — получите новый от [@BotFather](https://t.me/BotFather):
+```
+/mybots → @YourBot → API Token
+```
+
+### JWT Secret
+
+Если забыли — сгенерируйте новый (все пользователи будут разлогинены):
+```bash
+openssl rand -base64 64 | tr -d '\n'
+```
+
+---
+
 ## Как секреты работают в разных окружениях
 
 ### Локальная разработка (без Docker)
