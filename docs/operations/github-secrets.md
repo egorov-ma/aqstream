@@ -8,6 +8,72 @@
 
 **Путь:** `Settings → Secrets and variables → Actions → Repository secrets`
 
+---
+
+## Как секреты работают в разных окружениях
+
+### Локальная разработка (без Docker)
+
+При запуске сервисов через `./gradlew bootRun` используются значения из `application-local.yml`:
+
+```yaml
+# services/user-service/user-service-service/src/main/resources/application-local.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/user_service_db
+    username: aqstream
+    password: aqstream  # Простой пароль для локальной разработки
+```
+
+Инфраструктура (PostgreSQL, Redis, RabbitMQ) запускается через `make infra-up` с паролями по умолчанию.
+
+### Docker Desktop (локально)
+
+При запуске через `docker compose up` используются значения по умолчанию из `docker-compose.yml`:
+
+```yaml
+# docker-compose.yml
+services:
+  postgres-shared:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aqstream}  # По умолчанию "aqstream"
+```
+
+Синтаксис `${VAR:-default}` означает: использовать переменную `VAR`, или `default` если не задана.
+
+**Не нужно** создавать `.env` файл локально — всё работает с дефолтами.
+
+### CI/CD (GitHub Actions)
+
+При сборке и тестах в GitHub Actions:
+
+1. **Unit тесты** — не требуют реальных сервисов, моки
+2. **Integration тесты** — используют Testcontainers (поднимают PostgreSQL, Redis в Docker)
+3. **Testcontainers** — создают изолированные контейнеры с автоматическими credentials
+
+Секреты GitHub не используются на этапе тестирования.
+
+### Production (деплой)
+
+При деплое на production сервер:
+
+1. GitHub Actions получает секреты из `Settings → Secrets → Actions`
+2. Подключается к серверу по SSH (используя `SSH_HOST`, `SSH_USER`, `SSH_KEY`)
+3. Генерирует `.env` файл на сервере с реальными значениями
+4. Docker Compose читает `.env` и передаёт переменные в контейнеры
+
+```mermaid
+flowchart LR
+    GH[GitHub Secrets] --> SSH[SSH to Server]
+    SSH --> ENV[".env file"]
+    ENV --> DC[Docker Compose]
+    DC --> S[Services]
+```
+
+**Важно:** `.env` файл создаётся автоматически при каждом деплое и никогда не хранится в git.
+
+---
+
 ## Список секретов
 
 | Secret | Обязательный | Описание |
