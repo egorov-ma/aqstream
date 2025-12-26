@@ -537,7 +537,8 @@ services:
       dockerfile: Dockerfile
     container_name: aqstream-frontend
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
+      # Gateway URL для API rewrites в Next.js
+      NEXT_PUBLIC_GATEWAY_URL: http://gateway:8080
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     ports:
       - "3000:3000"

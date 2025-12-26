@@ -21,6 +21,18 @@ const nextConfig = {
       'development'
     );
   },
+
+  // Проксирование API запросов на Gateway
+  async rewrites() {
+    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080';
+
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${gatewayUrl}/api/:path*`,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
