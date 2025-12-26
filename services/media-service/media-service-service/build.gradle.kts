@@ -16,6 +16,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // OpenAPI / Swagger
+    val openApiVersion: String by project
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
+
     // MinIO S3 client
     val minioVersion: String by project
     implementation("io.minio:minio:$minioVersion")
@@ -27,10 +31,6 @@ dependencies {
 
     testImplementation(project(":common:common-test"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-}
-
-springBoot {
-    buildInfo()
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
