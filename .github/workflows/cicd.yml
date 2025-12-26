@@ -369,10 +369,20 @@ jobs:
           tar -zxvf allure-2.27.0.tgz
           echo "$PWD/allure-2.27.0/bin" >> $GITHUB_PATH
 
+      - name: Flatten Allure Results
+        run: |
+          mkdir -p allure-results-flat
+          # Находим все JSON файлы в вложенных папках и копируем в плоскую структуру
+          find allure-results-merged -name "*.json" -exec cp {} allure-results-flat/ \; 2>/dev/null || true
+          find allure-results-merged -name "*.txt" -exec cp {} allure-results-flat/ \; 2>/dev/null || true
+          find allure-results-merged -name "*.png" -exec cp {} allure-results-flat/ \; 2>/dev/null || true
+          find allure-results-merged -name "*.attach" -exec cp {} allure-results-flat/ \; 2>/dev/null || true
+          echo "Found $(ls -1 allure-results-flat/*.json 2>/dev/null | wc -l) result files"
+
       - name: Generate Allure Report
         run: |
-          if [ -d "allure-results-merged" ] && [ -n "$(ls -A allure-results-merged 2>/dev/null)" ]; then
-            allure generate allure-results-merged -o _site/allure --clean
+          if [ -d "allure-results-flat" ] && [ -n "$(ls -A allure-results-flat/*.json 2>/dev/null)" ]; then
+            allure generate allure-results-flat -o _site/allure --clean
           else
             mkdir -p _site/allure
             echo "<html><body><h1>No test results found</h1><p>Run tests to generate Allure reports.</p></body></html>" > _site/allure/index.html
