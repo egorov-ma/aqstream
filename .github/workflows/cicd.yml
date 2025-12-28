@@ -574,7 +574,7 @@ jobs:
           username: ${{ vars.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           command_timeout: 15m
-          envs: JWT_SECRET,TELEGRAM_BOT_TOKEN,DATABASE_PASSWORD,RABBITMQ_PASSWORD,REDIS_PASSWORD,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD,MINIO_ACCESS_KEY,MINIO_SECRET_KEY,FRONTEND_URL,CORS_ALLOWED_ORIGINS
+          envs: JWT_SECRET,TELEGRAM_BOT_TOKEN,DATABASE_PASSWORD,RABBITMQ_USER,RABBITMQ_PASSWORD,REDIS_PASSWORD,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD,MINIO_ACCESS_KEY,MINIO_SECRET_KEY,FRONTEND_URL,CORS_ALLOWED_ORIGINS
           script: |
             set -e
             cd ~/aqstream
@@ -588,6 +588,7 @@ jobs:
               "JWT_SECRET=${JWT_SECRET}" \
               "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" \
               "POSTGRES_PASSWORD=${DATABASE_PASSWORD}" \
+              "RABBITMQ_USER=${RABBITMQ_USER}" \
               "RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}" \
               "REDIS_PASSWORD=${REDIS_PASSWORD}" \
               "MAIL_HOST=${MAIL_HOST}" \
@@ -634,6 +635,7 @@ jobs:
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
           # Variables (видимые)
+          RABBITMQ_USER: ${{ vars.RABBITMQ_USER }}
           MAIL_HOST: ${{ vars.MAIL_HOST }}
           MAIL_PORT: ${{ vars.MAIL_PORT }}
           MAIL_USERNAME: ${{ vars.MAIL_USERNAME }}
