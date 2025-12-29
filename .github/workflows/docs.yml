@@ -93,14 +93,14 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            site/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/docs.aqstream.ru/
+            site/ ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:/var/www/docs.aqstream.ru/
           rm ~/.ssh/deploy_key
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
             echo "Files deployed:"
