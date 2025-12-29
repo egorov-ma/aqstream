@@ -1,12 +1,21 @@
-# GitHub Secrets
+# GitHub Secrets & Variables
 
-Инструкция по настройке секретов для CI/CD pipeline.
+Инструкция по настройке секретов и переменных для CI/CD pipeline.
 
 ## Обзор
 
-Все секреты хранятся в GitHub и передаются на сервер при деплое.
+Конфигурация хранится в GitHub и передаётся на сервер при деплое.
 
-**Путь:** `Settings → Secrets and variables → Actions → Repository secrets`
+**Путь:** `Settings → Secrets and variables → Actions`
+
+### Secrets vs Variables
+
+| Тип | Видимость | Использовать для |
+|-----|-----------|------------------|
+| **Secrets** | Скрыты (показываются как `***`) | Пароли, токены, ключи |
+| **Variables** | Видны в логах | Имена пользователей, хосты, URL |
+
+**Пример:** `RABBITMQ_PASSWORD` — Secret (пароль), `RABBITMQ_USER` — Variable (имя пользователя)
 
 ---
 
@@ -167,26 +176,34 @@ flowchart LR
 
 ---
 
-## Список секретов
+## Список Secrets (скрытые)
 
 | Secret | Обязательный | Описание |
 |--------|--------------|----------|
-| `SSH_HOST` | Да | Адрес production сервера |
-| `SSH_USER` | Да | SSH пользователь |
 | `SSH_KEY` | Да | Приватный SSH ключ |
 | `JWT_SECRET` | Да | Секрет для подписи JWT токенов |
 | `TELEGRAM_BOT_TOKEN` | Да | Токен Telegram бота |
 | `DATABASE_PASSWORD` | Да | Пароль PostgreSQL |
 | `RABBITMQ_PASSWORD` | Да | Пароль RabbitMQ |
 | `REDIS_PASSWORD` | Да | Пароль Redis |
+| `MAIL_PASSWORD` | Нет | SMTP пароль |
+| `MINIO_SECRET_KEY` | Да | MinIO secret key |
+
+## Список Variables (видимые)
+
+| Variable | Обязательный | Описание |
+|----------|--------------|----------|
+| `SSH_HOST` | Да | Адрес production сервера |
+| `SSH_USER` | Да | SSH пользователь |
+| `RABBITMQ_USER` | Да | Имя пользователя RabbitMQ (default: `aqstream`) |
 | `MAIL_HOST` | Нет | SMTP сервер |
 | `MAIL_PORT` | Нет | SMTP порт |
 | `MAIL_USERNAME` | Нет | SMTP логин |
-| `MAIL_PASSWORD` | Нет | SMTP пароль |
 | `MINIO_ACCESS_KEY` | Да | MinIO access key |
-| `MINIO_SECRET_KEY` | Да | MinIO secret key |
 | `FRONTEND_URL` | Да | URL фронтенда |
 | `CORS_ALLOWED_ORIGINS` | Да | Разрешённые CORS origins |
+| `TELEGRAM_BOT_USERNAME` | Нет | Username Telegram бота |
+| `TELEGRAM_WEBHOOK_URL` | Нет | URL вебхука Telegram |
 
 ---
 
