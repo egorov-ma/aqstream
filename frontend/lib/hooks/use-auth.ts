@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/auth-store';
-import type { LoginRequest, RegisterRequest } from '@/lib/api/types';
+import type {
+  ForgotPasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+  ResetPasswordRequest,
+  TelegramAuthRequest,
+} from '@/lib/api/types';
 import { toast } from 'sonner';
 
 export function useUser() {
@@ -17,6 +24,7 @@ export function useUser() {
 export function useLogin() {
   const { login } = useAuthStore();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
@@ -24,28 +32,29 @@ export function useLogin() {
       login(response.user, response.accessToken, response.refreshToken);
       queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Вы успешно вошли в систему');
+      router.push('/dashboard');
     },
-    onError: () => {
-      toast.error('Ошибка входа. Проверьте email и пароль');
-    },
+    // Убираем onError — обработка в форме для лучшего UX
   });
 }
 
 export function useRegister() {
+  const router = useRouter();
+
   return useMutation({
     mutationFn: (data: RegisterRequest) => authApi.register(data),
     onSuccess: () => {
-      toast.success('Регистрация успешна! Теперь войдите в систему');
+      toast.success('Регистрация успешна! Проверьте email для подтверждения');
+      router.push('/verify-email-sent');
     },
-    onError: () => {
-      toast.error('Ошибка регистрации. Попробуйте ещё раз');
-    },
+    // Убираем onError — обработка в форме для лучшего UX
   });
 }
 
 export function useLogout() {
   const { logout } = useAuthStore();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: () => authApi.logout(),
@@ -53,11 +62,65 @@ export function useLogout() {
       logout();
       queryClient.clear();
       toast.success('Вы вышли из системы');
+      router.push('/login');
     },
     onError: () => {
       // Даже при ошибке logout локально
       logout();
       queryClient.clear();
+      router.push('/login');
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (data: ForgotPasswordRequest) => authApi.forgotPassword(data),
+    onSuccess: () => {
+      toast.success('Инструкции отправлены на email');
+    },
+    // Не показываем ошибку — для безопасности всегда "успех"
+  });
+}
+
+export function useResetPassword() {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: ResetPasswordRequest) => authApi.resetPassword(data),
+    onSuccess: () => {
+      toast.success('Пароль успешно изменён');
+      router.push('/login?reset=success');
+    },
+    // Ошибки обрабатываются в форме
+  });
+}
+
+export function useTelegramAuth() {
+  const { login } = useAuthStore();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: TelegramAuthRequest) => authApi.telegramAuth(data),
+    onSuccess: (response) => {
+      login(response.user, response.accessToken, response.refreshToken);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      toast.success('Вы успешно вошли через Telegram');
+      router.push('/dashboard');
+    },
+    // Ошибки обрабатываются в компоненте
+  });
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: (email: string) => authApi.resendVerification({ email }),
+    onSuccess: () => {
+      toast.success('Письмо с подтверждением отправлено');
+    },
+    onError: () => {
+      toast.error('Не удалось отправить письмо. Попробуйте позже');
     },
   });
 }

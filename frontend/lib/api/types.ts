@@ -29,11 +29,42 @@ export interface LoginResponse {
   user: User;
 }
 
+// Alias для консистентности с backend
+export type AuthResponse = LoginResponse;
+
 export interface RegisterRequest {
   email: string;
   password: string;
   firstName: string;
-  lastName: string;
+  lastName?: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+// Telegram Login Widget data
+export interface TelegramAuthRequest {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
 }
 
 // User
@@ -42,7 +73,8 @@ export interface User {
   id: string;
   email: string;
   firstName: string;
-  lastName: string;
+  lastName: string | null;
+  avatarUrl: string | null;
   emailVerified: boolean;
   createdAt: string;
 }

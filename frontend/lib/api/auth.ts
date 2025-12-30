@@ -1,5 +1,15 @@
 import { apiClient } from './client';
-import type { LoginRequest, LoginResponse, RegisterRequest, User } from './types';
+import type {
+  ForgotPasswordRequest,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  ResendVerificationRequest,
+  ResetPasswordRequest,
+  TelegramAuthRequest,
+  User,
+  VerifyEmailRequest,
+} from './types';
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
@@ -7,8 +17,8 @@ export const authApi = {
     return response.data;
   },
 
-  register: async (data: RegisterRequest): Promise<User> => {
-    const response = await apiClient.post<User>('/api/v1/auth/register', data);
+  register: async (data: RegisterRequest): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/api/v1/auth/register', data);
     return response.data;
   },
 
@@ -25,6 +35,27 @@ export const authApi = {
     const response = await apiClient.post<LoginResponse>('/api/v1/auth/refresh', {
       refreshToken,
     });
+    return response.data;
+  },
+
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<void> => {
+    await apiClient.post('/api/v1/auth/forgot-password', data);
+  },
+
+  resetPassword: async (data: ResetPasswordRequest): Promise<void> => {
+    await apiClient.post('/api/v1/auth/reset-password', data);
+  },
+
+  verifyEmail: async (data: VerifyEmailRequest): Promise<void> => {
+    await apiClient.post('/api/v1/auth/verify-email', data);
+  },
+
+  resendVerification: async (data: ResendVerificationRequest): Promise<void> => {
+    await apiClient.post('/api/v1/auth/resend-verification', data);
+  },
+
+  telegramAuth: async (data: TelegramAuthRequest): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/api/v1/auth/telegram', data);
     return response.data;
   },
 };

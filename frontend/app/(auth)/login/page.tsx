@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,8 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { LoginForm, TelegramLogin } from '@/components/features/auth';
 
 export const metadata: Metadata = {
   title: 'Вход - AqStream',
@@ -25,27 +23,27 @@ export default function LoginPage() {
         <CardDescription>Введите email и пароль для входа в аккаунт</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="email@example.com" disabled />
+        <LoginForm />
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">или войдите через</span>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Пароль</Label>
-          <Input id="password" type="password" placeholder="••••••••" disabled />
+
+        <div className="flex justify-center">
+          <TelegramLogin />
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col gap-4">
-        <Button className="w-full" disabled>
-          Войти
-        </Button>
-        <p className="text-center text-sm text-muted-foreground">
+      <CardFooter>
+        <p className="w-full text-center text-sm text-muted-foreground">
           Нет аккаунта?{' '}
-          <Link href="/register" className="text-primary hover:underline">
+          <Link href="/register" className="text-primary hover:underline" data-testid="register-link">
             Зарегистрироваться
           </Link>
-        </p>
-        <p className="text-center text-xs text-muted-foreground">
-          Функционал будет доступен в Phase 2.
         </p>
       </CardFooter>
     </Card>

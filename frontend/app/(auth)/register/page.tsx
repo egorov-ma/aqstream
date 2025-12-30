@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,8 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { RegisterForm, TelegramLogin } from '@/components/features/auth';
 
 export const metadata: Metadata = {
   title: 'Регистрация - AqStream',
@@ -25,31 +23,29 @@ export default function RegisterPage() {
         <CardDescription>Создайте новый аккаунт для доступа к платформе</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Имя</Label>
-          <Input id="name" type="text" placeholder="Ваше имя" disabled />
+        <RegisterForm />
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              или зарегистрируйтесь через
+            </span>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="email@example.com" disabled />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Пароль</Label>
-          <Input id="password" type="password" placeholder="••••••••" disabled />
+
+        <div className="flex justify-center">
+          <TelegramLogin />
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col gap-4">
-        <Button className="w-full" disabled>
-          Зарегистрироваться
-        </Button>
-        <p className="text-center text-sm text-muted-foreground">
+      <CardFooter>
+        <p className="w-full text-center text-sm text-muted-foreground">
           Уже есть аккаунт?{' '}
-          <Link href="/login" className="text-primary hover:underline">
+          <Link href="/login" className="text-primary hover:underline" data-testid="login-link">
             Войти
           </Link>
-        </p>
-        <p className="text-center text-xs text-muted-foreground">
-          Функционал будет доступен в Phase 2.
         </p>
       </CardFooter>
     </Card>
