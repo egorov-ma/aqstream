@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Создание таблицы user_notifications для UI-уведомлений -->
+
+    <changeSet id="006-1" author="aqstream">
+        <comment>Создание таблицы user_notifications для bell icon уведомлений</comment>
+
+        <createTable tableName="user_notifications" schemaName="notification_service">
+            <!-- Primary key -->
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" primaryKeyName="pk_user_notifications"/>
+            </column>
+
+            <!-- Recipient -->
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Type -->
+            <column name="type" type="varchar(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Content -->
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message" type="text">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Read status -->
+            <column name="is_read" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Linked entity for navigation -->
+            <column name="linked_entity_type" type="varchar(30)">
+                <!-- EVENT, REGISTRATION, etc. -->
+            </column>
+            <column name="linked_entity_id" type="uuid"/>
+
+            <!-- Timestamps -->
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="user_notifications" schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="006-2" author="aqstream">
+        <comment>Индексы для таблицы user_notifications</comment>
+
+        <!-- Индекс на user_id для получения уведомлений пользователя -->
+        <createIndex indexName="idx_user_notifications_user_id"
+                     tableName="user_notifications"
+                     schemaName="notification_service">
+            <column name="user_id"/>
+        </createIndex>
+
+        <!-- Индекс на user_id + is_read для подсчёта непрочитанных -->
+        <createIndex indexName="idx_user_notifications_user_unread"
+                     tableName="user_notifications"
+                     schemaName="notification_service">
+            <column name="user_id"/>
+            <column name="is_read"/>
+        </createIndex>
+
+        <!-- Индекс на created_at для сортировки -->
+        <createIndex indexName="idx_user_notifications_created_at"
+                     tableName="user_notifications"
+                     schemaName="notification_service">
+            <column name="created_at" descending="true"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_user_notifications_created_at"
+                       tableName="user_notifications"
+                       schemaName="notification_service"/>
+            <dropIndex indexName="idx_user_notifications_user_unread"
+                       tableName="user_notifications"
+                       schemaName="notification_service"/>
+            <dropIndex indexName="idx_user_notifications_user_id"
+                       tableName="user_notifications"
+                       schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

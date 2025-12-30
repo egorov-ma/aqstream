@@ -113,8 +113,8 @@ backlog → ready → in_progress → review → done
 
 | ID | Название | Статус | Приоритет |
 |----|----------|--------|-----------|
-| [P2-015](./phase-2/P2-015-frontend-auth-pages.md) | Auth pages (login, register) | `ready` | critical |
-| [P2-016](./phase-2/P2-016-frontend-dashboard.md) | Dashboard организатора | `ready` | critical |
+| [P2-015](./phase-2/P2-015-frontend-auth-pages.md) | Auth pages (login, register) | `done` | critical |
+| [P2-016](./phase-2/P2-016-frontend-dashboard.md) | Dashboard организатора | `done` | critical |
 | [P2-017](./phase-2/P2-017-frontend-event-crud.md) | Создание и редактирование события | `ready` | critical |
 | [P2-018](./phase-2/P2-018-frontend-event-page.md) | Публичная страница события | `ready` | critical |
 | [P2-019](./phase-2/P2-019-frontend-registration.md) | Процесс регистрации | `ready` | high |

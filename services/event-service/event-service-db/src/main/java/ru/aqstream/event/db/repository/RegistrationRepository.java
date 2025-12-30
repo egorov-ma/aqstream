@@ -236,6 +236,39 @@ public interface RegistrationRepository extends JpaRepository<Registration, UUID
         + "AND r.status = 'CONFIRMED'")
     long countConfirmedByTicketTypeId(@Param("ticketTypeId") UUID ticketTypeId);
 
+    // === Dashboard статистика ===
+
+    /**
+     * Подсчитывает количество регистраций организации за период.
+     *
+     * @param tenantId идентификатор организации
+     * @param from     начало периода
+     * @return количество регистраций
+     */
+    @Query("SELECT COUNT(r) FROM Registration r "
+        + "WHERE r.tenantId = :tenantId "
+        + "AND r.createdAt >= :from")
+    long countByTenantIdAndCreatedAtAfter(
+        @Param("tenantId") UUID tenantId,
+        @Param("from") java.time.Instant from
+    );
+
+    /**
+     * Подсчитывает количество check-in организации за период.
+     *
+     * @param tenantId идентификатор организации
+     * @param from     начало периода
+     * @return количество check-in
+     */
+    @Query("SELECT COUNT(r) FROM Registration r "
+        + "WHERE r.tenantId = :tenantId "
+        + "AND r.checkedInAt IS NOT NULL "
+        + "AND r.checkedInAt >= :from")
+    long countCheckedInByTenantIdAfter(
+        @Param("tenantId") UUID tenantId,
+        @Param("from") java.time.Instant from
+    );
+
     // === Для массовых операций ===
 
     /**

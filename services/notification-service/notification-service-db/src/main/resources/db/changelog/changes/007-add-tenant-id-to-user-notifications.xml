@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Добавление tenant_id и RLS для user_notifications -->
+
+    <changeSet id="007-1" author="aqstream">
+        <comment>Добавление колонки tenant_id для multi-tenancy</comment>
+
+        <addColumn tableName="user_notifications" schemaName="notification_service">
+            <column name="tenant_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="user_notifications" schemaName="notification_service" columnName="tenant_id"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="007-2" author="aqstream">
+        <comment>Индекс на tenant_id для RLS</comment>
+
+        <createIndex indexName="idx_user_notifications_tenant_id"
+                     tableName="user_notifications"
+                     schemaName="notification_service">
+            <column name="tenant_id"/>
+        </createIndex>
+
+        <!-- Составной индекс для запросов с tenant_id + user_id -->
+        <createIndex indexName="idx_user_notifications_tenant_user"
+                     tableName="user_notifications"
+                     schemaName="notification_service">
+            <column name="tenant_id"/>
+            <column name="user_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_user_notifications_tenant_user"
+                       tableName="user_notifications"
+                       schemaName="notification_service"/>
+            <dropIndex indexName="idx_user_notifications_tenant_id"
+                       tableName="user_notifications"
+                       schemaName="notification_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="007-3" author="aqstream">
+        <comment>Включение RLS для user_notifications</comment>
+
+        <sql>
+            -- Включаем RLS
+            ALTER TABLE notification_service.user_notifications ENABLE ROW LEVEL SECURITY;
+
+            -- Политика для tenant isolation (USING + WITH CHECK)
+            CREATE POLICY tenant_isolation_user_notifications ON notification_service.user_notifications
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+
+            -- FORCE RLS для владельца таблицы
+            ALTER TABLE notification_service.user_notifications FORCE ROW LEVEL SECURITY;
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_user_notifications ON notification_service.user_notifications;
+                ALTER TABLE notification_service.user_notifications NO FORCE ROW LEVEL SECURITY;
+                ALTER TABLE notification_service.user_notifications DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

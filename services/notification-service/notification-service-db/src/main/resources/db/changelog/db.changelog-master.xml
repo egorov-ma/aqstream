@@ -10,5 +10,7 @@
     <include file="changes/003-create-notification-logs.xml" relativeToChangelogFile="true"/>
     <include file="changes/004-create-notification-preferences.xml" relativeToChangelogFile="true"/>
     <include file="changes/005-seed-notification-templates.xml" relativeToChangelogFile="true"/>
+    <include file="changes/006-create-user-notifications.xml" relativeToChangelogFile="true"/>
+    <include file="changes/007-add-tenant-id-to-user-notifications.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

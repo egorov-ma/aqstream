@@ -117,3 +117,46 @@ export interface CreateEventRequest {
 }
 
 export interface UpdateEventRequest extends Partial<CreateEventRequest> {}
+
+// Dashboard Stats
+
+export interface DashboardStats {
+  activeEventsCount: number;
+  totalRegistrations: number;
+  checkedInCount: number;
+  attendanceRate: number;
+  upcomingEvents: Event[];
+}
+
+// User Notifications
+
+export type UserNotificationType =
+  | 'NEW_REGISTRATION'
+  | 'EVENT_UPDATE'
+  | 'EVENT_CANCELLED'
+  | 'EVENT_REMINDER'
+  | 'SYSTEM';
+
+export interface UserNotification {
+  id: string;
+  type: UserNotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  linkedEntity: {
+    entityType: string;
+    entityId: string;
+  } | null;
+  createdAt: string;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}
+
+// Organization Switch
+
+export interface SwitchOrganizationResponse {
+  accessToken: string;
+  refreshToken: string;
+}
