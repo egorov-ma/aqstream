@@ -13,6 +13,7 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * Базовая конфигурация RabbitMQ для всех сервисов.
@@ -178,13 +179,16 @@ public class RabbitMQConfig {
      * Настроенный RabbitTemplate с JSON конвертером.
      * Использует основной exchange для отправки событий.
      *
+     * <p>Помечен как @Primary для приоритета над Spring Boot auto-configuration.</p>
+     *
      * @param connectionFactory фабрика соединений
      * @param messageConverter  конвертер сообщений
      * @return настроенный RabbitTemplate
      */
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
-                                         MessageConverter messageConverter) {
+    @Primary
+    public RabbitTemplate aqstreamRabbitTemplate(ConnectionFactory connectionFactory,
+                                                  MessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
         template.setExchange(EVENTS_EXCHANGE);
