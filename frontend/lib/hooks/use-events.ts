@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi, type EventFilters } from '@/lib/api/events';
-import type { CreateEventRequest, UpdateEventRequest } from '@/lib/api/types';
+import type {
+  CreateEventRequest,
+  UpdateEventRequest,
+  Event,
+  PageResponse,
+} from '@/lib/api/types';
 import { toast } from 'sonner';
 
 export function useEvents(filters?: EventFilters) {
@@ -47,13 +52,36 @@ export function useUpdateEvent() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateEventRequest }) =>
       eventsApi.update(id, data),
+    // Optimistic update
+    onMutate: async ({ id, data }) => {
+      // Отменяем исходящие запросы
+      await queryClient.cancelQueries({ queryKey: ['events', id] });
+
+      // Сохраняем предыдущее значение
+      const previousEvent = queryClient.getQueryData<Event>(['events', id]);
+
+      // Оптимистично обновляем кеш
+      if (previousEvent) {
+        queryClient.setQueryData<Event>(['events', id], {
+          ...previousEvent,
+          ...data,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      return { previousEvent };
+    },
+    onError: (_error, { id }, context) => {
+      // Откатываем при ошибке
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['events', id], context.previousEvent);
+      }
+      toast.error('Ошибка при обновлении события');
+    },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events', id] });
       toast.success('Событие обновлено');
-    },
-    onError: () => {
-      toast.error('Ошибка при обновлении события');
     },
   });
 }
@@ -63,12 +91,42 @@ export function useDeleteEvent() {
 
   return useMutation({
     mutationFn: (id: string) => eventsApi.delete(id),
+    // Optimistic update - удаляем из списка сразу
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['events'] });
+
+      // Сохраняем предыдущие данные всех списков
+      const previousQueries = queryClient.getQueriesData<PageResponse<Event>>({
+        queryKey: ['events'],
+      });
+
+      // Оптимистично удаляем из всех списков
+      queryClient.setQueriesData<PageResponse<Event>>(
+        { queryKey: ['events'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            content: old.content.filter((e) => e.id !== id),
+            totalElements: old.totalElements - 1,
+          };
+        }
+      );
+
+      return { previousQueries };
+    },
+    onError: (_error, _id, context) => {
+      // Откатываем при ошибке
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error('Ошибка при удалении события');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       toast.success('Событие удалено');
-    },
-    onError: () => {
-      toast.error('Ошибка при удалении события');
     },
   });
 }
@@ -78,13 +136,32 @@ export function usePublishEvent() {
 
   return useMutation({
     mutationFn: (id: string) => eventsApi.publish(id),
+    // Optimistic update
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['events', id] });
+
+      const previousEvent = queryClient.getQueryData<Event>(['events', id]);
+
+      if (previousEvent) {
+        queryClient.setQueryData<Event>(['events', id], {
+          ...previousEvent,
+          status: 'PUBLISHED',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      return { previousEvent };
+    },
+    onError: (_error, id, context) => {
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['events', id], context.previousEvent);
+      }
+      toast.error('Ошибка при публикации события');
+    },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events', id] });
       toast.success('Событие опубликовано');
-    },
-    onError: () => {
-      toast.error('Ошибка при публикации события');
     },
   });
 }
@@ -94,13 +171,102 @@ export function useCancelEvent() {
 
   return useMutation({
     mutationFn: (id: string) => eventsApi.cancel(id),
+    // Optimistic update
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['events', id] });
+
+      const previousEvent = queryClient.getQueryData<Event>(['events', id]);
+
+      if (previousEvent) {
+        queryClient.setQueryData<Event>(['events', id], {
+          ...previousEvent,
+          status: 'CANCELLED',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      return { previousEvent };
+    },
+    onError: (_error, id, context) => {
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['events', id], context.previousEvent);
+      }
+      toast.error('Ошибка при отмене события');
+    },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events', id] });
       toast.success('Событие отменено');
     },
-    onError: () => {
-      toast.error('Ошибка при отмене события');
+  });
+}
+
+export function useUnpublishEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.unpublish(id),
+    // Optimistic update
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['events', id] });
+
+      const previousEvent = queryClient.getQueryData<Event>(['events', id]);
+
+      if (previousEvent) {
+        queryClient.setQueryData<Event>(['events', id], {
+          ...previousEvent,
+          status: 'DRAFT',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      return { previousEvent };
+    },
+    onError: (_error, id, context) => {
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['events', id], context.previousEvent);
+      }
+      toast.error('Ошибка при снятии события с публикации');
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events', id] });
+      toast.success('Событие снято с публикации');
+    },
+  });
+}
+
+export function useCompleteEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.complete(id),
+    // Optimistic update
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['events', id] });
+
+      const previousEvent = queryClient.getQueryData<Event>(['events', id]);
+
+      if (previousEvent) {
+        queryClient.setQueryData<Event>(['events', id], {
+          ...previousEvent,
+          status: 'COMPLETED',
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      return { previousEvent };
+    },
+    onError: (_error, id, context) => {
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['events', id], context.previousEvent);
+      }
+      toast.error('Ошибка при завершении события');
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events', id] });
+      toast.success('Событие завершено');
     },
   });
 }

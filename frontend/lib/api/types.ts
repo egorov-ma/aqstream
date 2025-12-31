@@ -7,13 +7,13 @@ export interface ApiError {
 }
 
 export interface PageResponse<T> {
-  data: T[];
+  content: T[];
   page: number;
   size: number;
   totalElements: number;
   totalPages: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
 }
 
 // Auth
@@ -91,32 +91,125 @@ export interface Organization {
 
 // Event
 
+export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
+export type LocationType = 'ONLINE' | 'OFFLINE' | 'HYBRID';
+export type ParticipantsVisibility = 'CLOSED' | 'OPEN';
+
 export interface Event {
   id: string;
+  tenantId: string;
   title: string;
-  description?: string;
   slug: string;
+  description?: string;
   status: EventStatus;
   startsAt: string;
   endsAt?: string;
   timezone: string;
-  location?: string;
+  locationType: LocationType;
+  locationAddress?: string;
+  onlineUrl?: string;
+  maxCapacity?: number;
+  registrationOpensAt?: string;
+  registrationClosesAt?: string;
+  isPublic: boolean;
+  participantsVisibility: ParticipantsVisibility;
+  groupId?: string;
+  coverImageUrl?: string;
   createdAt: string;
   updatedAt: string;
+  // Обратная совместимость: location используется в старом коде
+  location?: string;
 }
-
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
 
 export interface CreateEventRequest {
   title: string;
   description?: string;
   startsAt: string;
   endsAt?: string;
-  timezone: string;
+  timezone?: string;
+  locationType?: LocationType;
+  locationAddress?: string;
+  onlineUrl?: string;
+  maxCapacity?: number;
+  registrationOpensAt?: string;
+  registrationClosesAt?: string;
+  isPublic?: boolean;
+  participantsVisibility?: ParticipantsVisibility;
+  groupId?: string;
+  coverImageUrl?: string;
+  // Обратная совместимость
   location?: string;
 }
 
 export interface UpdateEventRequest extends Partial<CreateEventRequest> {}
+
+// Ticket Type
+
+export interface TicketType {
+  id: string;
+  eventId: string;
+  name: string;
+  description?: string;
+  priceCents: number;
+  currency: string;
+  quantity?: number;
+  soldCount: number;
+  reservedCount: number;
+  available?: number;
+  salesStart?: string;
+  salesEnd?: string;
+  sortOrder: number;
+  isActive: boolean;
+  isSoldOut: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTicketTypeRequest {
+  name: string;
+  description?: string;
+  quantity?: number;
+  salesStart?: string;
+  salesEnd?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateTicketTypeRequest extends Partial<CreateTicketTypeRequest> {
+  isActive?: boolean;
+}
+
+// Registration
+
+export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'RESERVED' | 'PENDING' | 'EXPIRED';
+
+export interface Registration {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  eventSlug: string;
+  eventStartsAt: string;
+  ticketTypeId: string;
+  ticketTypeName: string;
+  userId: string;
+  status: RegistrationStatus;
+  confirmationCode: string;
+  firstName: string;
+  lastName?: string;
+  email: string;
+  customFields?: Record<string, string>;
+  cancelledAt?: string;
+  cancellationReason?: string;
+  createdAt: string;
+}
+
+// Media
+
+export interface UploadResponse {
+  url: string;
+  filename: string;
+  contentType: string;
+  size: number;
+}
 
 // Dashboard Stats
 

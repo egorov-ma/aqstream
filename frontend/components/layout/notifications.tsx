@@ -130,14 +130,14 @@ export function Notifications() {
               Повторить
             </Button>
           </div>
-        ) : !notifications?.data || notifications.data.length === 0 ? (
+        ) : !notifications?.content || notifications.content.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Нет уведомлений</p>
           </div>
         ) : (
           <ScrollArea className="h-[300px]">
-            {notifications.data.map((notification) => (
+            {notifications.content.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
                 className={cn(

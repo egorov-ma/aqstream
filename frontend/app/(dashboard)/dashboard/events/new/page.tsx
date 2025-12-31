@@ -1,74 +1,93 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Создание события - AqStream',
-  description: 'Создание нового мероприятия',
-};
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useCreateEvent, usePublishEvent } from '@/lib/hooks/use-events';
+import { ticketTypesApi } from '@/lib/api/ticket-types';
+import { EventForm } from '@/components/features/events';
+import type { EventFormData } from '@/lib/validations/events';
+import { toast } from 'sonner';
 
 export default function NewEventPage() {
+  const router = useRouter();
+  const createEvent = useCreateEvent();
+  const publishEvent = usePublishEvent();
+
+  const handleSubmit = async (data: EventFormData, publish: boolean) => {
+    try {
+      // 1. Создаём событие
+      const event = await createEvent.mutateAsync({
+        title: data.title,
+        description: data.description || undefined,
+        startsAt: data.startsAt,
+        endsAt: data.endsAt || undefined,
+        timezone: data.timezone,
+        locationType: data.locationType,
+        locationAddress: data.locationAddress || undefined,
+        onlineUrl: data.onlineUrl || undefined,
+        maxCapacity: data.maxCapacity ?? undefined,
+        registrationOpensAt: data.registrationOpensAt || undefined,
+        registrationClosesAt: data.registrationClosesAt || undefined,
+        isPublic: data.isPublic,
+        participantsVisibility: data.participantsVisibility,
+        groupId: data.groupId || undefined,
+        coverImageUrl: data.coverImageUrl || undefined,
+      });
+
+      // 2. Создаём типы билетов
+      if (data.ticketTypes.length > 0) {
+        for (const ticketType of data.ticketTypes) {
+          await ticketTypesApi.create(event.id, {
+            name: ticketType.name,
+            description: ticketType.description || undefined,
+            quantity: ticketType.quantity ?? undefined,
+            salesStart: ticketType.salesStart || undefined,
+            salesEnd: ticketType.salesEnd || undefined,
+            sortOrder: ticketType.sortOrder,
+          });
+        }
+      }
+
+      // 3. Публикуем если нужно
+      if (publish) {
+        await publishEvent.mutateAsync(event.id);
+        toast.success('Событие опубликовано');
+      } else {
+        toast.success('Событие сохранено как черновик');
+      }
+
+      // 4. Переходим на страницу события
+      router.push(`/dashboard/events/${event.id}`);
+    } catch (error) {
+      // Ошибки уже обрабатываются в хуках через toast
+      console.error('Ошибка при создании события:', error);
+    }
+  };
+
+  const isLoading = createEvent.isPending || publishEvent.isPending;
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
+      {/* Заголовок */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/dashboard/events">
             <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Назад</span>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Создание события</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Создание события</h1>
+          <p className="text-sm text-muted-foreground">
+            Заполните информацию о новом мероприятии
+          </p>
+        </div>
       </div>
 
-      {/* Placeholder форма — будет реализована в Phase 2 */}
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Информация о событии</CardTitle>
-          <CardDescription>Заполните основную информацию о мероприятии</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Название</Label>
-            <Input id="title" placeholder="Название мероприятия" disabled />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Описание</Label>
-            <Input id="description" placeholder="Описание мероприятия" disabled />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="date">Дата</Label>
-              <Input id="date" type="date" disabled />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="time">Время</Label>
-              <Input id="time" type="time" disabled />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Место проведения</Label>
-            <Input id="location" placeholder="Адрес или онлайн" disabled />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <Button disabled>Создать событие</Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/events">Отмена</Link>
-            </Button>
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            Форма будет полностью функциональна в Phase 2.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Форма */}
+      <EventForm onSubmit={handleSubmit} isLoading={isLoading} />
     </div>
   );
 }

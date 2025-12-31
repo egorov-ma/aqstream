@@ -1,9 +1,18 @@
 import { apiClient } from './client';
-import type { Event, CreateEventRequest, UpdateEventRequest, PageResponse } from './types';
+import type {
+  Event,
+  CreateEventRequest,
+  UpdateEventRequest,
+  PageResponse,
+  EventStatus,
+} from './types';
 
 export interface EventFilters {
-  status?: string;
+  status?: EventStatus;
   search?: string;
+  groupId?: string;
+  startsAfter?: string;
+  startsBefore?: string;
   page?: number;
   size?: number;
 }
@@ -22,7 +31,7 @@ export const eventsApi = {
   },
 
   getBySlug: async (slug: string): Promise<Event> => {
-    const response = await apiClient.get<Event>(`/api/v1/events/public/${slug}`);
+    const response = await apiClient.get<Event>(`/api/v1/public/events/${slug}`);
     return response.data;
   },
 
@@ -47,6 +56,22 @@ export const eventsApi = {
 
   cancel: async (id: string): Promise<Event> => {
     const response = await apiClient.post<Event>(`/api/v1/events/${id}/cancel`);
+    return response.data;
+  },
+
+  /**
+   * Снять событие с публикации (PUBLISHED → DRAFT)
+   */
+  unpublish: async (id: string): Promise<Event> => {
+    const response = await apiClient.post<Event>(`/api/v1/events/${id}/unpublish`);
+    return response.data;
+  },
+
+  /**
+   * Завершить событие (PUBLISHED → COMPLETED)
+   */
+  complete: async (id: string): Promise<Event> => {
+    const response = await apiClient.post<Event>(`/api/v1/events/${id}/complete`);
     return response.data;
   },
 };
