@@ -1,5 +1,6 @@
 package ru.aqstream.event.api.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -23,6 +24,7 @@ import java.util.UUID;
  * @param isPublic               публичность события (по умолчанию false)
  * @param participantsVisibility видимость списка участников (по умолчанию CLOSED)
  * @param groupId                ID группы для приватных событий (опционально)
+ * @param recurrenceRule         правило повторения для серии событий (опционально)
  */
 public record CreateEventRequest(
     @NotBlank(message = "Название события обязательно")
@@ -58,7 +60,10 @@ public record CreateEventRequest(
 
     ParticipantsVisibility participantsVisibility,
 
-    UUID groupId
+    UUID groupId,
+
+    @Valid
+    CreateRecurrenceRuleRequest recurrenceRule
 ) {
 
     /**

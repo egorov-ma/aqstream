@@ -32,6 +32,7 @@ import {
   EventStatsCard,
   MarkdownPreview,
   RegistrationList,
+  EventActivityLog,
   getTimezoneLabel,
 } from '@/components/features/events';
 
@@ -261,6 +262,9 @@ export default function EventDetailPage() {
           <RegistrationList eventId={id} />
         </CardContent>
       </Card>
+
+      {/* История изменений */}
+      <EventActivityLog eventId={id} />
     </div>
   );
 }

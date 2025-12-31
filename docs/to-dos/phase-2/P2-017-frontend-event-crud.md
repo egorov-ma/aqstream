@@ -71,20 +71,21 @@
 - [x] Типы билетов (название, количество, период продаж)
 - [x] Предпросмотр
 - [x] Кнопки: Сохранить черновик, Опубликовать
+- [x] Настройка повторения события (recurring events)
 
 ### Редактирование события (/dashboard/events/[id]/edit)
 
 - [x] Загрузка существующих данных
 - [x] Те же поля что и при создании
 - [x] Ограничения для опубликованных событий
-- [ ] История изменений (опционально) — out of scope
+- [x] История изменений
 
 ### Управление событием (/dashboard/events/[id])
 
 - [x] Обзор события (статистика)
 - [x] Список регистраций
 - [x] Actions: редактировать, опубликовать/снять, отменить
-- [x] При отмене — подтверждение и причина (UI готов, backend не поддерживает cancelReason)
+- [x] При отмене — подтверждение и причина (cancelReason)
 
 ### Типы билетов (inline)
 
@@ -127,6 +128,8 @@ frontend/components/features/events/
 ├── event-list.tsx
 ├── event-form.tsx
 ├── event-card.tsx
+├── event-activity-log.tsx       — история изменений
+├── recurrence-config.tsx        — настройка повторения
 ├── ticket-type-form.tsx
 ├── ticket-type-list.tsx
 └── event-status-badge.tsx
@@ -197,11 +200,16 @@ export function useCreateEvent() {
 ## Out of Scope
 
 - Drag-and-drop builder для формы регистрации
-- Recurring events
 - Templates
 - Bulk operations
-- История изменений события (опционально)
-- `cancelReason` при отмене события — требует доработки backend API
+
+## Реализовано дополнительно
+
+Ранее находилось в Out of Scope, но было реализовано:
+
+- **cancelReason** — причина отмены события (backend API + frontend UI)
+- **История изменений** — audit log событий (создание, обновление, статус)
+- **Recurring Events** — повторяющиеся события (UI конфигурации, backend миграции)
 
 ## Заметки
 

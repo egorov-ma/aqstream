@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE aspectj PUBLIC
+        "-//AspectJ//DTD//EN"
+        "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
+<aspectj>
+    <weaver options="-verbose -showWeaveInfo">
+        <!-- Исключаем Oracle и Spring DataSource классы из weaving -->
+        <exclude within="oracle..*"/>
+        <exclude within="org.springframework.boot.jdbc.DataSourceBuilder*"/>
+        <exclude within="org.springframework.boot.jdbc.DataSourceBuilder$*"/>
+        <!-- Исключаем JaCoCo инструментированные классы -->
+        <exclude within="*..*$JaCoCo*"/>
+    </weaver>
+</aspectj>

@@ -115,10 +115,26 @@ export interface Event {
   participantsVisibility: ParticipantsVisibility;
   groupId?: string;
   coverImageUrl?: string;
+  cancelReason?: string;
+  cancelledAt?: string;
+  // Recurring events
+  recurrenceRule?: RecurrenceRule;
+  parentEventId?: string;
+  instanceDate?: string;
   createdAt: string;
   updatedAt: string;
   // Обратная совместимость: location используется в старом коде
   location?: string;
+}
+
+export interface CreateRecurrenceRuleRequest {
+  frequency: RecurrenceFrequency;
+  interval?: number;
+  endsAt?: string;
+  occurrenceCount?: number;
+  byDay?: string;
+  byMonthDay?: number;
+  excludedDates?: string[];
 }
 
 export interface CreateEventRequest {
@@ -137,11 +153,37 @@ export interface CreateEventRequest {
   participantsVisibility?: ParticipantsVisibility;
   groupId?: string;
   coverImageUrl?: string;
+  recurrenceRule?: CreateRecurrenceRuleRequest;
   // Обратная совместимость
   location?: string;
 }
 
 export interface UpdateEventRequest extends Partial<CreateEventRequest> {}
+
+// Recurrence (Повторяющиеся события)
+
+export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+export interface RecurrenceRule {
+  id?: string;
+  frequency: RecurrenceFrequency;
+  interval: number;
+  endsAt?: string;
+  occurrenceCount?: number;
+  byDay?: string; // "MO,WE,FR" для WEEKLY
+  byMonthDay?: number; // 1-31 для MONTHLY
+  excludedDates?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RecurringEventInfo {
+  recurrenceRuleId?: string;
+  parentEventId?: string;
+  instanceDate?: string;
+  isRecurring: boolean;
+  isInstance: boolean;
+}
 
 // Ticket Type
 
@@ -199,6 +241,33 @@ export interface Registration {
   customFields?: Record<string, string>;
   cancelledAt?: string;
   cancellationReason?: string;
+  createdAt: string;
+}
+
+// Event Audit Log
+
+export type EventAuditAction =
+  | 'CREATED'
+  | 'UPDATED'
+  | 'PUBLISHED'
+  | 'UNPUBLISHED'
+  | 'CANCELLED'
+  | 'COMPLETED'
+  | 'DELETED';
+
+export interface FieldChange {
+  from: string | null;
+  to: string | null;
+}
+
+export interface EventAuditLog {
+  id: string;
+  eventId: string;
+  action: EventAuditAction;
+  actorId: string | null;
+  actorEmail: string | null;
+  changedFields: Record<string, FieldChange> | null;
+  description: string | null;
   createdAt: string;
 }
 

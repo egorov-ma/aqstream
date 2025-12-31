@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -18,6 +19,7 @@ import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validat
 
 export function ForgotPasswordForm() {
   const [isSuccess, setIsSuccess] = useState(false);
+  const [networkError, setNetworkError] = useState<string | null>(null);
   const mutation = useForgotPassword();
 
   const form = useForm<ForgotPasswordFormData>({
@@ -28,12 +30,18 @@ export function ForgotPasswordForm() {
   });
 
   async function onSubmit(data: ForgotPasswordFormData) {
+    setNetworkError(null);
     try {
       await mutation.mutateAsync(data);
       setIsSuccess(true);
-    } catch {
-      // Для безопасности всегда показываем успех
-      // (не раскрываем существование email)
+    } catch (error) {
+      // Сетевые ошибки показываем пользователю (нет response от сервера)
+      if (error instanceof AxiosError && !error.response) {
+        setNetworkError('Ошибка сети. Проверьте подключение к интернету');
+        return;
+      }
+      // API ошибки (email не найден и т.д.) — показываем success для безопасности
+      // Это паттерн "always success" — не раскрываем существование email в системе
       setIsSuccess(true);
     }
   }

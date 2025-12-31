@@ -88,6 +88,34 @@ public class Event extends SoftDeletableEntity {
     @Column(name = "group_id")
     private UUID groupId;
 
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
+
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
+
+    // === Recurring Events ===
+
+    /**
+     * ID правила повторения (для шаблонного события или экземпляра).
+     */
+    @Column(name = "recurrence_rule_id")
+    private UUID recurrenceRuleId;
+
+    /**
+     * ID родительского события (для экземпляров серии).
+     * null для шаблонного события.
+     */
+    @Column(name = "parent_event_id")
+    private UUID parentEventId;
+
+    /**
+     * Дата экземпляра в серии (для идентификации конкретного повторения).
+     * null для шаблонного события.
+     */
+    @Column(name = "instance_date")
+    private java.time.LocalDate instanceDate;
+
     // === Фабричные методы ===
 
     /**
@@ -147,6 +175,16 @@ public class Event extends SoftDeletableEntity {
      * @throws InvalidEventStatusTransitionException если событие уже завершено
      */
     public void cancel() {
+        cancel(null);
+    }
+
+    /**
+     * Отменяет событие с указанием причины.
+     *
+     * @param reason причина отмены (опционально)
+     * @throws InvalidEventStatusTransitionException если событие уже завершено
+     */
+    public void cancel(String reason) {
         if (status == EventStatus.COMPLETED) {
             throw new InvalidEventStatusTransitionException(status, EventStatus.CANCELLED);
         }
@@ -154,6 +192,8 @@ public class Event extends SoftDeletableEntity {
             throw new InvalidEventStatusTransitionException("Событие уже отменено");
         }
         this.status = EventStatus.CANCELLED;
+        this.cancelReason = reason;
+        this.cancelledAt = Instant.now();
     }
 
     /**

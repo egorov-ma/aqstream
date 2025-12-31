@@ -39,6 +39,7 @@ import { MarkdownEditor } from './markdown-editor';
 import { ImageUpload } from './image-upload';
 import { TicketTypeList } from './ticket-type-list';
 import { EventPreview } from './event-preview';
+import { RecurrenceConfig } from './recurrence-config';
 
 interface EventFormProps {
   event?: Event;
@@ -256,6 +257,31 @@ export function EventForm({ event, onSubmit, isLoading }: EventFormProps) {
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Separator />
+
+            {/* Повторение */}
+            <FormField
+              control={form.control}
+              name="recurrenceRule"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <RecurrenceConfig
+                      value={field.value ?? null}
+                      onChange={field.onChange}
+                      disabled={isLoading || !!event}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  {event && (
+                    <FormDescription>
+                      Настройка повторения недоступна при редактировании
+                    </FormDescription>
+                  )}
                 </FormItem>
               )}
             />

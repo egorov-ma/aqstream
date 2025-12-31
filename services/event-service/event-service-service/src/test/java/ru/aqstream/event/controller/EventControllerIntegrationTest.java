@@ -39,6 +39,7 @@ import ru.aqstream.event.api.dto.EventStatus;
 import ru.aqstream.event.api.dto.LocationType;
 import ru.aqstream.event.api.dto.UpdateEventRequest;
 import ru.aqstream.event.db.entity.Event;
+import ru.aqstream.event.db.repository.EventAuditLogRepository;
 import ru.aqstream.event.db.repository.EventRepository;
 
 @IntegrationTest
@@ -71,13 +72,17 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private EventAuditLogRepository eventAuditLogRepository;
+
     private UUID tenantId;
     private UUID userId;
     private Event testEvent;
 
     @BeforeEach
     void setUp() {
-        // Очищаем таблицу
+        // Очищаем таблицы (порядок важен из-за FK)
+        eventAuditLogRepository.deleteAll();
         eventRepository.deleteAll();
 
         // Генерируем userId и tenant_id
@@ -123,7 +128,8 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
                 null,
                 false,
                 null,
-                null
+                null,
+                null // recurrenceRule
             );
 
             mockMvc.perform(post(BASE_URL)
@@ -141,7 +147,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         void create_MissingRequiredFields_ReturnsBadRequest() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
                 null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null
+                null, null, null, null, null, null, null
             );
 
             mockMvc.perform(post(BASE_URL)

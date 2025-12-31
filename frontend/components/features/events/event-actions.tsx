@@ -79,8 +79,10 @@ export function EventActions({ event }: EventActionsProps) {
   };
 
   const handleCancel = async () => {
-    // TODO: передать cancelReason в API когда backend поддержит
-    await cancelEvent.mutateAsync(event.id);
+    await cancelEvent.mutateAsync({
+      id: event.id,
+      reason: cancelReason.trim() || undefined,
+    });
     setCancelReason('');
     setDialogOpen(null);
   };

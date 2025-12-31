@@ -1,5 +1,30 @@
 import { z } from 'zod';
 
+// Схема правила повторения
+export const recurrenceRuleSchema = z.object({
+  frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
+  interval: z.number().min(1, 'Интервал должен быть больше 0').max(99),
+  endsAt: z.string().optional(),
+  occurrenceCount: z.number().min(1).max(365).optional(),
+  byDay: z.string().optional(), // "MO,WE,FR"
+  byMonthDay: z.number().min(1).max(31).optional(),
+  excludedDates: z.array(z.string()).optional(),
+}).refine(
+  (data) => {
+    // Для WEEKLY должен быть указан хотя бы один день недели
+    if (data.frequency === 'WEEKLY') {
+      return data.byDay && data.byDay.length > 0;
+    }
+    return true;
+  },
+  {
+    message: 'Выберите хотя бы один день недели',
+    path: ['byDay'],
+  }
+);
+
+export type RecurrenceRuleFormData = z.infer<typeof recurrenceRuleSchema>;
+
 // Схема типа билета (для inline формы на странице события)
 export const ticketTypeSchema = z.object({
   id: z.string().uuid().optional(),
@@ -68,6 +93,9 @@ export const baseEventFormSchema = z.object({
 
   // Типы билетов
   ticketTypes: z.array(ticketTypeSchema).default([]),
+
+  // Повторение
+  recurrenceRule: recurrenceRuleSchema.nullable().optional(),
 });
 
 // Тип для формы (используется в useForm)
@@ -163,6 +191,7 @@ export const defaultEventFormValues: EventFormData = {
   groupId: '',
   coverImageUrl: '',
   ticketTypes: [],
+  recurrenceRule: null,
 };
 
 // Ошибка cross-field валидации

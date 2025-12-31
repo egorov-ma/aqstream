@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="011-1-create-recurrence-rules-table" author="aqstream">
+        <comment>Создание таблицы правил повторения событий</comment>
+        <createTable tableName="recurrence_rules" schemaName="event_service">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="frequency" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="interval_value" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ends_at" type="TIMESTAMPTZ">
+                <constraints nullable="true"/>
+            </column>
+            <column name="occurrence_count" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="by_day" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="by_month_day" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="excluded_dates" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="recurrence_rules" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="011-2-add-recurrence-rules-indexes" author="aqstream">
+        <comment>Индексы для recurrence_rules</comment>
+        <createIndex tableName="recurrence_rules" schemaName="event_service" indexName="idx_recurrence_rules_tenant_id">
+            <column name="tenant_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="recurrence_rules" schemaName="event_service" indexName="idx_recurrence_rules_tenant_id"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="011-3-add-recurrence-rules-rls" author="aqstream">
+        <comment>Включение RLS для recurrence_rules</comment>
+        <sql>
+            -- Включаем RLS
+            ALTER TABLE event_service.recurrence_rules ENABLE ROW LEVEL SECURITY;
+
+            -- Политика для всех операций
+            CREATE POLICY tenant_isolation_recurrence_rules ON event_service.recurrence_rules
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+
+            -- FORCE RLS для владельца таблицы
+            ALTER TABLE event_service.recurrence_rules FORCE ROW LEVEL SECURITY;
+        </sql>
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_recurrence_rules ON event_service.recurrence_rules;
+                ALTER TABLE event_service.recurrence_rules NO FORCE ROW LEVEL SECURITY;
+                ALTER TABLE event_service.recurrence_rules DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

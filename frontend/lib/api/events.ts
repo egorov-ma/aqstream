@@ -5,6 +5,7 @@ import type {
   UpdateEventRequest,
   PageResponse,
   EventStatus,
+  EventAuditLog,
 } from './types';
 
 export interface EventFilters {
@@ -54,8 +55,10 @@ export const eventsApi = {
     return response.data;
   },
 
-  cancel: async (id: string): Promise<Event> => {
-    const response = await apiClient.post<Event>(`/api/v1/events/${id}/cancel`);
+  cancel: async (id: string, reason?: string): Promise<Event> => {
+    const response = await apiClient.post<Event>(`/api/v1/events/${id}/cancel`, {
+      reason: reason || undefined,
+    });
     return response.data;
   },
 
@@ -72,6 +75,21 @@ export const eventsApi = {
    */
   complete: async (id: string): Promise<Event> => {
     const response = await apiClient.post<Event>(`/api/v1/events/${id}/complete`);
+    return response.data;
+  },
+
+  /**
+   * Получить историю изменений события
+   */
+  getActivity: async (
+    id: string,
+    page = 0,
+    size = 20
+  ): Promise<PageResponse<EventAuditLog>> => {
+    const response = await apiClient.get<PageResponse<EventAuditLog>>(
+      `/api/v1/events/${id}/activity`,
+      { params: { page, size } }
+    );
     return response.data;
   },
 };

@@ -16,5 +16,9 @@
     <include file="db/changelog/changes/006-create-registrations-table.xml"/>
     <include file="db/changelog/changes/007-add-registration-check-in.xml"/>
     <include file="db/changelog/changes/008-add-ticket-types-rls.xml"/>
+    <include file="db/changelog/changes/009-add-cancel-reason.xml"/>
+    <include file="db/changelog/changes/010-add-event-audit-log.xml"/>
+    <include file="db/changelog/changes/011-add-recurrence-rules.xml"/>
+    <include file="db/changelog/changes/012-add-recurrence-to-events.xml"/>
 
 </databaseChangeLog>

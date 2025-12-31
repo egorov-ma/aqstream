@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="012-1-add-recurrence-columns-to-events" author="aqstream">
+        <comment>Добавление полей для recurring events в таблицу events</comment>
+
+        <!-- Добавляем колонки без FK constraints -->
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="recurrence_rule_id" type="UUID">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="parent_event_id" type="UUID">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="instance_date" type="DATE">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- FK constraints отдельно для корректной работы со схемами -->
+        <addForeignKeyConstraint
+            baseTableSchemaName="event_service"
+            baseTableName="events"
+            baseColumnNames="recurrence_rule_id"
+            constraintName="fk_events_recurrence_rule"
+            referencedTableSchemaName="event_service"
+            referencedTableName="recurrence_rules"
+            referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="event_service"
+            baseTableName="events"
+            baseColumnNames="parent_event_id"
+            constraintName="fk_events_parent_event"
+            referencedTableSchemaName="event_service"
+            referencedTableName="events"
+            referencedColumnNames="id"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableSchemaName="event_service" baseTableName="events" constraintName="fk_events_recurrence_rule"/>
+            <dropForeignKeyConstraint baseTableSchemaName="event_service" baseTableName="events" constraintName="fk_events_parent_event"/>
+            <dropColumn tableName="events" schemaName="event_service" columnName="recurrence_rule_id"/>
+            <dropColumn tableName="events" schemaName="event_service" columnName="parent_event_id"/>
+            <dropColumn tableName="events" schemaName="event_service" columnName="instance_date"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="012-2-add-recurrence-events-indexes" author="aqstream">
+        <comment>Индексы для recurring events</comment>
+
+        <createIndex tableName="events" schemaName="event_service" indexName="idx_events_recurrence_rule_id">
+            <column name="recurrence_rule_id"/>
+        </createIndex>
+
+        <createIndex tableName="events" schemaName="event_service" indexName="idx_events_parent_event_id">
+            <column name="parent_event_id"/>
+        </createIndex>
+
+        <createIndex tableName="events" schemaName="event_service" indexName="idx_events_instance_date">
+            <column name="instance_date"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="events" schemaName="event_service" indexName="idx_events_recurrence_rule_id"/>
+            <dropIndex tableName="events" schemaName="event_service" indexName="idx_events_parent_event_id"/>
+            <dropIndex tableName="events" schemaName="event_service" indexName="idx_events_instance_date"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

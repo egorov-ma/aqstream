@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="010-1-create-event-audit-log-table" author="aqstream">
+        <comment>Создание таблицы истории изменений событий</comment>
+        <createTable tableName="event_audit_log" schemaName="event_service">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_event_audit_log_event"
+                             referencedTableSchemaName="event_service"
+                             referencedTableName="events"
+                             referencedColumnNames="id"/>
+            </column>
+            <column name="action" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actor_id" type="UUID">
+                <constraints nullable="true"/>
+            </column>
+            <column name="actor_email" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="changed_fields" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="description" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMPTZ" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="event_audit_log" schemaName="event_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="010-2-add-event-audit-log-indexes" author="aqstream">
+        <comment>Индексы для event_audit_log</comment>
+        <createIndex tableName="event_audit_log" schemaName="event_service" indexName="idx_event_audit_log_tenant_id">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="event_audit_log" schemaName="event_service" indexName="idx_event_audit_log_event_id">
+            <column name="event_id"/>
+        </createIndex>
+        <createIndex tableName="event_audit_log" schemaName="event_service" indexName="idx_event_audit_log_created_at">
+            <column name="created_at" descending="true"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="event_audit_log" schemaName="event_service" indexName="idx_event_audit_log_tenant_id"/>
+            <dropIndex tableName="event_audit_log" schemaName="event_service" indexName="idx_event_audit_log_event_id"/>
+            <dropIndex tableName="event_audit_log" schemaName="event_service" indexName="idx_event_audit_log_created_at"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="010-3-add-event-audit-log-rls" author="aqstream">
+        <comment>Включение RLS для event_audit_log</comment>
+        <sql>
+            -- Включаем RLS
+            ALTER TABLE event_service.event_audit_log ENABLE ROW LEVEL SECURITY;
+
+            -- Политика для всех операций
+            CREATE POLICY tenant_isolation_event_audit_log ON event_service.event_audit_log
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+
+            -- FORCE RLS для владельца таблицы
+            ALTER TABLE event_service.event_audit_log FORCE ROW LEVEL SECURITY;
+        </sql>
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_event_audit_log ON event_service.event_audit_log;
+                ALTER TABLE event_service.event_audit_log NO FORCE ROW LEVEL SECURITY;
+                ALTER TABLE event_service.event_audit_log DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

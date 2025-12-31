@@ -23,10 +23,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.aqstream.common.api.PageResponse;
+import ru.aqstream.event.api.dto.CancelEventRequest;
 import ru.aqstream.event.api.dto.CreateEventRequest;
+import ru.aqstream.event.api.dto.EventAuditLogDto;
 import ru.aqstream.event.api.dto.EventDto;
 import ru.aqstream.event.api.dto.EventStatus;
 import ru.aqstream.event.api.dto.UpdateEventRequest;
+import ru.aqstream.event.service.EventAuditService;
 import ru.aqstream.event.service.EventService;
 
 /**
@@ -40,6 +43,7 @@ import ru.aqstream.event.service.EventService;
 public class EventController {
 
     private final EventService eventService;
+    private final EventAuditService eventAuditService;
 
     // ==================== CRUD ====================
 
@@ -205,9 +209,11 @@ public class EventController {
     @PostMapping("/{id}/cancel")
     public ResponseEntity<EventDto> cancel(
         @Parameter(description = "ID события")
-        @PathVariable UUID id
+        @PathVariable UUID id,
+        @Valid @RequestBody(required = false) CancelEventRequest request
     ) {
-        EventDto event = eventService.cancel(id);
+        String reason = request != null ? request.reason() : null;
+        EventDto event = eventService.cancel(id, reason);
         return ResponseEntity.ok(event);
     }
 
@@ -228,5 +234,26 @@ public class EventController {
     ) {
         EventDto event = eventService.complete(id);
         return ResponseEntity.ok(event);
+    }
+
+    // ==================== Activity Log ====================
+
+    @Operation(
+        summary = "Получить историю изменений события",
+        description = "Возвращает страницу записей аудита события (создание, обновление, публикация и т.д.)."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "История изменений"),
+        @ApiResponse(responseCode = "401", description = "Не авторизован"),
+        @ApiResponse(responseCode = "404", description = "Событие не найдено")
+    })
+    @GetMapping("/{id}/activity")
+    public ResponseEntity<PageResponse<EventAuditLogDto>> getActivity(
+        @Parameter(description = "ID события")
+        @PathVariable UUID id,
+        @PageableDefault(size = 20) Pageable pageable
+    ) {
+        PageResponse<EventAuditLogDto> activity = eventAuditService.getEventHistory(id, pageable);
+        return ResponseEntity.ok(activity);
     }
 }

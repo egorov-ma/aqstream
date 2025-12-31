@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/form';
 import { useResetPassword } from '@/lib/hooks/use-auth';
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations/auth';
+import { AUTH_ERROR_CODES, getAuthErrorMessage } from '@/lib/api/error-codes';
+import type { ApiError } from '@/lib/api/types';
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -43,8 +45,14 @@ export function ResetPasswordForm() {
         newPassword: data.newPassword,
       });
     } catch (error) {
-      if (error instanceof AxiosError && error.response?.status === 400) {
-        setApiError('Ссылка недействительна или срок её действия истёк');
+      // Проверяем код ошибки API вместо HTTP статуса
+      if (error instanceof AxiosError && error.response?.data) {
+        const apiError = error.response.data as ApiError;
+        if (apiError.code === AUTH_ERROR_CODES.INVALID_TOKEN) {
+          setApiError(getAuthErrorMessage(apiError.code, 'Ссылка недействительна или срок её действия истёк'));
+        } else {
+          setApiError(apiError.message || 'Произошла ошибка. Попробуйте позже');
+        }
       } else {
         setApiError('Произошла ошибка. Попробуйте позже');
       }

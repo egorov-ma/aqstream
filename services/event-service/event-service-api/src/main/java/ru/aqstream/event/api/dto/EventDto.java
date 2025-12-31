@@ -1,6 +1,7 @@
 package ru.aqstream.event.api.dto;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -24,6 +25,11 @@ import java.util.UUID;
  * @param isPublic               публичность события
  * @param participantsVisibility видимость списка участников
  * @param groupId                ID группы для приватных событий
+ * @param cancelReason           причина отмены события
+ * @param cancelledAt            дата отмены события
+ * @param recurrenceRule         правило повторения (если это повторяющееся событие)
+ * @param parentEventId          ID родительского события (для экземпляров серии)
+ * @param instanceDate           дата экземпляра серии
  * @param createdAt              дата создания
  * @param updatedAt              дата обновления
  */
@@ -46,7 +52,30 @@ public record EventDto(
     boolean isPublic,
     ParticipantsVisibility participantsVisibility,
     UUID groupId,
+    String cancelReason,
+    Instant cancelledAt,
+    RecurrenceRuleDto recurrenceRule,
+    UUID parentEventId,
+    LocalDate instanceDate,
     Instant createdAt,
     Instant updatedAt
 ) {
+
+    /**
+     * Проверяет, является ли событие повторяющимся (шаблоном серии).
+     *
+     * @return true если у события есть правило повторения
+     */
+    public boolean isRecurring() {
+        return recurrenceRule != null;
+    }
+
+    /**
+     * Проверяет, является ли событие экземпляром серии.
+     *
+     * @return true если событие имеет родительское событие
+     */
+    public boolean isSeriesInstance() {
+        return parentEventId != null;
+    }
 }

@@ -186,6 +186,11 @@ class DashboardServiceTest {
             true,
             ParticipantsVisibility.CLOSED,
             null,
+            null, // cancelReason
+            null, // cancelledAt
+            null, // recurrenceRule
+            null, // parentEventId
+            null, // instanceDate
             Instant.now(),
             Instant.now()
         );

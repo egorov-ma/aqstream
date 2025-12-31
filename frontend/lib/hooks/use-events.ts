@@ -60,11 +60,12 @@ export function useUpdateEvent() {
       // Сохраняем предыдущее значение
       const previousEvent = queryClient.getQueryData<Event>(['events', id]);
 
-      // Оптимистично обновляем кеш
+      // Оптимистично обновляем кеш (без recurrenceRule, т.к. типы не совместимы)
       if (previousEvent) {
+        const { recurrenceRule: _, ...dataWithoutRecurrence } = data;
         queryClient.setQueryData<Event>(['events', id], {
           ...previousEvent,
-          ...data,
+          ...dataWithoutRecurrence,
           updatedAt: new Date().toISOString(),
         });
       }
@@ -170,9 +171,10 @@ export function useCancelEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => eventsApi.cancel(id),
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      eventsApi.cancel(id, reason),
     // Optimistic update
-    onMutate: async (id) => {
+    onMutate: async ({ id, reason }) => {
       await queryClient.cancelQueries({ queryKey: ['events', id] });
 
       const previousEvent = queryClient.getQueryData<Event>(['events', id]);
@@ -181,19 +183,21 @@ export function useCancelEvent() {
         queryClient.setQueryData<Event>(['events', id], {
           ...previousEvent,
           status: 'CANCELLED',
+          cancelReason: reason,
+          cancelledAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
       }
 
       return { previousEvent };
     },
-    onError: (_error, id, context) => {
+    onError: (_error, { id }, context) => {
       if (context?.previousEvent) {
         queryClient.setQueryData(['events', id], context.previousEvent);
       }
       toast.error('Ошибка при отмене события');
     },
-    onSuccess: (_, id) => {
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events', id] });
       toast.success('Событие отменено');
@@ -268,5 +272,13 @@ export function useCompleteEvent() {
       queryClient.invalidateQueries({ queryKey: ['events', id] });
       toast.success('Событие завершено');
     },
+  });
+}
+
+export function useEventActivity(eventId: string, page = 0, size = 20) {
+  return useQuery({
+    queryKey: ['events', eventId, 'activity', page, size],
+    queryFn: () => eventsApi.getActivity(eventId, page, size),
+    enabled: !!eventId,
   });
 }

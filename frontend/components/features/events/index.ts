@@ -23,3 +23,9 @@ export { EventStatsCard } from './event-stats-card';
 
 // Регистрации
 export { RegistrationList } from './registration-list';
+
+// История изменений
+export { EventActivityLog } from './event-activity-log';
+
+// Повторяющиеся события
+export { RecurrenceConfig, formatRecurrenceDescription } from './recurrence-config';

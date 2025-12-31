@@ -35,6 +35,7 @@ import ru.aqstream.event.api.exception.InvalidEventStatusTransitionException;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.event.db.entity.Event;
 import ru.aqstream.event.db.repository.EventRepository;
+import ru.aqstream.event.db.repository.RecurrenceRuleRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("EventService")
@@ -44,10 +45,19 @@ class EventServiceTest {
     private EventRepository eventRepository;
 
     @Mock
+    private RecurrenceRuleRepository recurrenceRuleRepository;
+
+    @Mock
     private EventMapper eventMapper;
 
     @Mock
+    private RecurrenceRuleMapper recurrenceRuleMapper;
+
+    @Mock
     private EventPublisher eventPublisher;
+
+    @Mock
+    private EventAuditService eventAuditService;
 
     private EventService service;
 
@@ -62,7 +72,14 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EventService(eventRepository, eventMapper, eventPublisher);
+        service = new EventService(
+            eventRepository,
+            recurrenceRuleRepository,
+            eventMapper,
+            recurrenceRuleMapper,
+            eventPublisher,
+            eventAuditService
+        );
 
         tenantId = UUID.randomUUID();
         eventId = UUID.randomUUID();
@@ -115,6 +132,11 @@ class EventServiceTest {
             false,
             ParticipantsVisibility.CLOSED,
             null,
+            null, // cancelReason
+            null, // cancelledAt
+            null, // recurrenceRule
+            null, // parentEventId
+            null, // instanceDate
             Instant.now(),
             Instant.now()
         );
@@ -130,12 +152,12 @@ class EventServiceTest {
             // given
             CreateEventRequest request = new CreateEventRequest(
                 testTitle, null, testStartsAt, null, null, null, null, null,
-                null, null, null, null, null, null
+                null, null, null, null, null, null, null
             );
 
             when(eventRepository.existsBySlugAndTenantId(any(), eq(tenantId))).thenReturn(false);
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             EventDto result = service.create(request);
@@ -158,12 +180,12 @@ class EventServiceTest {
             // given
             CreateEventRequest request = new CreateEventRequest(
                 "Конференция Spring 2025", null, testStartsAt, null, null, null, null, null,
-                null, null, null, null, null, null
+                null, null, null, null, null, null, null
             );
 
             when(eventRepository.existsBySlugAndTenantId(any(), eq(tenantId))).thenReturn(false);
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.create(request);
@@ -187,7 +209,7 @@ class EventServiceTest {
         void getById_ExistingEvent_ReturnsEvent() {
             // given
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             EventDto result = service.getById(eventId);
@@ -225,7 +247,7 @@ class EventServiceTest {
 
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.update(eventId, request);
@@ -301,7 +323,7 @@ class EventServiceTest {
             // given
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.publish(eventId);
@@ -358,7 +380,7 @@ class EventServiceTest {
 
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.unpublish(eventId);
@@ -389,7 +411,7 @@ class EventServiceTest {
             // given
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.cancel(eventId);
@@ -406,7 +428,7 @@ class EventServiceTest {
 
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.cancel(eventId);
@@ -442,7 +464,7 @@ class EventServiceTest {
 
             when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
             when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(testEvent)).thenReturn(testEventDto);
+            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
             service.complete(eventId);

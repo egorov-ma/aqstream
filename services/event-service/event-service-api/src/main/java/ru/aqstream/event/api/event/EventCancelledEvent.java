@@ -15,23 +15,27 @@ public class EventCancelledEvent extends DomainEvent {
     private final String title;
     private final Instant startsAt;
     private final Instant cancelledAt;
+    private final String cancelReason;
 
     /**
      * Создаёт событие отмены мероприятия.
      *
-     * @param eventId     идентификатор мероприятия
-     * @param tenantId    идентификатор организации
-     * @param title       название мероприятия
-     * @param startsAt    дата начала (для информирования участников)
-     * @param cancelledAt дата отмены
+     * @param eventId      идентификатор мероприятия
+     * @param tenantId     идентификатор организации
+     * @param title        название мероприятия
+     * @param startsAt     дата начала (для информирования участников)
+     * @param cancelledAt  дата отмены
+     * @param cancelReason причина отмены (опционально)
      */
-    public EventCancelledEvent(UUID eventId, UUID tenantId, String title, Instant startsAt, Instant cancelledAt) {
+    public EventCancelledEvent(UUID eventId, UUID tenantId, String title, Instant startsAt,
+                               Instant cancelledAt, String cancelReason) {
         super();
         this.eventId = eventId;
         this.tenantId = tenantId;
         this.title = title;
         this.startsAt = startsAt;
         this.cancelledAt = cancelledAt;
+        this.cancelReason = cancelReason;
     }
 
     public UUID getEventId() {
@@ -52,6 +56,10 @@ public class EventCancelledEvent extends DomainEvent {
 
     public Instant getCancelledAt() {
         return cancelledAt;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
     }
 
     @Override

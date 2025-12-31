@@ -12,6 +12,8 @@ import ru.aqstream.common.api.PageResponse;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.event.api.dto.CreateEventRequest;
+import ru.aqstream.event.api.dto.CreateRecurrenceRuleRequest;
+import ru.aqstream.event.api.dto.RecurrenceRuleDto;
 import ru.aqstream.event.api.event.EventCancelledEvent;
 import ru.aqstream.event.api.event.EventCompletedEvent;
 import ru.aqstream.event.api.event.EventCreatedEvent;
@@ -25,7 +27,9 @@ import ru.aqstream.event.api.exception.EventNotEditableException;
 import ru.aqstream.event.api.exception.EventSlugAlreadyExistsException;
 import ru.aqstream.event.api.util.SlugGenerator;
 import ru.aqstream.event.db.entity.Event;
+import ru.aqstream.event.db.entity.RecurrenceRule;
 import ru.aqstream.event.db.repository.EventRepository;
+import ru.aqstream.event.db.repository.RecurrenceRuleRepository;
 
 /**
  * Сервис управления событиями.
@@ -39,8 +43,11 @@ public class EventService {
     private static final int MAX_SLUG_ATTEMPTS = 5;
 
     private final EventRepository eventRepository;
+    private final RecurrenceRuleRepository recurrenceRuleRepository;
     private final EventMapper eventMapper;
+    private final RecurrenceRuleMapper recurrenceRuleMapper;
     private final EventPublisher eventPublisher;
+    private final EventAuditService eventAuditService;
 
     // ==================== CRUD ====================
 
@@ -79,6 +86,15 @@ public class EventService {
         event.setParticipantsVisibility(request.participantsVisibilityOrDefault());
         event.setGroupId(request.groupId());
 
+        // Обрабатываем правило повторения если указано
+        RecurrenceRule recurrenceRule = null;
+        if (request.recurrenceRule() != null) {
+            recurrenceRule = createRecurrenceRule(request.recurrenceRule(), tenantId);
+            event.setRecurrenceRuleId(recurrenceRule.getId());
+            log.info("Создано правило повторения: ruleId={}, frequency={}",
+                recurrenceRule.getId(), recurrenceRule.getFrequency());
+        }
+
         event = eventRepository.save(event);
 
         log.info("Событие создано: eventId={}, slug={}, tenantId={}",
@@ -93,7 +109,13 @@ public class EventService {
             event.getStartsAt()
         ));
 
-        return eventMapper.toDto(event);
+        // Записываем в audit log
+        eventAuditService.logCreated(event);
+
+        RecurrenceRuleDto ruleDto = recurrenceRule != null
+            ? recurrenceRuleMapper.toDto(recurrenceRule)
+            : null;
+        return eventMapper.toDto(event, ruleDto);
     }
 
     /**
@@ -105,7 +127,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public EventDto getById(UUID eventId) {
         Event event = findEventById(eventId);
-        return eventMapper.toDto(event);
+        return mapToDto(event);
     }
 
     /**
@@ -119,7 +141,7 @@ public class EventService {
         UUID tenantId = TenantContext.getTenantId();
         Event event = eventRepository.findBySlugAndTenantId(slug, tenantId)
             .orElseThrow(() -> new EventNotFoundException(slug));
-        return eventMapper.toDto(event);
+        return mapToDto(event);
     }
 
     /**
@@ -130,7 +152,8 @@ public class EventService {
      * @return обновлённое событие
      * @throws EventNotEditableException если событие нельзя редактировать
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity") // Partial update паттерн требует много проверок
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength"})
+    // Partial update паттерн требует много проверок
     @Transactional
     public EventDto update(UUID eventId, UpdateEventRequest request) {
         log.info("Обновление события: eventId={}", eventId);
@@ -141,6 +164,9 @@ public class EventService {
         if (!event.isEditable()) {
             throw new EventNotEditableException(eventId, event.getStatus());
         }
+
+        // Сохраняем снимок для audit log
+        Event oldSnapshot = createSnapshot(event);
 
         // Обновляем только переданные поля
         if (request.title() != null) {
@@ -186,7 +212,10 @@ public class EventService {
             Instant.now()
         ));
 
-        return eventMapper.toDto(event);
+        // Записываем в audit log
+        eventAuditService.logUpdated(eventId, oldSnapshot, event);
+
+        return mapToDto(event);
     }
 
     /**
@@ -203,6 +232,9 @@ public class EventService {
         eventRepository.save(event);
 
         log.info("Событие удалено: eventId={}", eventId);
+
+        // Записываем в audit log
+        eventAuditService.logDeleted(event);
     }
 
     // ==================== Lifecycle ====================
@@ -233,7 +265,10 @@ public class EventService {
             Instant.now()
         ));
 
-        return eventMapper.toDto(event);
+        // Записываем в audit log
+        eventAuditService.logPublished(event);
+
+        return mapToDto(event);
     }
 
     /**
@@ -252,7 +287,10 @@ public class EventService {
 
         log.info("Событие снято с публикации: eventId={}", eventId);
 
-        return eventMapper.toDto(event);
+        // Записываем в audit log
+        eventAuditService.logUnpublished(event);
+
+        return mapToDto(event);
     }
 
     /**
@@ -263,10 +301,22 @@ public class EventService {
      */
     @Transactional
     public EventDto cancel(UUID eventId) {
-        log.info("Отмена события: eventId={}", eventId);
+        return cancel(eventId, null);
+    }
+
+    /**
+     * Отменяет событие с указанием причины (любой статус → CANCELLED).
+     *
+     * @param eventId идентификатор события
+     * @param reason  причина отмены (опционально)
+     * @return отменённое событие
+     */
+    @Transactional
+    public EventDto cancel(UUID eventId, String reason) {
+        log.info("Отмена события: eventId={}, reason={}", eventId, reason != null ? "указана" : "не указана");
 
         Event event = findEventById(eventId);
-        event.cancel();
+        event.cancel(reason);
         event = eventRepository.save(event);
 
         log.info("Событие отменено: eventId={}", eventId);
@@ -278,10 +328,14 @@ public class EventService {
             event.getTenantId(),
             event.getTitle(),
             event.getStartsAt(),
-            Instant.now()
+            event.getCancelledAt(),
+            event.getCancelReason()
         ));
 
-        return eventMapper.toDto(event);
+        // Записываем в audit log
+        eventAuditService.logCancelled(event, reason);
+
+        return mapToDto(event);
     }
 
     /**
@@ -308,7 +362,10 @@ public class EventService {
             Instant.now()
         ));
 
-        return eventMapper.toDto(event);
+        // Записываем в audit log
+        eventAuditService.logCompleted(event);
+
+        return mapToDto(event);
     }
 
     // ==================== Списки ====================
@@ -323,7 +380,7 @@ public class EventService {
     public PageResponse<EventDto> findAll(Pageable pageable) {
         UUID tenantId = TenantContext.getTenantId();
         Page<Event> page = eventRepository.findByTenantId(tenantId, pageable);
-        return PageResponse.of(page, eventMapper::toDto);
+        return PageResponse.of(page, this::mapToDto);
     }
 
     /**
@@ -337,7 +394,7 @@ public class EventService {
     public PageResponse<EventDto> findByStatus(EventStatus status, Pageable pageable) {
         UUID tenantId = TenantContext.getTenantId();
         Page<Event> page = eventRepository.findByTenantIdAndStatus(tenantId, status, pageable);
-        return PageResponse.of(page, eventMapper::toDto);
+        return PageResponse.of(page, this::mapToDto);
     }
 
     /**
@@ -351,7 +408,7 @@ public class EventService {
     public PageResponse<EventDto> findByGroup(UUID groupId, Pageable pageable) {
         UUID tenantId = TenantContext.getTenantId();
         Page<Event> page = eventRepository.findByTenantIdAndGroupId(tenantId, groupId, pageable);
-        return PageResponse.of(page, eventMapper::toDto);
+        return PageResponse.of(page, this::mapToDto);
     }
 
     /**
@@ -366,7 +423,7 @@ public class EventService {
     public PageResponse<EventDto> findByDateRange(Instant from, Instant to, Pageable pageable) {
         UUID tenantId = TenantContext.getTenantId();
         Page<Event> page = eventRepository.findByTenantIdAndDateRange(tenantId, from, to, pageable);
-        return PageResponse.of(page, eventMapper::toDto);
+        return PageResponse.of(page, this::mapToDto);
     }
 
     // ==================== Публичные ====================
@@ -382,7 +439,7 @@ public class EventService {
     public EventDto getPublicBySlug(String slug) {
         Event event = eventRepository.findPublicBySlug(slug)
             .orElseThrow(() -> new EventNotFoundException(slug));
-        return eventMapper.toDto(event);
+        return mapToDto(event);
     }
 
     // ==================== Вспомогательные ====================
@@ -426,5 +483,68 @@ public class EventService {
 
         // Крайне маловероятно, но на всякий случай
         throw new EventSlugAlreadyExistsException(baseSlug);
+    }
+
+    /**
+     * Создаёт снимок события для сравнения в audit log.
+     * Копирует только поля, которые отслеживаются в audit.
+     *
+     * @param event исходное событие
+     * @return снимок события
+     */
+    private Event createSnapshot(Event event) {
+        Event snapshot = Event.create(
+            event.getTitle(),
+            event.getSlug(),
+            event.getStartsAt(),
+            event.getTimezone()
+        );
+        snapshot.setDescription(event.getDescription());
+        snapshot.setEndsAt(event.getEndsAt());
+        snapshot.setLocationType(event.getLocationType());
+        snapshot.setLocationAddress(event.getLocationAddress());
+        snapshot.setOnlineUrl(event.getOnlineUrl());
+        snapshot.setMaxCapacity(event.getMaxCapacity());
+        snapshot.setRegistrationOpensAt(event.getRegistrationOpensAt());
+        snapshot.setRegistrationClosesAt(event.getRegistrationClosesAt());
+        snapshot.setPublic(event.isPublic());
+        snapshot.setParticipantsVisibility(event.getParticipantsVisibility());
+        snapshot.setGroupId(event.getGroupId());
+        return snapshot;
+    }
+
+    /**
+     * Преобразует Event в EventDto с загрузкой правила повторения.
+     *
+     * @param event событие
+     * @return DTO события
+     */
+    private EventDto mapToDto(Event event) {
+        RecurrenceRuleDto ruleDto = null;
+        if (event.getRecurrenceRuleId() != null) {
+            ruleDto = recurrenceRuleRepository.findById(event.getRecurrenceRuleId())
+                .map(recurrenceRuleMapper::toDto)
+                .orElse(null);
+        }
+        return eventMapper.toDto(event, ruleDto);
+    }
+
+    /**
+     * Создаёт правило повторения из запроса.
+     *
+     * @param request  запрос на создание правила
+     * @param tenantId идентификатор организации
+     * @return созданное правило повторения
+     */
+    private RecurrenceRule createRecurrenceRule(CreateRecurrenceRuleRequest request, UUID tenantId) {
+        RecurrenceRule rule = recurrenceRuleMapper.toEntity(request);
+        rule.setTenantId(tenantId);
+
+        // Устанавливаем интервал с дефолтом
+        if (rule.getIntervalValue() < 1) {
+            rule.setIntervalValue(request.intervalOrDefault());
+        }
+
+        return recurrenceRuleRepository.save(rule);
     }
 }
