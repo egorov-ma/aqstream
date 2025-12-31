@@ -1,9 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { eventsApi } from '@/lib/api/events';
+import { generateEventJsonLd } from '@/lib/utils/seo';
+import {
+  EventHero,
+  EventInfo,
+  EventStateMessage,
+  ParticipantsPlaceholder,
+  RegistrationForm,
+} from '@/components/features/public-event';
+import type { Event, TicketType } from '@/lib/api/types';
 
 interface EventPageProps {
   params: Promise<{
@@ -11,72 +17,181 @@ interface EventPageProps {
   }>;
 }
 
+// ISR: revalidate every 60 seconds
+export const revalidate = 60;
+
+/**
+ * Получает событие по slug на сервере
+ */
+async function getEvent(slug: string): Promise<Event | null> {
+  try {
+    return await eventsApi.getBySlug(slug);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Получает типы билетов по slug на сервере
+ */
+async function getTicketTypes(slug: string): Promise<TicketType[]> {
+  try {
+    return await eventsApi.getPublicTicketTypes(slug);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Проверяет, открыта ли регистрация (учитывает оба ограничения)
+ */
+function isRegistrationOpen(event: Event): boolean {
+  const now = new Date();
+
+  // Регистрация ещё не открыта
+  if (event.registrationOpensAt && new Date(event.registrationOpensAt) > now) {
+    return false;
+  }
+
+  // Регистрация уже закрыта
+  if (event.registrationClosesAt && new Date(event.registrationClosesAt) < now) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Проверяет, закрыта ли регистрация (для отображения сообщения)
+ */
+function isRegistrationClosed(event: Event): boolean {
+  if (event.registrationClosesAt) {
+    return new Date(event.registrationClosesAt) < new Date();
+  }
+  return false;
+}
+
+/**
+ * Проверяет, все ли билеты распроданы
+ */
+function areAllTicketsSoldOut(ticketTypes: TicketType[]): boolean {
+  if (ticketTypes.length === 0) return false;
+  return ticketTypes.every((tt) => tt.isSoldOut || !tt.isActive);
+}
+
+/**
+ * Генерирует метаданные страницы
+ */
 export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const event = await getEvent(slug);
 
-  // В будущем здесь будет загрузка данных события по slug
+  if (!event || event.status === 'DRAFT') {
+    return {
+      title: 'Событие не найдено - AqStream',
+      description: 'Запрашиваемое событие не найдено или недоступно.',
+    };
+  }
+
+  const description = event.description
+    ? event.description.replace(/[#*_`\[\]()]/g, '').slice(0, 160)
+    : 'Событие на платформе AqStream';
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aqstream.ru';
+  const ogImage = event.coverImageUrl || `${baseUrl}/og-default.svg`;
+
   return {
-    title: `${slug} - AqStream`,
-    description: 'Страница мероприятия',
+    title: `${event.title} - AqStream`,
+    description,
+    openGraph: {
+      title: event.title,
+      description,
+      type: 'website',
+      url: `${baseUrl}/events/${slug}`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: event.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: event.title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
 export default async function EventPage({ params }: EventPageProps) {
   const { slug } = await params;
 
-  // Placeholder — в будущем здесь будет загрузка данных события
-  if (!slug) {
+  // Загружаем данные параллельно
+  const [event, ticketTypes] = await Promise.all([
+    getEvent(slug),
+    getTicketTypes(slug),
+  ]);
+
+  // Событие не найдено или DRAFT
+  if (!event || event.status === 'DRAFT') {
     notFound();
   }
 
+  const registrationOpen = isRegistrationOpen(event);
+  const registrationClosed = isRegistrationClosed(event);
+  const allSoldOut = areAllTicketsSoldOut(ticketTypes);
+  const canRegister =
+    event.status === 'PUBLISHED' && registrationOpen && !allSoldOut;
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aqstream.ru';
+  const jsonLd = generateEventJsonLd(event, baseUrl);
+
   return (
-    <div className="container py-12">
-      <div className="mx-auto max-w-3xl">
-        {/* Информация о событии */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <Badge variant="secondary" className="mb-2">
-                  Черновик
-                </Badge>
-                <CardTitle className="text-3xl">{slug}</CardTitle>
-                <CardDescription>Описание мероприятия будет здесь</CardDescription>
+    <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="min-h-screen bg-background">
+        {/* Hero Section */}
+        <div className="container pt-8">
+          <EventHero event={event} />
+        </div>
+
+        {/* Main Content */}
+        <div className="container py-8">
+          {/* State Message */}
+          <div className="mb-8">
+            <EventStateMessage
+              event={event}
+              isRegistrationClosed={registrationClosed}
+              allSoldOut={allSoldOut}
+            />
+          </div>
+
+          {/* Two Column Layout */}
+          <div className="grid gap-8 lg:grid-cols-3">
+            {/* Left Column - Event Info (2/3 width) */}
+            <div className="lg:col-span-2 space-y-6">
+              <EventInfo event={event} />
+
+              {/* Participants Placeholder */}
+              {event.participantsVisibility === 'OPEN' && (
+                <ParticipantsPlaceholder />
+              )}
+            </div>
+
+            {/* Right Column - Registration (1/3 width) */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-8">
+                <RegistrationForm
+                  event={event}
+                  ticketTypes={ticketTypes}
+                  disabled={!canRegister}
+                />
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>Дата не указана</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>Место не указано</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>0 участников</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Форма регистрации */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Регистрация</CardTitle>
-            <CardDescription>Заполните форму для участия в мероприятии</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="mb-6 text-muted-foreground">
-              Форма регистрации будет доступна после реализации в Phase 2.
-            </p>
-            <Button size="lg" disabled>
-              Зарегистрироваться
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

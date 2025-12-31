@@ -36,6 +36,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // Redis для кэширования
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
 

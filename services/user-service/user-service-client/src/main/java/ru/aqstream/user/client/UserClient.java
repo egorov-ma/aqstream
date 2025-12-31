@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.aqstream.user.api.dto.AcceptInviteByTelegramRequest;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
+import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
 import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.dto.UserTelegramInfoDto;
@@ -90,4 +91,14 @@ public interface UserClient {
      */
     @PostMapping("/api/v1/internal/users/link-telegram")
     void linkTelegramByToken(@RequestBody LinkTelegramByTokenRequest request);
+
+    /**
+     * Получает организацию по ID.
+     * Используется для получения названия организатора события.
+     *
+     * @param organizationId ID организации
+     * @return данные организации или пустой Optional
+     */
+    @GetMapping("/api/v1/internal/users/organizations/{organizationId}")
+    Optional<OrganizationDto> findOrganizationById(@PathVariable("organizationId") UUID organizationId);
 }

@@ -5,12 +5,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.aqstream.common.test.SecurityTestUtils.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.datafaker.Faker;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,6 +34,7 @@ import ru.aqstream.user.db.repository.OrganizationMemberRepository;
 import ru.aqstream.user.db.repository.OrganizationRepository;
 import ru.aqstream.user.db.repository.OrganizationRequestRepository;
 import ru.aqstream.user.db.repository.UserRepository;
+import ru.aqstream.user.util.CookieUtils;
 
 /**
  * Интеграционные тесты для управления членами организации и переключения контекста.
@@ -127,8 +130,13 @@ class OrganizationControllerMembersIntegrationTest extends PostgresTestContainer
                     .with(jwt(jwtTokenProvider, testUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.refreshToken").exists())
-                .andExpect(jsonPath("$.tokenType").value("Bearer"));
+                // refreshToken теперь передаётся через httpOnly cookie
+                .andExpect(jsonPath("$.refreshToken").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                // Проверяем, что refresh token установлен в cookie
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie",
+                    Matchers.containsString(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=")));
         }
 
         @Test

@@ -95,9 +95,25 @@ export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
 export type LocationType = 'ONLINE' | 'OFFLINE' | 'HYBRID';
 export type ParticipantsVisibility = 'CLOSED' | 'OPEN';
 
+// Registration Form Configuration
+export type CustomFieldType = 'text' | 'email' | 'tel' | 'select';
+
+export interface CustomFieldConfig {
+  name: string;
+  label: string;
+  type: CustomFieldType;
+  required: boolean;
+  options?: string[];
+}
+
+export interface RegistrationFormConfig {
+  customFields?: CustomFieldConfig[];
+}
+
 export interface Event {
   id: string;
   tenantId: string;
+  organizerName?: string; // Название организации (для публичной страницы)
   title: string;
   slug: string;
   description?: string;
@@ -115,6 +131,7 @@ export interface Event {
   participantsVisibility: ParticipantsVisibility;
   groupId?: string;
   coverImageUrl?: string;
+  registrationFormConfig?: RegistrationFormConfig; // Конфигурация формы регистрации
   cancelReason?: string;
   cancelledAt?: string;
   // Recurring events

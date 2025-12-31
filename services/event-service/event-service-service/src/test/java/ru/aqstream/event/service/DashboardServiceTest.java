@@ -170,6 +170,7 @@ class DashboardServiceTest {
         return new EventDto(
             UUID.randomUUID(),
             tenantId,
+            "Test Organization", // organizerName
             FAKER.book().title(),
             "test-slug",
             FAKER.lorem().paragraph(),
@@ -179,13 +180,14 @@ class DashboardServiceTest {
             "Europe/Moscow",
             LocationType.OFFLINE,
             FAKER.address().fullAddress(),
-            null,
-            100,
-            null,
-            null,
-            true,
+            null, // onlineUrl
+            100, // maxCapacity
+            null, // registrationOpensAt
+            null, // registrationClosesAt
+            true, // isPublic
             ParticipantsVisibility.CLOSED,
-            null,
+            null, // groupId
+            null, // registrationFormConfig
             null, // cancelReason
             null, // cancelledAt
             null, // recurrenceRule

@@ -59,6 +59,9 @@ class EventServiceTest {
     @Mock
     private EventAuditService eventAuditService;
 
+    @Mock
+    private OrganizationNameResolver organizationNameResolver;
+
     private EventService service;
 
     private static final Faker FAKER = new Faker();
@@ -78,7 +81,8 @@ class EventServiceTest {
             eventMapper,
             recurrenceRuleMapper,
             eventPublisher,
-            eventAuditService
+            eventAuditService,
+            organizationNameResolver
         );
 
         tenantId = UUID.randomUUID();
@@ -116,22 +120,24 @@ class EventServiceTest {
         return new EventDto(
             eventId,
             tenantId,
+            "Test Organization", // organizerName
             testTitle,
             "test-slug",
-            null,
+            null, // description
             EventStatus.DRAFT,
             testStartsAt,
-            null,
+            null, // endsAt
             "Europe/Moscow",
             LocationType.ONLINE,
-            null,
-            null,
-            null,
-            null,
-            null,
-            false,
+            null, // locationAddress
+            null, // onlineUrl
+            null, // maxCapacity
+            null, // registrationOpensAt
+            null, // registrationClosesAt
+            false, // isPublic
             ParticipantsVisibility.CLOSED,
-            null,
+            null, // groupId
+            null, // registrationFormConfig
             null, // cancelReason
             null, // cancelledAt
             null, // recurrenceRule

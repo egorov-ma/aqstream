@@ -37,6 +37,12 @@ spring:
     # default-schema не указан - databasechangelog в public,
     # схемы указываются явно в changesets
 
+  # === Redis (для кэширования) ===
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
 # === Multi-tenancy (RLS) ===
 # Включает TenantAwareDataSourceDecorator для установки app.tenant_id в PostgreSQL
 aqstream:

@@ -48,6 +48,7 @@ public class EventService {
     private final RecurrenceRuleMapper recurrenceRuleMapper;
     private final EventPublisher eventPublisher;
     private final EventAuditService eventAuditService;
+    private final OrganizationNameResolver organizationNameResolver;
 
     // ==================== CRUD ====================
 
@@ -431,15 +432,27 @@ public class EventService {
     /**
      * Возвращает публичное событие по slug.
      * Не требует tenant context.
+     * Включает название организатора из user-service.
      *
      * @param slug URL-slug события
-     * @return событие
+     * @return событие с названием организатора
      */
     @Transactional(readOnly = true)
     public EventDto getPublicBySlug(String slug) {
         Event event = eventRepository.findPublicBySlug(slug)
             .orElseThrow(() -> new EventNotFoundException(slug));
-        return mapToDto(event);
+
+        // Получаем название организатора из user-service (с кэшированием)
+        String organizerName = organizationNameResolver.resolve(event.getTenantId());
+
+        RecurrenceRuleDto ruleDto = null;
+        if (event.getRecurrenceRuleId() != null) {
+            ruleDto = recurrenceRuleRepository.findById(event.getRecurrenceRuleId())
+                .map(recurrenceRuleMapper::toDto)
+                .orElse(null);
+        }
+
+        return eventMapper.toDto(event, organizerName, ruleDto);
     }
 
     // ==================== Вспомогательные ====================

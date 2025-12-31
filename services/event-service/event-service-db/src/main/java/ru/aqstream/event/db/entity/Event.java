@@ -11,11 +11,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 import ru.aqstream.common.data.SoftDeletableEntity;
 import ru.aqstream.event.api.dto.EventStatus;
 import ru.aqstream.event.api.dto.LocationType;
 import ru.aqstream.event.api.dto.ParticipantsVisibility;
+import ru.aqstream.event.api.dto.RegistrationFormConfig;
 import ru.aqstream.event.api.exception.EventInPastException;
 import ru.aqstream.event.api.exception.InvalidEventStatusTransitionException;
 
@@ -93,6 +96,15 @@ public class Event extends SoftDeletableEntity {
 
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
+
+    // === Форма регистрации ===
+
+    /**
+     * Конфигурация формы регистрации (кастомные поля).
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "registration_form_config", columnDefinition = "jsonb")
+    private RegistrationFormConfig registrationFormConfig;
 
     // === Recurring Events ===
 

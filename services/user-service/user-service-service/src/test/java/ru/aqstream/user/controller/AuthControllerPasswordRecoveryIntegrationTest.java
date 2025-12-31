@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +20,6 @@ import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
 import ru.aqstream.user.api.dto.ForgotPasswordRequest;
 import ru.aqstream.user.api.dto.LoginRequest;
-import ru.aqstream.user.api.dto.RefreshTokenRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.api.dto.ResendVerificationRequest;
 import ru.aqstream.user.api.dto.ResetPasswordRequest;
@@ -30,6 +30,7 @@ import ru.aqstream.user.db.entity.VerificationToken.TokenType;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.db.repository.VerificationTokenRepository;
+import ru.aqstream.user.util.CookieUtils;
 
 /**
  * Интеграционные тесты для подтверждения email и восстановления пароля.
@@ -267,13 +268,12 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
                 .andExpect(status().isCreated())
                 .andReturn();
 
-            String responseJson = registerResult.getResponse().getContentAsString();
-            String refreshToken = objectMapper.readTree(responseJson).get("refreshToken").asText();
+            // Извлекаем refresh token из cookie
+            String refreshToken = extractRefreshTokenFromCookie(registerResult);
 
-            RefreshTokenRequest refreshRequest = new RefreshTokenRequest(refreshToken);
+            // Проверяем, что токен работает
             mockMvc.perform(post(REFRESH_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refreshRequest)))
+                    .cookie(new Cookie(CookieUtils.REFRESH_TOKEN_COOKIE_NAME, refreshToken)))
                 .andExpect(status().isOk());
 
             ForgotPasswordRequest forgotRequest = new ForgotPasswordRequest(email);
@@ -294,13 +294,26 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
                     .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                 .andExpect(status().isNoContent());
 
+            // Токен должен быть отозван после сброса пароля
             mockMvc.perform(post(REFRESH_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refreshRequest)))
+                    .cookie(new Cookie(CookieUtils.REFRESH_TOKEN_COOKIE_NAME, refreshToken)))
                 .andExpect(status().isUnauthorized());
 
             long activeTokens = refreshTokenRepository.countActiveByUserId(user.getId(), java.time.Instant.now());
             assertThat(activeTokens).isZero();
         }
+    }
+
+    /**
+     * Извлекает refresh token из Set-Cookie header.
+     */
+    private String extractRefreshTokenFromCookie(MvcResult result) {
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertThat(setCookieHeader).isNotNull();
+        assertThat(setCookieHeader).contains(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=");
+
+        // Парсим значение cookie: refresh_token=value; Path=...
+        String cookieValue = setCookieHeader.split(";")[0];
+        return cookieValue.substring(CookieUtils.REFRESH_TOKEN_COOKIE_NAME.length() + 1);
     }
 }

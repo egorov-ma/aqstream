@@ -2,11 +2,14 @@ package ru.aqstream.user.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import net.datafaker.Faker;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,12 +21,12 @@ import org.springframework.test.web.servlet.MvcResult;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
 import ru.aqstream.user.api.dto.LoginRequest;
-import ru.aqstream.user.api.dto.RefreshTokenRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.db.repository.VerificationTokenRepository;
+import ru.aqstream.user.util.CookieUtils;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -63,6 +66,19 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         return FAKER.internet().emailAddress();
     }
 
+    /**
+     * Извлекает refresh token из Set-Cookie header.
+     */
+    private String extractRefreshTokenFromCookie(MvcResult result) {
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertThat(setCookieHeader).isNotNull();
+        assertThat(setCookieHeader).contains(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=");
+
+        // Парсим значение cookie: refresh_token=value; Path=...
+        String cookieValue = setCookieHeader.split(";")[0];
+        return cookieValue.substring(CookieUtils.REFRESH_TOKEN_COOKIE_NAME.length() + 1);
+    }
+
     @Nested
     @DisplayName("POST /api/v1/auth/register")
     class Register {
@@ -81,10 +97,15 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                // refreshToken теперь передаётся через httpOnly cookie, не в body
+                .andExpect(jsonPath("$.refreshToken").value(Matchers.nullValue()))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.user.email").value(email))
-                .andExpect(jsonPath("$.user.firstName").value(firstName));
+                .andExpect(jsonPath("$.user.firstName").value(firstName))
+                // Проверяем, что refresh token установлен в cookie
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie",
+                    Matchers.containsString(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=")));
 
             // Проверяем, что пользователь создан в БД
             assertThat(userRepository.existsByEmail(email)).isTrue();
@@ -177,8 +198,13 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
                     .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
-                .andExpect(jsonPath("$.user.email").value(email));
+                // refreshToken теперь передаётся через httpOnly cookie
+                .andExpect(jsonPath("$.refreshToken").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.user.email").value(email))
+                // Проверяем, что refresh token установлен в cookie
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie",
+                    Matchers.containsString(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=")));
         }
 
         @Test
@@ -266,29 +292,34 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-            // Извлекаем refresh token
-            String responseJson = registerResult.getResponse().getContentAsString();
-            String refreshToken = objectMapper.readTree(responseJson).get("refreshToken").asText();
+            // Извлекаем refresh token из cookie
+            String refreshToken = extractRefreshTokenFromCookie(registerResult);
 
-            // Обновляем токены
-            RefreshTokenRequest refreshRequest = new RefreshTokenRequest(refreshToken);
-
+            // Обновляем токены, передавая refresh token через cookie
             mockMvc.perform(post(REFRESH_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refreshRequest)))
+                    .cookie(new Cookie(CookieUtils.REFRESH_TOKEN_COOKIE_NAME, refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+                // refreshToken теперь передаётся через httpOnly cookie
+                .andExpect(jsonPath("$.refreshToken").value(Matchers.nullValue()))
+                // Новый refresh token должен быть установлен в cookie
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie",
+                    Matchers.containsString(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=")));
         }
 
         @Test
         @DisplayName("отклоняет невалидный refresh token")
         void refresh_InvalidToken_ReturnsUnauthorized() throws Exception {
-            RefreshTokenRequest refreshRequest = new RefreshTokenRequest("invalid.refresh.token");
-
             mockMvc.perform(post(REFRESH_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refreshRequest)))
+                    .cookie(new Cookie(CookieUtils.REFRESH_TOKEN_COOKIE_NAME, "invalid.refresh.token")))
+                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("отклоняет запрос без refresh token")
+        void refresh_MissingToken_ReturnsUnauthorized() throws Exception {
+            mockMvc.perform(post(REFRESH_URL))
                 .andExpect(status().isUnauthorized());
         }
     }
@@ -311,21 +342,17 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-            String responseJson = registerResult.getResponse().getContentAsString();
-            String refreshToken = objectMapper.readTree(responseJson).get("refreshToken").asText();
+            // Извлекаем refresh token из cookie
+            String refreshToken = extractRefreshTokenFromCookie(registerResult);
 
-            // Выходим
-            RefreshTokenRequest logoutRequest = new RefreshTokenRequest(refreshToken);
-
+            // Выходим, передавая refresh token через cookie
             mockMvc.perform(post(LOGOUT_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(logoutRequest)))
+                    .cookie(new Cookie(CookieUtils.REFRESH_TOKEN_COOKIE_NAME, refreshToken)))
                 .andExpect(status().isNoContent());
 
             // Пробуем использовать отозванный токен — должен быть отклонён
             mockMvc.perform(post(REFRESH_URL)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(logoutRequest)))
+                    .cookie(new Cookie(CookieUtils.REFRESH_TOKEN_COOKIE_NAME, refreshToken)))
                 .andExpect(status().isUnauthorized());
         }
     }

@@ -5,10 +5,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,6 +34,7 @@ import ru.aqstream.user.api.dto.UpdateOrganizationRequest;
 import ru.aqstream.user.api.exception.AccessDeniedException;
 import ru.aqstream.user.service.OrganizationInviteService;
 import ru.aqstream.user.service.OrganizationService;
+import ru.aqstream.user.util.CookieUtils;
 
 /**
  * Контроллер организаций.
@@ -45,6 +48,12 @@ public class OrganizationController {
 
     private final OrganizationService organizationService;
     private final OrganizationInviteService inviteService;
+
+    /**
+     * Использовать Secure флаг для cookies (true для HTTPS в production).
+     */
+    @Value("${auth.cookie.secure:false}")
+    private boolean secureCookie;
 
     // ==================== CRUD Организаций ====================
 
@@ -165,7 +174,8 @@ public class OrganizationController {
     public ResponseEntity<AuthResponse> switchOrganization(
         @AuthenticationPrincipal UserPrincipal principal,
         @PathVariable UUID id,
-        HttpServletRequest httpRequest
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
     ) {
         requireAuthenticated(principal);
         String userAgent = httpRequest.getHeader("User-Agent");
@@ -173,7 +183,12 @@ public class OrganizationController {
         AuthResponse response = organizationService.switchOrganization(
             principal.userId(), id, userAgent, ipAddress
         );
-        return ResponseEntity.ok(response);
+
+        // Устанавливаем refresh token в httpOnly cookie
+        CookieUtils.setRefreshTokenCookie(httpResponse, response.refreshToken(), secureCookie);
+
+        // Возвращаем ответ без refreshToken в body (он в cookie)
+        return ResponseEntity.ok(response.withoutRefreshToken());
     }
 
     // ==================== Управление членами ====================

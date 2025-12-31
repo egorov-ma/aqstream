@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.aqstream.user.api.dto.AcceptInviteByTelegramRequest;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
+import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
 import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.dto.UserTelegramInfoDto;
@@ -202,5 +203,25 @@ public class InternalUserController {
         telegramLinkService.linkTelegramByToken(request);
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Получает организацию по ID.
+     * Используется event-service для получения названия организатора.
+     *
+     * @param organizationId ID организации
+     * @return данные организации или 404
+     */
+    @Operation(
+        summary = "Получить организацию по ID",
+        description = "Внутренний эндпоинт для получения данных организации"
+    )
+    @GetMapping("/organizations/{organizationId}")
+    public ResponseEntity<OrganizationDto> findOrganizationById(@PathVariable UUID organizationId) {
+        log.debug("Internal: запрос организации по ID: organizationId={}", organizationId);
+
+        return organizationService.findByIdInternal(organizationId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

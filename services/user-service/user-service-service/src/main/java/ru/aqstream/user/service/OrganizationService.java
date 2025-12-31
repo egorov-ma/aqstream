@@ -379,6 +379,21 @@ public class OrganizationService {
         log.info("Член удалён: targetUserId={}", targetUserId);
     }
 
+    // ==================== Internal API ====================
+
+    /**
+     * Находит организацию по ID для внутреннего использования (без проверки членства).
+     * Используется event-service для получения названия организатора.
+     *
+     * @param organizationId идентификатор организации
+     * @return Optional с DTO организации
+     */
+    @Transactional(readOnly = true)
+    public java.util.Optional<OrganizationDto> findByIdInternal(UUID organizationId) {
+        return organizationRepository.findByIdWithOwner(organizationId)
+            .map(organizationMapper::toDto);
+    }
+
     // ==================== Вспомогательные методы ====================
 
     /**

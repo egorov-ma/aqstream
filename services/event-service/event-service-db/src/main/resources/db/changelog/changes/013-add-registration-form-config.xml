@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="013-1-add-registration-form-config" author="aqstream">
+        <comment>Добавление поля registration_form_config для настройки формы регистрации</comment>
+
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="registration_form_config" type="JSONB">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="events" schemaName="event_service" columnName="registration_form_config"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="013-2-add-registration-form-config-comment" author="aqstream">
+        <comment>Добавление комментария к полю registration_form_config</comment>
+
+        <sql>
+            COMMENT ON COLUMN event_service.events.registration_form_config IS
+            'Конфигурация формы регистрации в формате JSON: {"customFields": [{"name": "...", "label": "...", "type": "text|email|tel|select", "required": true/false, "options": [...]}]}';
+        </sql>
+
+        <rollback>
+            <sql>
+                COMMENT ON COLUMN event_service.events.registration_form_config IS NULL;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

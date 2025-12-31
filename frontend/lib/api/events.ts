@@ -6,6 +6,7 @@ import type {
   PageResponse,
   EventStatus,
   EventAuditLog,
+  TicketType,
 } from './types';
 
 export interface EventFilters {
@@ -89,6 +90,16 @@ export const eventsApi = {
     const response = await apiClient.get<PageResponse<EventAuditLog>>(
       `/api/v1/events/${id}/activity`,
       { params: { page, size } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Получить публичные типы билетов для события
+   */
+  getPublicTicketTypes: async (slug: string): Promise<TicketType[]> => {
+    const response = await apiClient.get<TicketType[]>(
+      `/api/v1/public/events/${slug}/ticket-types`
     );
     return response.data;
   },

@@ -2,6 +2,7 @@ package ru.aqstream.user.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,6 +14,7 @@ import java.util.TreeMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import net.datafaker.Faker;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.api.dto.TelegramAuthRequest;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.UserRepository;
+import ru.aqstream.user.util.CookieUtils;
 
 /**
  * Интеграционные тесты для Telegram аутентификации.
@@ -77,9 +80,14 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                // refreshToken теперь передаётся через httpOnly cookie
+                .andExpect(jsonPath("$.refreshToken").value(Matchers.nullValue()))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.user.firstName").value(firstName));
+                .andExpect(jsonPath("$.user.firstName").value(firstName))
+                // Проверяем, что refresh token установлен в cookie
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie",
+                    Matchers.containsString(CookieUtils.REFRESH_TOKEN_COOKIE_NAME + "=")));
 
             // Проверяем, что пользователь создан в БД
             User createdUser = userRepository.findByTelegramId(telegramId.toString()).orElse(null);

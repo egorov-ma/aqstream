@@ -282,3 +282,14 @@ export function useEventActivity(eventId: string, page = 0, size = 20) {
     enabled: !!eventId,
   });
 }
+
+/**
+ * Хук для получения публичных типов билетов по slug события
+ */
+export function usePublicTicketTypes(slug: string) {
+  return useQuery({
+    queryKey: ['public', 'events', slug, 'ticket-types'],
+    queryFn: () => eventsApi.getPublicTicketTypes(slug),
+    enabled: !!slug,
+  });
+}
