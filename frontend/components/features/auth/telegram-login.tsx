@@ -20,7 +20,8 @@ export function TelegramLogin({ className }: TelegramLoginProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const telegramAuthMutation = useTelegramAuth();
   const [error, setError] = useState<string | null>(null);
-  const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME;
+  // Убираем @ из имени бота (TELEGRAM_BOT_USERNAME может содержать @)
+  const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME?.replace('@', '');
 
   const handleAuth = useCallback(
     async (user: TelegramAuthRequest) => {
