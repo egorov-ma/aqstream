@@ -20,3 +20,6 @@ export { EventFilters, type EventFiltersState } from './event-filters';
 export { EventList } from './event-list';
 export { EventActions } from './event-actions';
 export { EventStatsCard } from './event-stats-card';
+
+// Регистрации
+export { RegistrationList } from './registration-list';

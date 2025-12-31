@@ -31,6 +31,7 @@ import {
   EventActions,
   EventStatsCard,
   MarkdownPreview,
+  RegistrationList,
   getTimezoneLabel,
 } from '@/components/features/events';
 
@@ -247,7 +248,7 @@ export default function EventDetailPage() {
         </Card>
       </div>
 
-      {/* Список регистраций (placeholder) */}
+      {/* Список регистраций */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -257,12 +258,7 @@ export default function EventDetailPage() {
           <CardDescription>Список зарегистрированных участников</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border border-dashed p-8 text-center">
-            <Users className="h-10 w-10 mx-auto mb-2 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">
-              Пока нет регистраций
-            </p>
-          </div>
+          <RegistrationList eventId={id} />
         </CardContent>
       </Card>
     </div>
