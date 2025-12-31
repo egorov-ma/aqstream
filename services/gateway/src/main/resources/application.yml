@@ -73,6 +73,18 @@ spring:
           predicates:
             - Path=/api/v1/analytics/**
 
+        # Event Service - dashboard статистика
+        - id: event-service-dashboard
+          uri: ${EVENT_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/dashboard/**
+
+        # Event Service - публичные страницы событий
+        - id: event-service-public
+          uri: ${EVENT_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/public/**
+
       # Rate limiting по умолчанию
       default-filters:
         - name: RequestRateLimiter
