@@ -20,8 +20,9 @@ export function TelegramLogin({ className }: TelegramLoginProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const telegramAuthMutation = useTelegramAuth();
   const [error, setError] = useState<string | null>(null);
-  // Убираем @ из имени бота (TELEGRAM_BOT_USERNAME может содержать @)
-  const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME?.replace('@', '');
+  // Убираем @ из начала имени бота (TELEGRAM_BOT_USERNAME может содержать @)
+  // Используем regex /^@/ чтобы удалить только первый символ, если это @
+  const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME?.replace(/^@/, '');
 
   const handleAuth = useCallback(
     async (user: TelegramAuthRequest) => {

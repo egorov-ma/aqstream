@@ -29,7 +29,8 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
-      login(response.user, response.accessToken, response.refreshToken);
+      // refreshToken передаётся через httpOnly cookie, не храним в store
+      login(response.user, response.accessToken);
       queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Вы успешно вошли в систему');
       router.push('/dashboard');
@@ -104,7 +105,8 @@ export function useTelegramAuth() {
   return useMutation({
     mutationFn: (data: TelegramAuthRequest) => authApi.telegramAuth(data),
     onSuccess: (response) => {
-      login(response.user, response.accessToken, response.refreshToken);
+      // refreshToken передаётся через httpOnly cookie, не храним в store
+      login(response.user, response.accessToken);
       queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Вы успешно вошли через Telegram');
       router.push('/dashboard');

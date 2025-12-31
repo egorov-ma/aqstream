@@ -2,14 +2,19 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/lib/api/types';
 
+/**
+ * Состояние аутентификации.
+ *
+ * ВАЖНО: refreshToken НЕ хранится на клиенте — он передаётся через httpOnly cookie.
+ * Это защищает от XSS атак.
+ */
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   setUser: (user: User) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
-  login: (user: User, accessToken: string, refreshToken: string) => void;
+  setAccessToken: (accessToken: string) => void;
+  login: (user: User, accessToken: string) => void;
   logout: () => void;
 }
 
@@ -18,18 +23,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
 
       setUser: (user) => set({ user }),
 
-      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
+      setAccessToken: (accessToken) => set({ accessToken }),
 
-      login: (user, accessToken, refreshToken) =>
+      login: (user, accessToken) =>
         set({
           user,
           accessToken,
-          refreshToken,
           isAuthenticated: true,
         }),
 
@@ -37,16 +40,15 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           accessToken: null,
-          refreshToken: null,
           isAuthenticated: false,
         }),
     }),
     {
       name: 'auth-storage',
+      // Не сохраняем refreshToken — он в httpOnly cookie
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

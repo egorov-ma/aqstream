@@ -5,6 +5,7 @@ export const AUTH_ERROR_CODES = {
   ACCOUNT_LOCKED: 'account_locked',
   EMAIL_ALREADY_EXISTS: 'email_already_exists',
   INVALID_TOKEN: 'invalid_token',
+  TOO_MANY_REQUESTS: 'too_many_requests',
 } as const;
 
 // Маппинг кодов ошибок на сообщения
@@ -14,6 +15,7 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   [AUTH_ERROR_CODES.ACCOUNT_LOCKED]: 'Аккаунт заблокирован. Попробуйте через 15 минут',
   [AUTH_ERROR_CODES.EMAIL_ALREADY_EXISTS]: 'Пользователь с таким email уже существует',
   [AUTH_ERROR_CODES.INVALID_TOKEN]: 'Ссылка недействительна или срок её действия истёк',
+  [AUTH_ERROR_CODES.TOO_MANY_REQUESTS]: 'Слишком много попыток. Попробуйте позже',
 };
 
 // Получить сообщение об ошибке по коду

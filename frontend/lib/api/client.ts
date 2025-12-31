@@ -8,6 +8,8 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Отправлять cookies с запросами (для httpOnly refresh token)
+  withCredentials: true,
 });
 
 // Request interceptor — добавляем токен
@@ -70,15 +72,19 @@ apiClient.interceptors.response.use(
         });
       }
 
-      if (authStore.refreshToken) {
+      // Пробуем обновить токен (refresh token в httpOnly cookie отправится автоматически)
+      if (authStore.isAuthenticated) {
         isRefreshing = true;
         try {
-          const response = await axios.post(`${API_URL}/api/v1/auth/refresh`, {
-            refreshToken: authStore.refreshToken,
-          });
+          // Refresh token передаётся автоматически через httpOnly cookie
+          const response = await axios.post(
+            `${API_URL}/api/v1/auth/refresh`,
+            {},
+            { withCredentials: true }
+          );
 
-          const { accessToken, refreshToken } = response.data;
-          authStore.setTokens(accessToken, refreshToken);
+          const { accessToken } = response.data;
+          authStore.setAccessToken(accessToken);
 
           // Обрабатываем очередь с новым токеном
           processQueue(null, accessToken);

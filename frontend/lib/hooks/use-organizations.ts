@@ -36,14 +36,14 @@ export function useOrganization(id: string) {
  */
 export function useSwitchOrganization() {
   const queryClient = useQueryClient();
-  const { setTokens } = useAuthStore();
+  const { setAccessToken } = useAuthStore();
   const { setCurrentOrganization } = useOrganizationStore();
 
   return useMutation({
     mutationFn: organizationsApi.switch,
     onSuccess: (response, organizationId) => {
-      // Обновляем токены с новым tenantId
-      setTokens(response.accessToken, response.refreshToken);
+      // Обновляем access token (refreshToken в httpOnly cookie обновляется автоматически)
+      setAccessToken(response.accessToken);
 
       // Обновляем текущую организацию в store
       // (нужно получить организацию из кэша или сделать запрос)

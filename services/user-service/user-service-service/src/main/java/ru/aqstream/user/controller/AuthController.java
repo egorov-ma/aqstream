@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +30,7 @@ import ru.aqstream.user.api.dto.VerifyEmailRequest;
 import ru.aqstream.user.service.AuthService;
 import ru.aqstream.user.service.TelegramAuthService;
 import ru.aqstream.user.service.VerificationService;
+import ru.aqstream.user.util.CookieUtils;
 
 /**
  * Контроллер аутентификации.
@@ -43,6 +46,12 @@ public class AuthController {
     private final TelegramAuthService telegramAuthService;
     private final VerificationService verificationService;
 
+    /**
+     * Использовать Secure флаг для cookies (true для HTTPS в production).
+     */
+    @Value("${auth.cookie.secure:false}")
+    private boolean secureCookie;
+
     @Operation(summary = "Регистрация", description = "Регистрация нового пользователя по email")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Пользователь зарегистрирован"),
@@ -52,13 +61,19 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
         @Valid @RequestBody RegisterRequest request,
-        HttpServletRequest httpRequest
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
     ) {
         String userAgent = httpRequest.getHeader("User-Agent");
         String ipAddress = ClientIpResolver.resolve(httpRequest);
 
         AuthResponse response = authService.register(request, userAgent, ipAddress);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        // Устанавливаем refresh token в httpOnly cookie
+        CookieUtils.setRefreshTokenCookie(httpResponse, response.refreshToken(), secureCookie);
+
+        // Возвращаем ответ без refreshToken в body (он в cookie)
+        return ResponseEntity.status(HttpStatus.CREATED).body(response.withoutRefreshToken());
     }
 
     @Operation(summary = "Вход", description = "Вход по email и паролю")
@@ -70,13 +85,18 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
         @Valid @RequestBody LoginRequest request,
-        HttpServletRequest httpRequest
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
     ) {
         String userAgent = httpRequest.getHeader("User-Agent");
         String ipAddress = ClientIpResolver.resolve(httpRequest);
 
         AuthResponse response = authService.login(request, userAgent, ipAddress);
-        return ResponseEntity.ok(response);
+
+        // Устанавливаем refresh token в httpOnly cookie
+        CookieUtils.setRefreshTokenCookie(httpResponse, response.refreshToken(), secureCookie);
+
+        return ResponseEntity.ok(response.withoutRefreshToken());
     }
 
     @Operation(summary = "Обновление токенов", description = "Обновление access и refresh токенов")
@@ -86,14 +106,29 @@ public class AuthController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
-        @Valid @RequestBody RefreshTokenRequest request,
-        HttpServletRequest httpRequest
+        @RequestBody(required = false) RefreshTokenRequest request,
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
     ) {
+        // Получаем refresh token из cookie или body (для обратной совместимости)
+        String refreshToken = CookieUtils.getRefreshTokenFromCookie(httpRequest)
+            .orElseGet(() -> request != null ? request.refreshToken() : null);
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String userAgent = httpRequest.getHeader("User-Agent");
         String ipAddress = ClientIpResolver.resolve(httpRequest);
 
-        AuthResponse response = authService.refresh(request, userAgent, ipAddress);
-        return ResponseEntity.ok(response);
+        AuthResponse response = authService.refresh(
+            new RefreshTokenRequest(refreshToken), userAgent, ipAddress
+        );
+
+        // Устанавливаем новый refresh token в httpOnly cookie
+        CookieUtils.setRefreshTokenCookie(httpResponse, response.refreshToken(), secureCookie);
+
+        return ResponseEntity.ok(response.withoutRefreshToken());
     }
 
     @Operation(
@@ -109,13 +144,18 @@ public class AuthController {
     @PostMapping("/telegram")
     public ResponseEntity<AuthResponse> telegramAuth(
         @Valid @RequestBody TelegramAuthRequest request,
-        HttpServletRequest httpRequest
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
     ) {
         String userAgent = httpRequest.getHeader("User-Agent");
         String ipAddress = ClientIpResolver.resolve(httpRequest);
 
         AuthResponse response = telegramAuthService.authenticate(request, userAgent, ipAddress);
-        return ResponseEntity.ok(response);
+
+        // Устанавливаем refresh token в httpOnly cookie
+        CookieUtils.setRefreshTokenCookie(httpResponse, response.refreshToken(), secureCookie);
+
+        return ResponseEntity.ok(response.withoutRefreshToken());
     }
 
     @Operation(
@@ -133,7 +173,8 @@ public class AuthController {
     public ResponseEntity<AuthResponse> linkTelegram(
         @AuthenticationPrincipal UserPrincipal principal,
         @Valid @RequestBody TelegramAuthRequest request,
-        HttpServletRequest httpRequest
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
     ) {
         // Проверяем что пользователь аутентифицирован (JWT передаётся через Gateway)
         if (principal == null) {
@@ -146,7 +187,11 @@ public class AuthController {
         AuthResponse response = telegramAuthService.linkTelegram(
             principal.userId(), request, userAgent, ipAddress
         );
-        return ResponseEntity.ok(response);
+
+        // Устанавливаем refresh token в httpOnly cookie
+        CookieUtils.setRefreshTokenCookie(httpResponse, response.refreshToken(), secureCookie);
+
+        return ResponseEntity.ok(response.withoutRefreshToken());
     }
 
     @Operation(
@@ -158,8 +203,24 @@ public class AuthController {
         @ApiResponse(responseCode = "401", description = "Невалидный refresh token")
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
-        authService.logoutAll(request.refreshToken());
+    public ResponseEntity<Void> logout(
+        @RequestBody(required = false) RefreshTokenRequest request,
+        HttpServletRequest httpRequest,
+        HttpServletResponse httpResponse
+    ) {
+        // Получаем refresh token из cookie или body (для обратной совместимости)
+        String refreshToken = CookieUtils.getRefreshTokenFromCookie(httpRequest)
+            .orElseGet(() -> request != null ? request.refreshToken() : null);
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        authService.logoutAll(refreshToken);
+
+        // Удаляем cookie
+        CookieUtils.clearRefreshTokenCookie(httpResponse, secureCookie);
+
         return ResponseEntity.noContent().build();
     }
 

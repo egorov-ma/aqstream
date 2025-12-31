@@ -54,13 +54,13 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings" className="flex items-center">
+          <Link href="/dashboard/settings?tab=profile" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
             Профиль
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings" className="flex items-center">
+          <Link href="/dashboard/settings?tab=organization" className="flex items-center">
             <Settings className="mr-2 h-4 w-4" />
             Настройки
           </Link>

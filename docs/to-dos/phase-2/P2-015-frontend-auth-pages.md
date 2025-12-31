@@ -261,6 +261,7 @@ export function TelegramLogin({ botName, onAuth }: TelegramLoginProps) {
 
 - ✅ Все страницы реализованы и функциональны
 - Telegram Login Widget требует HTTPS в production (в dev работает)
-- Токены хранятся в localStorage через Zustand persist
+- accessToken хранится в localStorage через Zustand persist
+- refreshToken передаётся через httpOnly cookie (защита от XSS)
 - Auto-refresh токена реализован в API client interceptor
 - Тесты: 29 unit/integration (Vitest) + 18 E2E (Playwright)

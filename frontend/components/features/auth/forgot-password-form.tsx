@@ -65,6 +65,15 @@ export function ForgotPasswordForm() {
         className="space-y-4"
         data-testid="forgot-password-form"
       >
+        {networkError && (
+          <div
+            className="rounded-md bg-destructive/15 p-3 text-sm text-destructive"
+            data-testid="network-error-message"
+          >
+            {networkError}
+          </div>
+        )}
+
         <FormField
           control={form.control}
           name="email"

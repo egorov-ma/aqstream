@@ -25,7 +25,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string | null; // null когда передаётся через httpOnly cookie
   user: User;
 }
 
@@ -320,5 +320,5 @@ export interface UnreadCountResponse {
 
 export interface SwitchOrganizationResponse {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string | null; // null когда передаётся через httpOnly cookie
 }

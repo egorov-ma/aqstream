@@ -28,4 +28,14 @@ public record AuthResponse(
     public static AuthResponse bearer(String accessToken, String refreshToken, long expiresIn, UserDto user) {
         return new AuthResponse(accessToken, refreshToken, expiresIn, "Bearer", user);
     }
+
+    /**
+     * Возвращает копию ответа без refreshToken.
+     * Используется когда refreshToken передаётся через httpOnly cookie.
+     *
+     * @return AuthResponse с refreshToken = null
+     */
+    public AuthResponse withoutRefreshToken() {
+        return new AuthResponse(accessToken, null, expiresIn, tokenType, user);
+    }
 }

@@ -31,10 +31,10 @@ export const authApi = {
     return response.data;
   },
 
-  refresh: async (refreshToken: string): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/api/v1/auth/refresh', {
-      refreshToken,
-    });
+  // Refresh вызывается автоматически через interceptor в client.ts
+  // refreshToken передаётся через httpOnly cookie
+  refresh: async (): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/api/v1/auth/refresh', {});
     return response.data;
   },
 
