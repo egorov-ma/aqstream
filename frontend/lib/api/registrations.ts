@@ -9,6 +9,14 @@ export interface RegistrationFilters {
   size?: number;
 }
 
+export interface CreateRegistrationRequest {
+  ticketTypeId: string;
+  firstName: string;
+  lastName?: string;
+  email: string;
+  customFields?: Record<string, string>;
+}
+
 export const registrationsApi = {
   /**
    * Получить список регистраций события (для организаторов)
@@ -40,5 +48,23 @@ export const registrationsApi = {
   }): Promise<PageResponse<Registration>> => {
     const response = await apiClient.get('/registrations/my', { params });
     return response.data;
+  },
+
+  /**
+   * Создать регистрацию на событие
+   */
+  create: async (
+    eventId: string,
+    data: CreateRegistrationRequest
+  ): Promise<Registration> => {
+    const response = await apiClient.post(`/events/${eventId}/registrations`, data);
+    return response.data;
+  },
+
+  /**
+   * Отменить регистрацию
+   */
+  cancel: async (registrationId: string): Promise<void> => {
+    await apiClient.delete(`/registrations/${registrationId}`);
   },
 };

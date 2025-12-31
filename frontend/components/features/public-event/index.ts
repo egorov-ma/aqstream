@@ -1,3 +1,4 @@
+export { AddToCalendarButton } from './add-to-calendar';
 export { EventHero } from './event-hero';
 export { EventInfo } from './event-info';
 export { EventStateMessage } from './event-state-message';

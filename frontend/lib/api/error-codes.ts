@@ -68,3 +68,29 @@ export const TICKET_TYPE_ERROR_MESSAGES: Record<string, string> = {
 export function getTicketTypeErrorMessage(code: string, fallback: string): string {
   return TICKET_TYPE_ERROR_MESSAGES[code] || fallback;
 }
+
+// Коды ошибок API регистраций
+export const REGISTRATION_ERROR_CODES = {
+  REGISTRATION_ALREADY_EXISTS: 'registration_already_exists',
+  REGISTRATION_NOT_FOUND: 'registration_not_found',
+  TICKET_TYPE_SOLD_OUT: 'ticket_type_sold_out',
+  EVENT_REGISTRATION_CLOSED: 'event_registration_closed',
+  TICKET_TYPE_SALES_NOT_OPEN: 'ticket_type_sales_not_open',
+  REGISTRATION_NOT_CANCELLABLE: 'registration_not_cancellable',
+} as const;
+
+// Маппинг кодов ошибок регистраций на сообщения
+export const REGISTRATION_ERROR_MESSAGES: Record<string, string> = {
+  [REGISTRATION_ERROR_CODES.REGISTRATION_ALREADY_EXISTS]:
+    'Вы уже зарегистрированы на это событие',
+  [REGISTRATION_ERROR_CODES.REGISTRATION_NOT_FOUND]: 'Регистрация не найдена',
+  [REGISTRATION_ERROR_CODES.TICKET_TYPE_SOLD_OUT]: 'Билеты данного типа распроданы',
+  [REGISTRATION_ERROR_CODES.EVENT_REGISTRATION_CLOSED]: 'Регистрация на событие закрыта',
+  [REGISTRATION_ERROR_CODES.TICKET_TYPE_SALES_NOT_OPEN]: 'Продажи билетов ещё не открыты',
+  [REGISTRATION_ERROR_CODES.REGISTRATION_NOT_CANCELLABLE]: 'Эту регистрацию нельзя отменить',
+};
+
+// Получить сообщение об ошибке регистрации по коду
+export function getRegistrationErrorMessage(code: string, fallback: string): string {
+  return REGISTRATION_ERROR_MESSAGES[code] || fallback;
+}

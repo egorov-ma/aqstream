@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { AxiosError } from 'axios';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -32,12 +35,16 @@ import {
   type RegistrationFormData,
 } from '@/lib/validations/registration';
 import { useAuthStore } from '@/lib/store/auth-store';
-import type { Event, TicketType, CustomFieldConfig } from '@/lib/api/types';
+import { useCreateRegistration } from '@/lib/hooks/use-registrations';
+import { getRegistrationErrorMessage } from '@/lib/api/error-codes';
+import { ROUTES, getLoginUrl, getRegisterUrl } from '@/lib/routes';
+import type { Event, TicketType, CustomFieldConfig, Registration, ApiError } from '@/lib/api/types';
 
 interface RegistrationFormProps {
   event: Event;
   ticketTypes: TicketType[];
   disabled?: boolean;
+  onSuccess?: (registration: Registration) => void;
 }
 
 /**
@@ -88,8 +95,13 @@ export function RegistrationForm({
   event,
   ticketTypes,
   disabled = false,
+  onSuccess,
 }: RegistrationFormProps) {
   const { user } = useAuthStore();
+  const router = useRouter();
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const createRegistration = useCreateRegistration(event.id);
 
   // Получаем дефолтные значения с автозаполнением для авторизованных
   const defaultValues = getDefaultRegistrationValues(event.registrationFormConfig, {
@@ -113,6 +125,9 @@ export function RegistrationForm({
   }, [user, form]);
 
   const onSubmit = async (data: RegistrationFormData) => {
+    // Сбрасываем ошибку API
+    setApiError(null);
+
     // Валидируем custom fields
     const customFieldsConfig = event.registrationFormConfig?.customFields || [];
     if (customFieldsConfig.length > 0 && data.customFields) {
@@ -132,14 +147,65 @@ export function RegistrationForm({
       }
     }
 
-    // TODO: P2-019 — реализовать отправку регистрации
-    toast.info('Регистрация будет доступна скоро', {
-      description: 'Функционал регистрации находится в разработке.',
-    });
+    try {
+      const registration = await createRegistration.mutateAsync({
+        ticketTypeId: data.ticketTypeId,
+        firstName: data.firstName,
+        lastName: data.lastName || undefined,
+        email: data.email,
+        customFields: data.customFields as Record<string, string> | undefined,
+      });
+
+      // Вызываем callback или редиректим на success page
+      if (onSuccess) {
+        onSuccess(registration);
+      } else {
+        router.push(ROUTES.EVENT_SUCCESS(event.slug, registration.confirmationCode));
+      }
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.data) {
+        const apiErrorData = error.response.data as ApiError;
+        const message = getRegistrationErrorMessage(apiErrorData.code, apiErrorData.message);
+        setApiError(message);
+      } else {
+        setApiError('Произошла ошибка при регистрации. Попробуйте ещё раз.');
+      }
+    }
   };
 
   const customFields = event.registrationFormConfig?.customFields || [];
   const isFormDisabled = disabled || event.status === 'CANCELLED' || event.status === 'COMPLETED';
+
+  // Auth guard: показываем форму входа если пользователь не авторизован
+  if (!user) {
+    return (
+      <Card data-testid="registration-form-card">
+        <CardHeader>
+          <CardTitle>Регистрация</CardTitle>
+          <CardDescription>
+            Для регистрации на событие необходимо войти в аккаунт
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Войдите в свой аккаунт или зарегистрируйтесь, чтобы записаться на это событие.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button asChild>
+              <Link href={getLoginUrl(ROUTES.EVENT(event.slug))}>
+                Войти
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={getRegisterUrl(ROUTES.EVENT(event.slug))}>
+                Зарегистрироваться
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card data-testid="registration-form-card">
@@ -152,6 +218,13 @@ export function RegistrationForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="registration-form">
+            {/* Ошибка API */}
+            {apiError && (
+              <Alert variant="destructive" data-testid="api-error-message">
+                <AlertDescription>{apiError}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Выбор типа билета */}
             <FormField
               control={form.control}
@@ -271,10 +344,10 @@ export function RegistrationForm({
             <Button
               type="submit"
               className="w-full"
-              disabled={isFormDisabled || form.formState.isSubmitting}
+              disabled={isFormDisabled || createRegistration.isPending}
               data-testid="registration-submit"
             >
-              {form.formState.isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
+              {createRegistration.isPending ? 'Регистрация...' : 'Зарегистрироваться'}
             </Button>
           </form>
         </Form>
