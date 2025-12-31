@@ -49,8 +49,12 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
 
-    // 401 — попытка refresh token
-    if (error.response?.status === 401 && originalRequest) {
+    // Auth endpoints не должны триггерить refresh token логику
+    // (они специально возвращают 401 для неверных credentials)
+    const isAuthEndpoint = originalRequest?.url?.includes('/api/v1/auth/');
+
+    // 401 — попытка refresh token (только для НЕ-auth endpoints)
+    if (error.response?.status === 401 && originalRequest && !isAuthEndpoint) {
       const authStore = useAuthStore.getState();
 
       // Если уже идёт refresh — ставим запрос в очередь

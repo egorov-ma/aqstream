@@ -534,6 +534,7 @@ jobs:
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_APP_URL=${{ vars.FRONTEND_URL }}
             NEXT_PUBLIC_TELEGRAM_BOT_NAME=${{ vars.TELEGRAM_BOT_USERNAME }}
+            GITHUB_SHA=${{ github.sha }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
           tags: |
