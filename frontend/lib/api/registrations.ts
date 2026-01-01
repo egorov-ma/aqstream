@@ -25,7 +25,7 @@ export const registrationsApi = {
     eventId: string,
     filters?: RegistrationFilters
   ): Promise<PageResponse<Registration>> => {
-    const response = await apiClient.get(`/events/${eventId}/registrations`, {
+    const response = await apiClient.get(`/api/v1/events/${eventId}/registrations`, {
       params: filters,
     });
     return response.data;
@@ -35,7 +35,7 @@ export const registrationsApi = {
    * Получить регистрацию по ID
    */
   getById: async (registrationId: string): Promise<Registration> => {
-    const response = await apiClient.get(`/registrations/${registrationId}`);
+    const response = await apiClient.get(`/api/v1/registrations/${registrationId}`);
     return response.data;
   },
 
@@ -46,7 +46,7 @@ export const registrationsApi = {
     page?: number;
     size?: number;
   }): Promise<PageResponse<Registration>> => {
-    const response = await apiClient.get('/registrations/my', { params });
+    const response = await apiClient.get('/api/v1/registrations/my', { params });
     return response.data;
   },
 
@@ -57,7 +57,7 @@ export const registrationsApi = {
     eventId: string,
     data: CreateRegistrationRequest
   ): Promise<Registration> => {
-    const response = await apiClient.post(`/events/${eventId}/registrations`, data);
+    const response = await apiClient.post(`/api/v1/events/${eventId}/registrations`, data);
     return response.data;
   },
 
@@ -65,13 +65,13 @@ export const registrationsApi = {
    * Отменить регистрацию
    */
   cancel: async (registrationId: string): Promise<void> => {
-    await apiClient.delete(`/registrations/${registrationId}`);
+    await apiClient.delete(`/api/v1/registrations/${registrationId}`);
   },
 
   /**
    * Повторно отправить билет в Telegram
    */
   resendTicket: async (registrationId: string): Promise<void> => {
-    await apiClient.post(`/registrations/${registrationId}/resend-ticket`);
+    await apiClient.post(`/api/v1/registrations/${registrationId}/resend-ticket`);
   },
 };
