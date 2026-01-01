@@ -1,55 +1,60 @@
 import { apiClient } from './client';
 import type { UploadResponse } from './types';
 
-// API клиент для работы с медиафайлами
+export type MediaPurpose = 'USER_AVATAR' | 'EVENT_COVER' | 'ORGANIZATION_LOGO' | 'GENERAL';
 
 export const mediaApi = {
   /**
-   * Загрузить изображение
-   * @param file - файл для загрузки
-   * @returns URL загруженного файла и метаданные
+   * Загрузить файл.
    */
-  upload: async (file: File): Promise<UploadResponse> => {
+  upload: async (file: File, purpose: MediaPurpose = 'GENERAL'): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('purpose', purpose);
 
-    const response = await apiClient.post<UploadResponse>(
-      '/api/v1/media/upload',
-      formData
-    );
-    return response.data;
-  },
-
-  /**
-   * Загрузить изображение обложки события
-   * @param eventId - ID события (опционально, для привязки к событию)
-   * @param file - файл изображения
-   */
-  uploadEventCover: async (
-    file: File,
-    eventId?: string
-  ): Promise<UploadResponse> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (eventId) {
-      formData.append('entityType', 'event');
-      formData.append('entityId', eventId);
-    }
-
-    const response = await apiClient.post<UploadResponse>(
-      '/api/v1/media/upload',
-      formData
-    );
-    return response.data;
-  },
-
-  /**
-   * Удалить файл по URL
-   * @param url - URL файла для удаления
-   */
-  delete: async (url: string): Promise<void> => {
-    await apiClient.delete('/api/v1/media', {
-      params: { url },
+    const response = await apiClient.post<UploadResponse>('/api/v1/media', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
+    return response.data;
+  },
+
+  /**
+   * Загрузить аватар пользователя.
+   */
+  uploadAvatar: async (file: File): Promise<UploadResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.post<UploadResponse>('/api/v1/media/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * Загрузить обложку события.
+   */
+  uploadEventCover: async (file: File): Promise<UploadResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('purpose', 'EVENT_COVER');
+
+    const response = await apiClient.post<UploadResponse>('/api/v1/media', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * Удалить файл.
+   */
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/media/${id}`);
   },
 };

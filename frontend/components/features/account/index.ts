@@ -7,3 +7,4 @@ export { TelegramLink } from './telegram-link';
 export { NotificationSettingsForm } from './notification-settings';
 export { OrganizationList } from './organization-list';
 export { GroupList } from './group-list';
+export { AvatarUpload } from './avatar-upload';

@@ -5,6 +5,7 @@ import { User, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileForm } from '@/components/features/account/profile-form';
 import { ChangePasswordForm } from '@/components/features/account/change-password-form';
+import { AvatarUpload } from '@/components/features/account/avatar-upload';
 
 import { useAuthStore } from '@/lib/store/auth-store';
 
@@ -31,20 +32,24 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold">Профиль</h1>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Личные данные
-            </CardTitle>
-            <CardDescription>
-              Управляйте вашей контактной информацией
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProfileForm user={user} />
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-6">
+          <AvatarUpload />
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Личные данные
+              </CardTitle>
+              <CardDescription>
+                Управляйте вашей контактной информацией
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileForm user={user} />
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
