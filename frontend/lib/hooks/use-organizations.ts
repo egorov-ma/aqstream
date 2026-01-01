@@ -31,37 +31,53 @@ export function useOrganization(id: string) {
 }
 
 /**
+ * Получить членство текущего пользователя в организации (включая роль).
+ */
+export function useMyMembership(organizationId: string | undefined) {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: ['organizations', organizationId, 'membership', 'me'],
+    queryFn: () => organizationsApi.getMyMembership(organizationId!),
+    enabled: isAuthenticated && !!organizationId,
+  });
+}
+
+/**
  * Переключиться на другую организацию.
- * Обновляет токены и перезагружает данные.
+ * Обновляет токены, загружает роль и перезагружает данные.
  */
 export function useSwitchOrganization() {
   const queryClient = useQueryClient();
   const { setAccessToken } = useAuthStore();
-  const { setCurrentOrganization } = useOrganizationStore();
+  const { setOrganizationWithRole } = useOrganizationStore();
 
   return useMutation({
-    mutationFn: organizationsApi.switch,
-    onSuccess: (response, organizationId) => {
-      // Обновляем access token (refreshToken в httpOnly cookie обновляется автоматически)
-      setAccessToken(response.accessToken);
+    mutationFn: async (organizationId: string) => {
+      // 1. Переключаем организацию (получаем новый токен)
+      const switchResponse = await organizationsApi.switch(organizationId);
+      // 2. Загружаем членство (включая роль)
+      const membership = await organizationsApi.getMyMembership(organizationId);
+      return { switchResponse, membership, organizationId };
+    },
+    onSuccess: ({ switchResponse, membership, organizationId }) => {
+      // Обновляем access token
+      setAccessToken(switchResponse.accessToken);
 
-      // Обновляем текущую организацию в store
-      // (нужно получить организацию из кэша или сделать запрос)
+      // Обновляем текущую организацию и роль в store
       const organizations = queryClient.getQueryData<
         Awaited<ReturnType<typeof organizationsApi.list>>
       >(['organizations']);
 
       const org = organizations?.find((o) => o.id === organizationId);
       if (org) {
-        setCurrentOrganization(org);
+        setOrganizationWithRole(org, membership.role);
       }
 
-      // Инвалидируем все tenant-specific запросы чтобы перезагрузить данные
-      // Исключаем organizations — они не зависят от текущего tenant
+      // Инвалидируем все tenant-specific запросы
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
-          // Список ключей, которые НЕ зависят от tenant
           const tenantIndependentKeys = ['organizations', 'user'];
           return !tenantIndependentKeys.includes(key as string);
         },

@@ -11,7 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useOrganizations, useSwitchOrganization } from '@/lib/hooks/use-organizations';
+import {
+  useOrganizations,
+  useSwitchOrganization,
+  useMyMembership,
+} from '@/lib/hooks/use-organizations';
 import { useOrganizationStore } from '@/lib/store/organization-store';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -19,7 +23,19 @@ import { cn } from '@/lib/utils';
 export function OrganizationSwitcher() {
   const { data: organizations, isLoading } = useOrganizations();
   const switchOrganization = useSwitchOrganization();
-  const { currentOrganization } = useOrganizationStore();
+  const { currentOrganization, currentRole, setCurrentRole } = useOrganizationStore();
+
+  // Загружаем роль для текущей организации (если роль не загружена)
+  const { data: membership } = useMyMembership(
+    currentOrganization && !currentRole ? currentOrganization.id : undefined
+  );
+
+  // Синхронизируем роль из membership в store
+  useEffect(() => {
+    if (membership && !currentRole) {
+      setCurrentRole(membership.role);
+    }
+  }, [membership, currentRole, setCurrentRole]);
 
   // Автоматически переключаем на первую организацию при входе
   // Это обновляет JWT токен с правильным tenantId

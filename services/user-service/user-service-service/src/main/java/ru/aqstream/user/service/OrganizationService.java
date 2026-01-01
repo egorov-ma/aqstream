@@ -294,6 +294,20 @@ public class OrganizationService {
     }
 
     /**
+     * Возвращает членство текущего пользователя в организации.
+     * Используется для определения роли пользователя (OWNER/MODERATOR) на фронтенде.
+     *
+     * @param organizationId идентификатор организации
+     * @param userId         идентификатор пользователя
+     * @return членство пользователя
+     */
+    @Transactional(readOnly = true)
+    public OrganizationMemberDto getMyMembership(UUID organizationId, UUID userId) {
+        OrganizationMember member = checkMembership(organizationId, userId);
+        return memberMapper.toDto(member);
+    }
+
+    /**
      * Изменяет роль члена организации.
      * Только OWNER может изменять роли.
      *

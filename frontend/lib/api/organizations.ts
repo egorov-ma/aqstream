@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Organization, SwitchOrganizationResponse } from './types';
+import type { Organization, OrganizationMember, SwitchOrganizationResponse } from './types';
 
 export const organizationsApi = {
   /**
@@ -15,6 +15,16 @@ export const organizationsApi = {
    */
   getById: async (id: string): Promise<Organization> => {
     const response = await apiClient.get<Organization>(`/api/v1/organizations/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Получить своё членство в организации (включая роль).
+   */
+  getMyMembership: async (organizationId: string): Promise<OrganizationMember> => {
+    const response = await apiClient.get<OrganizationMember>(
+      `/api/v1/organizations/${organizationId}/members/me`
+    );
     return response.data;
   },
 

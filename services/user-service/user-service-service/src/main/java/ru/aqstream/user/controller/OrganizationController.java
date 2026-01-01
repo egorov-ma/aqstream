@@ -214,6 +214,27 @@ public class OrganizationController {
     }
 
     @Operation(
+        summary = "Получить своё членство в организации",
+        description = "Возвращает членство текущего пользователя, включая роль (OWNER/MODERATOR). "
+            + "Используется для определения прав доступа на фронтенде."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Членство найдено"),
+        @ApiResponse(responseCode = "401", description = "Не авторизован"),
+        @ApiResponse(responseCode = "403", description = "Не член организации"),
+        @ApiResponse(responseCode = "404", description = "Организация не найдена")
+    })
+    @GetMapping("/{id}/members/me")
+    public ResponseEntity<OrganizationMemberDto> getMyMembership(
+        @AuthenticationPrincipal UserPrincipal principal,
+        @PathVariable UUID id
+    ) {
+        requireAuthenticated(principal);
+        OrganizationMemberDto membership = organizationService.getMyMembership(id, principal.userId());
+        return ResponseEntity.ok(membership);
+    }
+
+    @Operation(
         summary = "Изменить роль члена организации",
         description = "Изменяет роль члена организации. Доступно только OWNER."
     )

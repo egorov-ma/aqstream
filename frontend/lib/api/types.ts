@@ -102,6 +102,23 @@ export interface Organization {
   createdAt: string;
 }
 
+// Organization Role & Membership
+
+export type OrganizationRole = 'OWNER' | 'MODERATOR';
+
+export interface OrganizationMember {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userAvatarUrl: string | null;
+  role: OrganizationRole;
+  invitedById: string | null;
+  invitedByName: string | null;
+  joinedAt: string;
+  createdAt: string;
+}
+
 // Group
 
 export interface Group {
