@@ -97,6 +97,9 @@ public class Event extends SoftDeletableEntity {
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
+    @Column(name = "cover_image_url", columnDefinition = "TEXT")
+    private String coverImageUrl;
+
     // === Форма регистрации ===
 
     /**

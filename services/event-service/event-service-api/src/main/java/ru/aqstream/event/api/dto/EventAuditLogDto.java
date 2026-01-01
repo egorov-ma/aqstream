@@ -36,5 +36,5 @@ public record EventAuditLogDto(
     public record FieldChange(
         String from,
         String to
-    ) {}
+    ) { }
 }

@@ -91,7 +91,7 @@ cd ~/aqstream
 ### Шаг 7. Проверка инфраструктуры
 
 ```bash
-make infra-up
+make local-up
 make health
 ```
 
@@ -279,10 +279,12 @@ GitHub → Settings → Secrets and variables → Actions → New repository sec
 
 | Команда | Описание |
 | --------- | ---------- |
-| `make infra-up` | Запустить инфраструктуру |
-| `make infra-down` | Остановить инфраструктуру |
+| `make local-up` | Запустить инфраструктуру |
+| `make local-down` | Остановить инфраструктуру |
+| `make docker-up` | Запустить полный стек в Docker |
+| `make docker-down` | Остановить стек |
 | `make health` | Проверить сервисы |
-| `make logs` | Логи контейнеров |
+| `make log-all` | Логи контейнеров |
 | `make db-backup` | Бэкап всех баз данных |
 | `make db-restore BACKUP_DATE=...` | Восстановление из бэкапа |
 | `docker ps` | Статус контейнеров |
@@ -309,7 +311,7 @@ source ~/.bashrc
 
 ```bash
 sudo lsof -i :5432
-make down
+make docker-down
 ```
 
 ---

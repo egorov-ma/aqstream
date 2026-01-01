@@ -72,7 +72,7 @@ graph TB
 ```bash
 git clone https://github.com/egorov-ma/aqstream.git && cd aqstream
 cp .env.example .env
-make infra-up     # Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)
+make local-up     # Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)
 ```
 
 | URL | Описание |
@@ -115,11 +115,12 @@ make infra-up     # Запустить инфраструктуру (PostgreSQL,
 
 ```bash
 make help           # Все доступные команды
-make infra-up       # Запустить инфраструктуру
-make infra-down     # Остановить инфраструктуру
-make health         # Проверить доступность сервисов
+make local-up       # Запустить инфраструктуру
+make local-down     # Остановить инфраструктуру
+make run-all        # Запустить все backend сервисы
+make docker-up      # Полный стек в Docker
 make test           # Запустить тесты
-make lint           # Проверка кода
+make health         # Проверить доступность сервисов
 ```
 
 ## Документация

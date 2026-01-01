@@ -21,5 +21,6 @@
     <include file="db/changelog/changes/011-add-recurrence-rules.xml"/>
     <include file="db/changelog/changes/012-add-recurrence-to-events.xml"/>
     <include file="db/changelog/changes/013-add-registration-form-config.xml"/>
+    <include file="db/changelog/changes/014-add-cover-image-url.xml"/>
 
 </databaseChangeLog>

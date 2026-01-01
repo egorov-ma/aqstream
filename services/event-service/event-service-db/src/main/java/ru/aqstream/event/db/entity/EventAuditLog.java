@@ -63,7 +63,7 @@ public class EventAuditLog extends TenantAwareEntity {
     public record FieldChange(
         String from,
         String to
-    ) {}
+    ) { }
 
     // === Фабричные методы ===
 

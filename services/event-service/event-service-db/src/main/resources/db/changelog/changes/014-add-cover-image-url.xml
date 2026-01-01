@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="014-add-cover-image-url" author="aqstream">
+        <comment>Добавление поля cover_image_url для обложки события</comment>
+
+        <addColumn tableName="events" schemaName="event_service">
+            <column name="cover_image_url" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="events" schemaName="event_service" columnName="cover_image_url"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

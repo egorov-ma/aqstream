@@ -36,13 +36,13 @@ cd aqstream
 cp .env.example .env
 
 # Запустить инфраструктуру
-make infra-up
+make local-up
 
-# Запустить backend (в отдельном терминале)
-./gradlew bootRun
+# Запустить все backend сервисы (в одном терминале)
+make run-all
 
-# Запустить frontend (в отдельном терминале)
-cd frontend && pnpm dev
+# Или запустить frontend (в отдельном терминале)
+make run-frontend
 ```
 
 ### Порты
@@ -71,16 +71,18 @@ cd frontend && pnpm dev
 
 ```bash
 # Только инфраструктура (БД, Redis, RabbitMQ)
-make infra-up
+make local-up
 
 # Один backend сервис
-./gradlew :services:event-service:bootRun
+make run-event          # Event Service
+make run-user           # User Service
+make run-gateway        # API Gateway
 
-# Все backend сервисы
-./gradlew bootRun --parallel
+# Все backend сервисы (в правильном порядке)
+make run-all
 
 # Frontend
-cd frontend && pnpm dev
+make run-frontend
 ```
 
 ### Hot Reload
@@ -93,22 +95,22 @@ Frontend: Next.js Fast Refresh.
 
 ```bash
 # Запустить инфраструктуру
-make infra-up
+make local-up
 
 # Остановить инфраструктуру
-make infra-down
+make local-down
 
 # Посмотреть логи
-make infra-logs
+make log-infra
 
 # Статус контейнеров
-make infra-ps
+make local-status
 
 # Проверить health сервисов
 make health
 
 # Полный сброс (удаление данных)
-make infra-reset
+make local-reset
 ```
 
 ### Docker Compose файлы

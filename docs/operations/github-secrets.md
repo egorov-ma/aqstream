@@ -127,7 +127,7 @@ spring:
     password: aqstream  # Простой пароль для локальной разработки
 ```
 
-Инфраструктура (PostgreSQL, Redis, RabbitMQ) запускается через `make infra-up` с паролями по умолчанию.
+Инфраструктура (PostgreSQL, Redis, RabbitMQ) запускается через `make local-up` с паролями по умолчанию.
 
 ### Docker Desktop (локально)
 

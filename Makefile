@@ -1,34 +1,147 @@
-.PHONY: build test clean help build-docker up down logs infra-up infra-down infra-logs infra-ps infra-reset db-backup db-restore docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc backend-gateway backend-user backend-event backend-notification backend-media
+.PHONY: help build test clean check coverage \
+        local-up local-down local-status local-reset local-services-stop dev \
+        run-all run-gateway run-user run-event run-notification run-payment run-media run-analytics run-frontend \
+        docker-up docker-up-full docker-down docker-build docker-rebuild docker-status \
+        test-unit test-integration test-e2e test-frontend test-frontend-watch test-frontend-e2e \
+        log-all log-infra log-backend log-gateway log-user log-event log-notification log-payment log-media log-analytics log-frontend \
+        db-backup db-restore db-shell-shared db-shell-user db-shell-payment db-shell-analytics \
+        frontend-install frontend-build frontend-lint frontend-typecheck frontend-format \
+        docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc \
+        health
 
 # Цвета для вывода
 CYAN := \033[36m
 GREEN := \033[32m
 YELLOW := \033[33m
+RED := \033[31m
 RESET := \033[0m
+BOLD := \033[1m
+
+# Переменные
+BACKUP_DIR := ./backups
+BACKUP_DATE := $(shell date +%Y%m%d_%H%M%S)
+
+# Контейнеры инфраструктуры
+INFRA_CONTAINERS := postgres-shared postgres-user postgres-payment postgres-analytics redis rabbitmq minio minio-init
+
+# Backend сервисы
+BACKEND_SERVICES := gateway user-service event-service notification-service
+
+# ============================================
+# HELP
+# ============================================
 
 help: ## Показать справку
-	@echo "$(CYAN)AqStream - доступные команды:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(BOLD)$(CYAN)AqStream Makefile$(RESET)"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Quick Start:$(RESET)"
+	@echo "  $(CYAN)dev$(RESET)                  Локальная разработка (инфраструктура + инструкции)"
+	@echo "  $(CYAN)docker-up$(RESET)            Полный стек в Docker"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Local Development:$(RESET)"
+	@echo "  $(CYAN)local-up$(RESET)             Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)"
+	@echo "  $(CYAN)local-down$(RESET)           Остановить инфраструктуру"
+	@echo "  $(CYAN)local-status$(RESET)         Статус контейнеров инфраструктуры"
+	@echo "  $(CYAN)local-reset$(RESET)          Сбросить инфраструктуру (удалить volumes)"
+	@echo "  $(CYAN)local-services-stop$(RESET)  Остановить Docker сервисы (оставить инфраструктуру)"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Run Services (local):$(RESET)"
+	@echo "  $(CYAN)run-all$(RESET)              Запустить все backend сервисы (в правильном порядке)"
+	@echo "  $(CYAN)run-gateway$(RESET)          API Gateway (порт 8080)"
+	@echo "  $(CYAN)run-user$(RESET)             User Service (порт 8081)"
+	@echo "  $(CYAN)run-event$(RESET)            Event Service (порт 8082)"
+	@echo "  $(CYAN)run-notification$(RESET)     Notification Service (порт 8084)"
+	@echo "  $(CYAN)run-payment$(RESET)          Payment Service (порт 8083)"
+	@echo "  $(CYAN)run-media$(RESET)            Media Service (порт 8085)"
+	@echo "  $(CYAN)run-analytics$(RESET)        Analytics Service (порт 8086)"
+	@echo "  $(CYAN)run-frontend$(RESET)         Frontend (порт 3000)"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Docker Stack:$(RESET)"
+	@echo "  $(CYAN)docker-up$(RESET)            Запустить основной стек"
+	@echo "  $(CYAN)docker-up-full$(RESET)       Запустить полный стек (все сервисы)"
+	@echo "  $(CYAN)docker-down$(RESET)          Остановить стек"
+	@echo "  $(CYAN)docker-build$(RESET)         Собрать Docker образы"
+	@echo "  $(CYAN)docker-rebuild$(RESET)       Пересобрать образы (no-cache)"
+	@echo "  $(CYAN)docker-status$(RESET)        Статус контейнеров"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Tests:$(RESET)"
+	@echo "  $(CYAN)test$(RESET)                 Все тесты (unit + integration + e2e)"
+	@echo "  $(CYAN)test-unit$(RESET)            Только unit тесты"
+	@echo "  $(CYAN)test-integration$(RESET)     Только integration тесты"
+	@echo "  $(CYAN)test-e2e$(RESET)             Только e2e тесты (backend)"
+	@echo "  $(CYAN)test-frontend$(RESET)        Frontend unit тесты"
+	@echo "  $(CYAN)test-frontend-watch$(RESET)  Frontend тесты в watch режиме"
+	@echo "  $(CYAN)test-frontend-e2e$(RESET)    Frontend e2e тесты (Playwright)"
+	@echo "  $(CYAN)coverage$(RESET)             Jacoco coverage report"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Logs:$(RESET)"
+	@echo "  $(CYAN)log-all$(RESET)              Все логи"
+	@echo "  $(CYAN)log-infra$(RESET)            Логи инфраструктуры"
+	@echo "  $(CYAN)log-backend$(RESET)          Логи backend сервисов"
+	@echo "  $(CYAN)log-gateway$(RESET)          Логи Gateway"
+	@echo "  $(CYAN)log-user$(RESET)             Логи User Service"
+	@echo "  $(CYAN)log-event$(RESET)            Логи Event Service"
+	@echo "  $(CYAN)log-notification$(RESET)     Логи Notification Service"
+	@echo "  $(CYAN)log-frontend$(RESET)         Логи Frontend"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Build:$(RESET)"
+	@echo "  $(CYAN)build$(RESET)                Собрать проект (Gradle)"
+	@echo "  $(CYAN)clean$(RESET)                Очистить build артефакты"
+	@echo "  $(CYAN)check$(RESET)                Checkstyle + тесты"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Frontend:$(RESET)"
+	@echo "  $(CYAN)frontend-install$(RESET)     Установить зависимости (pnpm install)"
+	@echo "  $(CYAN)frontend-build$(RESET)       Собрать frontend"
+	@echo "  $(CYAN)frontend-lint$(RESET)        ESLint"
+	@echo "  $(CYAN)frontend-typecheck$(RESET)   TypeScript проверка"
+	@echo "  $(CYAN)frontend-format$(RESET)      Prettier format"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Database:$(RESET)"
+	@echo "  $(CYAN)db-backup$(RESET)            Бэкап всех баз данных"
+	@echo "  $(CYAN)db-restore$(RESET)           Восстановление из бэкапа"
+	@echo "  $(CYAN)db-shell-shared$(RESET)      psql в shared_services_db"
+	@echo "  $(CYAN)db-shell-user$(RESET)        psql в user_service_db"
+	@echo "  $(CYAN)db-shell-payment$(RESET)     psql в payment_service_db"
+	@echo "  $(CYAN)db-shell-analytics$(RESET)   psql в analytics_service_db"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Documentation:$(RESET)"
+	@echo "  $(CYAN)docs-install$(RESET)         Установить Python зависимости"
+	@echo "  $(CYAN)docs-serve$(RESET)           Запустить MkDocs сервер"
+	@echo "  $(CYAN)docs-build$(RESET)           Собрать документацию"
+	@echo "  $(CYAN)docs-validate$(RESET)        Валидация документации"
+	@echo "  $(CYAN)docs-openapi$(RESET)         Скачать OpenAPI specs"
+	@echo "  $(CYAN)docs-redoc$(RESET)           Сгенерировать ReDoc"
+	@echo ""
+	@echo "$(BOLD)$(GREEN)Health:$(RESET)"
+	@echo "  $(CYAN)health$(RESET)               Проверить health всех сервисов"
+	@echo ""
 
-# === Gradle ===
+# ============================================
+# QUICK START
+# ============================================
 
-build: ## Собрать проект
-	./gradlew build
+dev: local-up ## Локальная разработка (инфраструктура + инструкции)
+	@echo ""
+	@echo "$(GREEN)Готово к разработке!$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Запуск сервисов:$(RESET)"
+	@echo "  make run-all           # Все backend сервисы"
+	@echo "  make run-frontend      # Frontend (порт 3000)"
+	@echo ""
+	@echo "$(YELLOW)Или по отдельности:$(RESET)"
+	@echo "  make run-gateway       # API Gateway (порт 8080)"
+	@echo "  make run-user          # User Service (порт 8081)"
+	@echo "  make run-event         # Event Service (порт 8082)"
+	@echo "  make run-notification  # Notification Service (порт 8084)"
 
-test: ## Запустить тесты
-	./gradlew test
+# ============================================
+# LOCAL DEVELOPMENT
+# ============================================
 
-clean: ## Очистить build артефакты
-	./gradlew clean
-
-check: ## Запустить все проверки (checkstyle, tests)
-	./gradlew check
-
-# === Docker Infrastructure ===
-
-infra-up: ## Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)
+local-up: ## Запустить инфраструктуру (PostgreSQL, Redis, RabbitMQ, MinIO)
 	@echo "$(CYAN)Запуск инфраструктуры...$(RESET)"
-	docker compose up -d postgres-shared postgres-user postgres-payment postgres-analytics redis rabbitmq minio minio-init
+	docker compose up -d $(INFRA_CONTAINERS)
 	@echo "$(GREEN)Инфраструктура запущена!$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Доступные сервисы:$(RESET)"
@@ -37,32 +150,203 @@ infra-up: ## Запустить инфраструктуру (PostgreSQL, Redis,
 	@echo "  PostgreSQL (payment):   localhost:5434"
 	@echo "  PostgreSQL (analytics): localhost:5435"
 	@echo "  Redis:                  localhost:6379"
-	@echo "  RabbitMQ:             localhost:5672"
-	@echo "  RabbitMQ UI:          http://localhost:15672 (guest/guest)"
-	@echo "  MinIO API:            http://localhost:9000"
-	@echo "  MinIO Console:        http://localhost:9001 (minioadmin/minioadmin)"
+	@echo "  RabbitMQ:               localhost:5672"
+	@echo "  RabbitMQ UI:            http://localhost:15672 (guest/guest)"
+	@echo "  MinIO API:              http://localhost:9000"
+	@echo "  MinIO Console:          http://localhost:9001 (minioadmin/minioadmin)"
 
-infra-down: ## Остановить инфраструктуру
+local-down: ## Остановить инфраструктуру
 	@echo "$(CYAN)Остановка инфраструктуры...$(RESET)"
 	docker compose down
 	@echo "$(GREEN)Инфраструктура остановлена$(RESET)"
 
-infra-logs: ## Показать логи инфраструктуры
-	docker compose logs -f postgres-shared postgres-user postgres-payment postgres-analytics redis rabbitmq minio
-
-infra-ps: ## Показать статус контейнеров
+local-status: ## Статус контейнеров инфраструктуры
 	docker compose ps
 
-infra-reset: ## Полный сброс инфраструктуры (удаление volumes)
+local-reset: ## Сбросить инфраструктуру (удалить volumes)
 	@echo "$(YELLOW)ВНИМАНИЕ: Это удалит все данные!$(RESET)"
 	@read -p "Продолжить? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
 	docker compose down -v
 	@echo "$(GREEN)Инфраструктура сброшена$(RESET)"
 
-# === Database Backup/Restore ===
+local-services-stop: ## Остановить Docker сервисы (оставить инфраструктуру)
+	@echo "$(CYAN)Остановка Docker сервисов...$(RESET)"
+	docker compose stop gateway user-service event-service notification-service payment-service media-service analytics-service frontend 2>/dev/null || true
+	@echo "$(GREEN)Сервисы остановлены. Инфраструктура работает.$(RESET)"
 
-BACKUP_DIR := ./backups
-BACKUP_DATE := $(shell date +%Y%m%d_%H%M%S)
+# ============================================
+# RUN SERVICES (LOCAL)
+# ============================================
+
+run-all: ## Запустить все backend сервисы (в правильном порядке)
+	@echo "$(CYAN)Запуск всех backend сервисов...$(RESET)"
+	@echo "$(YELLOW)Порядок: user-service -> event-service -> notification-service -> gateway$(RESET)"
+	@echo "$(YELLOW)Нажмите Ctrl+C для остановки всех сервисов$(RESET)"
+	@echo ""
+	@trap 'echo ""; echo "$(RED)Остановка сервисов...$(RESET)"; kill 0' EXIT; \
+	./gradlew :services:user-service:user-service-service:bootRun & \
+	sleep 15 && ./gradlew :services:event-service:event-service-service:bootRun & \
+	sleep 25 && ./gradlew :services:notification-service:notification-service-service:bootRun & \
+	sleep 35 && ./gradlew :services:gateway:bootRun & \
+	wait
+
+run-gateway: ## Запустить API Gateway (порт 8080)
+	./gradlew :services:gateway:bootRun
+
+run-user: ## Запустить User Service (порт 8081)
+	./gradlew :services:user-service:user-service-service:bootRun
+
+run-event: ## Запустить Event Service (порт 8082)
+	./gradlew :services:event-service:event-service-service:bootRun
+
+run-notification: ## Запустить Notification Service (порт 8084)
+	./gradlew :services:notification-service:notification-service-service:bootRun
+
+run-payment: ## Запустить Payment Service (порт 8083)
+	./gradlew :services:payment-service:payment-service-service:bootRun
+
+run-media: ## Запустить Media Service (порт 8085)
+	./gradlew :services:media-service:media-service-service:bootRun
+
+run-analytics: ## Запустить Analytics Service (порт 8086)
+	./gradlew :services:analytics-service:analytics-service-service:bootRun
+
+run-frontend: ## Запустить Frontend (порт 3000)
+	cd frontend && pnpm dev
+
+# ============================================
+# DOCKER STACK
+# ============================================
+
+docker-up: ## Запустить основной стек в Docker
+	@echo "$(CYAN)Запуск основного стека...$(RESET)"
+	docker compose up -d
+	@echo "$(GREEN)Стек запущен!$(RESET)"
+
+docker-up-full: ## Запустить полный стек (все сервисы включая stub)
+	@echo "$(CYAN)Запуск полного стека (с profile=full)...$(RESET)"
+	docker compose --profile full up -d
+	@echo "$(GREEN)Полный стек запущен!$(RESET)"
+
+docker-down: ## Остановить Docker стек
+	@echo "$(CYAN)Остановка стека...$(RESET)"
+	docker compose down
+	@echo "$(GREEN)Стек остановлен$(RESET)"
+
+docker-build: build ## Собрать Docker образы (сначала Gradle build)
+	@echo "$(CYAN)Сборка Docker образов...$(RESET)"
+	docker compose build
+	@echo "$(GREEN)Образы собраны$(RESET)"
+
+docker-rebuild: build ## Пересобрать Docker образы (no-cache)
+	@echo "$(CYAN)Пересборка Docker образов (no-cache)...$(RESET)"
+	docker compose build --no-cache
+	@echo "$(GREEN)Образы пересобраны$(RESET)"
+
+docker-status: ## Статус Docker контейнеров
+	docker compose ps
+
+# ============================================
+# TESTS
+# ============================================
+
+test: ## Запустить все тесты
+	./gradlew test
+
+test-unit: ## Запустить только unit тесты
+	./gradlew unit
+
+test-integration: ## Запустить только integration тесты
+	./gradlew integration
+
+test-e2e: ## Запустить только e2e тесты (backend)
+	./gradlew e2e
+
+test-frontend: ## Запустить frontend unit тесты
+	cd frontend && pnpm test
+
+test-frontend-watch: ## Запустить frontend тесты в watch режиме
+	cd frontend && pnpm test:watch
+
+test-frontend-e2e: ## Запустить frontend e2e тесты (Playwright)
+	cd frontend && pnpm test:e2e
+
+coverage: ## Jacoco coverage report
+	./gradlew jacocoTestReport
+	@echo "$(GREEN)Coverage report: build/reports/jacoco/test/html/index.html$(RESET)"
+
+# ============================================
+# LOGS
+# ============================================
+
+log-all: ## Показать все логи
+	docker compose logs -f
+
+log-infra: ## Показать логи инфраструктуры
+	docker compose logs -f $(INFRA_CONTAINERS)
+
+log-backend: ## Показать логи backend сервисов
+	docker compose logs -f $(BACKEND_SERVICES)
+
+log-gateway: ## Показать логи Gateway
+	docker compose logs -f gateway
+
+log-user: ## Показать логи User Service
+	docker compose logs -f user-service
+
+log-event: ## Показать логи Event Service
+	docker compose logs -f event-service
+
+log-notification: ## Показать логи Notification Service
+	docker compose logs -f notification-service
+
+log-payment: ## Показать логи Payment Service
+	docker compose logs -f payment-service
+
+log-media: ## Показать логи Media Service
+	docker compose logs -f media-service
+
+log-analytics: ## Показать логи Analytics Service
+	docker compose logs -f analytics-service
+
+log-frontend: ## Показать логи Frontend
+	docker compose logs -f frontend
+
+# ============================================
+# BUILD
+# ============================================
+
+build: ## Собрать проект (Gradle)
+	./gradlew build
+
+clean: ## Очистить build артефакты
+	./gradlew clean
+
+check: ## Запустить все проверки (checkstyle, tests)
+	./gradlew check
+
+# ============================================
+# FRONTEND
+# ============================================
+
+frontend-install: ## Установить зависимости frontend
+	cd frontend && pnpm install
+
+frontend-build: ## Собрать frontend
+	cd frontend && pnpm build
+
+frontend-lint: ## Проверить код frontend (ESLint)
+	cd frontend && pnpm lint
+
+frontend-typecheck: ## Проверить типы frontend (TypeScript)
+	cd frontend && pnpm typecheck
+
+frontend-format: ## Форматировать код frontend (Prettier)
+	cd frontend && pnpm format
+
+# ============================================
+# DATABASE
+# ============================================
 
 db-backup: ## Создать бэкап всех баз данных
 	@echo "$(CYAN)Создание бэкапа баз данных...$(RESET)"
@@ -85,84 +369,21 @@ db-restore: ## Восстановить базы из бэкапа (требуе
 	@docker compose exec -T postgres-analytics psql -U $${POSTGRES_USER:-aqstream} -d analytics_service_db < $(BACKUP_DIR)/analytics_service_db_$(BACKUP_DATE).sql
 	@echo "$(GREEN)Базы данных восстановлены$(RESET)"
 
-# === Docker Full Stack ===
+db-shell-shared: ## Открыть psql в shared_services_db
+	docker compose exec postgres-shared psql -U $${POSTGRES_USER:-aqstream} -d shared_services_db
 
-build-docker: build ## Собрать Docker образы (сначала Gradle build)
-	docker compose build
+db-shell-user: ## Открыть psql в user_service_db
+	docker compose exec postgres-user psql -U $${POSTGRES_USER:-aqstream} -d user_service_db
 
-up: ## Запустить весь стек (инфраструктура + сервисы)
-	docker compose up -d
+db-shell-payment: ## Открыть psql в payment_service_db
+	docker compose exec postgres-payment psql -U $${POSTGRES_USER:-aqstream} -d payment_service_db
 
-down: ## Остановить весь стек
-	docker compose down
+db-shell-analytics: ## Открыть psql в analytics_service_db
+	docker compose exec postgres-analytics psql -U $${POSTGRES_USER:-aqstream} -d analytics_service_db
 
-logs: ## Показать логи всех контейнеров
-	docker compose logs -f
-
-# === Frontend ===
-
-frontend-install: ## Установить зависимости frontend
-	cd frontend && pnpm install
-
-frontend-dev: ## Запустить frontend dev server
-	cd frontend && pnpm dev
-
-frontend-build: ## Собрать frontend
-	cd frontend && pnpm build
-
-frontend-lint: ## Проверить код frontend
-	cd frontend && pnpm lint
-
-frontend-typecheck: ## Проверить типы frontend
-	cd frontend && pnpm typecheck
-
-# === Backend Services ===
-
-backend-gateway: ## Запустить API Gateway
-	./gradlew :services:gateway:bootRun
-
-backend-user: ## Запустить User Service
-	./gradlew :services:user-service:bootRun
-
-backend-event: ## Запустить Event Service
-	./gradlew :services:event-service:bootRun
-
-backend-notification: ## Запустить Notification Service
-	./gradlew :services:notification-service:bootRun
-
-backend-media: ## Запустить Media Service
-	./gradlew :services:media-service:bootRun
-
-# === Development ===
-
-dev: infra-up ## Запустить локальное окружение для разработки
-	@echo ""
-	@echo "$(GREEN)Готово к разработке!$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Запуск сервисов (в отдельных терминалах):$(RESET)"
-	@echo "  make backend-gateway       # API Gateway (порт 8080)"
-	@echo "  make backend-user          # User Service (порт 8081)"
-	@echo "  make backend-event         # Event Service (порт 8082)"
-	@echo "  make backend-notification  # Notification Service (порт 8084)"
-	@echo "  make backend-media         # Media Service (порт 8085)"
-	@echo "  make frontend-dev          # Frontend (порт 3000)"
-
-stop: infra-down ## Остановить локальное окружение
-
-# === Health Checks ===
-
-health: ## Проверить health всех сервисов
-	@echo "$(CYAN)Проверка PostgreSQL...$(RESET)"
-	@docker compose exec -T postgres-shared pg_isready -U aqstream || echo "postgres-shared: недоступен"
-	@docker compose exec -T postgres-user pg_isready -U aqstream || echo "postgres-user: недоступен"
-	@docker compose exec -T postgres-payment pg_isready -U aqstream || echo "postgres-payment: недоступен"
-	@docker compose exec -T postgres-analytics pg_isready -U aqstream || echo "postgres-analytics: недоступен"
-	@echo "$(CYAN)Проверка Redis...$(RESET)"
-	@docker compose exec -T redis redis-cli -a $${REDIS_PASSWORD:-aqstream-redis-secret} ping 2>/dev/null || echo "redis: недоступен"
-	@echo "$(CYAN)Проверка RabbitMQ...$(RESET)"
-	@docker compose exec -T rabbitmq rabbitmq-diagnostics check_running || echo "rabbitmq: недоступен"
-
-# === Documentation ===
+# ============================================
+# DOCUMENTATION
+# ============================================
 
 docs-install: ## Установить Python зависимости для документации
 	@echo "$(CYAN)Установка зависимостей для документации...$(RESET)"
@@ -189,3 +410,18 @@ docs-openapi: ## Скачать OpenAPI спецификации из серви
 
 docs-redoc: ## Сгенерировать ReDoc HTML
 	./docs/_internal/generators/generate-redoc.sh
+
+# ============================================
+# HEALTH
+# ============================================
+
+health: ## Проверить health всех сервисов
+	@echo "$(CYAN)Проверка PostgreSQL...$(RESET)"
+	@docker compose exec -T postgres-shared pg_isready -U aqstream || echo "$(RED)postgres-shared: недоступен$(RESET)"
+	@docker compose exec -T postgres-user pg_isready -U aqstream || echo "$(RED)postgres-user: недоступен$(RESET)"
+	@docker compose exec -T postgres-payment pg_isready -U aqstream || echo "$(RED)postgres-payment: недоступен$(RESET)"
+	@docker compose exec -T postgres-analytics pg_isready -U aqstream || echo "$(RED)postgres-analytics: недоступен$(RESET)"
+	@echo "$(CYAN)Проверка Redis...$(RESET)"
+	@docker compose exec -T redis redis-cli -a $${REDIS_PASSWORD:-aqstream-redis-secret} ping 2>/dev/null || echo "$(RED)redis: недоступен$(RESET)"
+	@echo "$(CYAN)Проверка RabbitMQ...$(RESET)"
+	@docker compose exec -T rabbitmq rabbitmq-diagnostics check_running || echo "$(RED)rabbitmq: недоступен$(RESET)"

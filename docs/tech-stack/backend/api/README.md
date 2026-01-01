@@ -44,7 +44,7 @@ docs/tech-stack/backend/api/
 
 ```bash
 # Запустить сервисы
-make up
+make docker-up
 
 # Скачать спецификации
 ./docs/_internal/generators/generate-openapi.sh

@@ -29,4 +29,4 @@ public record PublicEventSummaryDto(
     String locationAddress,
     String coverImageUrl,
     String organizerName
-) {}
+) { }
