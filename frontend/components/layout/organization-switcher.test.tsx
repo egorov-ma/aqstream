@@ -174,11 +174,12 @@ describe('OrganizationSwitcher', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('sets first organization as default when none selected', () => {
+  it('switches to first organization when none selected', () => {
     mockCurrentOrganization = null;
     renderWithProviders(<OrganizationSwitcher />);
 
-    // useEffect должен вызвать setCurrentOrganization с первой организацией
-    expect(mockSetCurrentOrganization).toHaveBeenCalledWith(mockOrganizations[0]);
+    // useEffect должен вызвать switchOrganization.mutate с ID первой организации
+    // Это обновит JWT токен с правильным tenantId
+    expect(mockMutate).toHaveBeenCalledWith(mockOrganizations[0].id);
   });
 });

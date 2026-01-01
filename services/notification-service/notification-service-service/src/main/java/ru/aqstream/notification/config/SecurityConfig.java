@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import ru.aqstream.common.api.ErrorResponse;
 import ru.aqstream.common.security.JwtAuthenticationFilter;
 import ru.aqstream.common.security.JwtTokenProvider;
+import ru.aqstream.common.web.TenantContextFilter;
 
 /**
  * Конфигурация безопасности для Notification Service.
@@ -34,6 +35,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
+    private final TenantContextFilter tenantContextFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -68,6 +70,9 @@ public class SecurityConfig {
                 new JwtAuthenticationFilter(jwtTokenProvider),
                 UsernamePasswordAuthenticationFilter.class
             )
+
+            // TenantContext фильтр — устанавливает tenant из JWT после аутентификации
+            .addFilterAfter(tenantContextFilter, JwtAuthenticationFilter.class)
 
             .build();
     }

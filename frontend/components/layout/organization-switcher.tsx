@@ -19,14 +19,20 @@ import { cn } from '@/lib/utils';
 export function OrganizationSwitcher() {
   const { data: organizations, isLoading } = useOrganizations();
   const switchOrganization = useSwitchOrganization();
-  const { currentOrganization, setCurrentOrganization } = useOrganizationStore();
+  const { currentOrganization } = useOrganizationStore();
 
-  // Устанавливаем первую организацию по умолчанию
+  // Автоматически переключаем на первую организацию при входе
+  // Это обновляет JWT токен с правильным tenantId
   useEffect(() => {
-    if (organizations && organizations.length > 0 && !currentOrganization) {
-      setCurrentOrganization(organizations[0]);
+    if (
+      organizations &&
+      organizations.length > 0 &&
+      !currentOrganization &&
+      !switchOrganization.isPending
+    ) {
+      switchOrganization.mutate(organizations[0].id);
     }
-  }, [organizations, currentOrganization, setCurrentOrganization]);
+  }, [organizations, currentOrganization, switchOrganization]);
 
   // Не показываем если только одна организация или загрузка
   if (isLoading) {
