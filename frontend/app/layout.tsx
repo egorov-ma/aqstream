@@ -11,6 +11,13 @@ const inter = Inter({ subsets: ['latin', 'cyrillic'] });
 export const metadata: Metadata = {
   title: 'AqStream - Платформа для управления мероприятиями',
   description: 'Создавайте события, управляйте регистрациями, анализируйте результаты',
+  manifest: '/manifest.json',
+  themeColor: '#000000',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'AqStream Check-in',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
