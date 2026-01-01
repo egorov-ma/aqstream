@@ -19,6 +19,7 @@ import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.dto.RegistrationStatus;
 import ru.aqstream.event.api.event.RegistrationCancelledEvent;
 import ru.aqstream.event.api.event.RegistrationCreatedEvent;
+import ru.aqstream.event.api.event.TicketResendRequestedEvent;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.api.exception.EventRegistrationClosedException;
 import ru.aqstream.event.api.exception.PrivateEventAccessDeniedException;
@@ -206,6 +207,40 @@ public class RegistrationService {
         }
 
         cancelRegistrationInternal(registration, null, false);
+    }
+
+    /**
+     * Запрашивает повторную отправку билета в Telegram.
+     *
+     * @param registrationId идентификатор регистрации
+     * @param principal      авторизованный пользователь
+     * @throws RegistrationNotFoundException     если регистрация не найдена
+     * @throws RegistrationAccessDeniedException если нет доступа
+     */
+    @Transactional
+    public void resendTicket(UUID registrationId, UserPrincipal principal) {
+        UUID userId = principal.userId();
+        UUID tenantId = TenantContext.getTenantId();
+        log.info("Запрос повторной отправки билета: registrationId={}, userId={}", registrationId, userId);
+
+        Registration registration = registrationRepository.findByIdAndTenantId(registrationId, tenantId)
+            .orElseThrow(() -> new RegistrationNotFoundException(registrationId, tenantId));
+
+        // Проверяем, что это регистрация текущего пользователя
+        if (!registration.getUserId().equals(userId)) {
+            throw new RegistrationAccessDeniedException(registrationId, userId);
+        }
+
+        // Проверяем, что регистрация активна (CONFIRMED или CHECKED_IN)
+        RegistrationStatus status = registration.getStatus();
+        if (status != RegistrationStatus.CONFIRMED && status != RegistrationStatus.CHECKED_IN) {
+            throw new RegistrationNotCancellableException(registrationId, status);
+        }
+
+        // Публикуем событие для отправки билета
+        publishTicketResendRequestedEvent(registration);
+
+        log.info("Запрос на повторную отправку билета отправлен: registrationId={}", registrationId);
     }
 
     /**
@@ -491,6 +526,29 @@ public class RegistrationService {
             registration.getEmail(),
             registration.getCancellationReason(),
             byOrganizer
+        ));
+    }
+
+    /**
+     * Публикует событие запроса повторной отправки билета.
+     */
+    private void publishTicketResendRequestedEvent(Registration registration) {
+        Event event = registration.getEvent();
+        TicketType ticketType = registration.getTicketType();
+
+        eventPublisher.publish(new TicketResendRequestedEvent(
+            registration.getId(),
+            event.getId(),
+            registration.getTenantId(),
+            registration.getUserId(),
+            event.getTitle(),
+            event.getSlug(),
+            event.getStartsAt(),
+            ticketType.getName(),
+            registration.getConfirmationCode(),
+            registration.getFirstName(),
+            registration.getLastName(),
+            registration.getEmail()
         ));
     }
 }

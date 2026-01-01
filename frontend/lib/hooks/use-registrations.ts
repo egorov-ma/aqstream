@@ -110,3 +110,18 @@ export function useCancelRegistration() {
     },
   });
 }
+
+/**
+ * Повторно отправить билет в Telegram
+ */
+export function useResendTicket() {
+  return useMutation({
+    mutationFn: (registrationId: string) => registrationsApi.resendTicket(registrationId),
+    onSuccess: () => {
+      toast.success('Билет отправлен в Telegram');
+    },
+    onError: () => {
+      toast.error('Ошибка при отправке билета');
+    },
+  });
+}

@@ -130,6 +130,28 @@ public class RegistrationController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+        summary = "Повторно отправить билет",
+        description = "Запрашивает повторную отправку билета в Telegram."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Запрос на отправку билета принят"),
+        @ApiResponse(responseCode = "401", description = "Не авторизован"),
+        @ApiResponse(responseCode = "403", description = "Нет доступа"),
+        @ApiResponse(responseCode = "404", description = "Регистрация не найдена"),
+        @ApiResponse(responseCode = "409", description = "Билет не может быть отправлен для данного статуса")
+    })
+    @PostMapping("/registrations/{id}/resend-ticket")
+    public ResponseEntity<Void> resendTicket(
+        @Parameter(description = "ID регистрации")
+        @PathVariable UUID id,
+        @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        requireAuthenticated(principal);
+        registrationService.resendTicket(id, principal);
+        return ResponseEntity.noContent().build();
+    }
+
     // ==================== Для организаторов ====================
 
     @Operation(

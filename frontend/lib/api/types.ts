@@ -251,7 +251,7 @@ export interface UpdateTicketTypeRequest extends Partial<CreateTicketTypeRequest
 
 // Registration
 
-export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'RESERVED' | 'PENDING' | 'EXPIRED';
+export type RegistrationStatus = 'CONFIRMED' | 'CANCELLED' | 'RESERVED' | 'PENDING' | 'EXPIRED' | 'CHECKED_IN';
 
 export interface Registration {
   id: string;

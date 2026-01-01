@@ -8,6 +8,7 @@ export function getStatusBadgeVariant(
 ): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
     case 'CONFIRMED':
+    case 'CHECKED_IN':
       return 'default';
     case 'CANCELLED':
       return 'destructive';
@@ -28,6 +29,8 @@ export function getStatusLabel(status: RegistrationStatus): string {
   switch (status) {
     case 'CONFIRMED':
       return 'Подтверждена';
+    case 'CHECKED_IN':
+      return 'Отмечена';
     case 'CANCELLED':
       return 'Отменена';
     case 'RESERVED':

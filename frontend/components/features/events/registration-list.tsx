@@ -49,6 +49,7 @@ function formatDate(isoString: string): string {
 function RegistrationStatusBadge({ status }: { status: RegistrationStatus }) {
   const variants: Record<RegistrationStatus, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
     CONFIRMED: { variant: 'default', label: 'Подтверждено' },
+    CHECKED_IN: { variant: 'default', label: 'Отмечено' },
     CANCELLED: { variant: 'destructive', label: 'Отменено' },
     PENDING: { variant: 'secondary', label: 'Ожидает' },
     RESERVED: { variant: 'outline', label: 'Резерв' },

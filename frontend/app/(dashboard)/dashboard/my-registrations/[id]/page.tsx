@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TicketDetail } from '@/components/features/account/ticket-detail';
 
-import { useRegistration, useCancelRegistration } from '@/lib/hooks/use-registrations';
+import { useRegistration, useCancelRegistration, useResendTicket } from '@/lib/hooks/use-registrations';
 
 export default function TicketDetailPage() {
   const params = useParams();
@@ -18,6 +18,7 @@ export default function TicketDetailPage() {
 
   const { data: registration, isLoading, error } = useRegistration(registrationId);
   const cancelMutation = useCancelRegistration();
+  const resendMutation = useResendTicket();
 
   if (isLoading) {
     return (
@@ -82,6 +83,8 @@ export default function TicketDetailPage() {
         router.push('/dashboard/my-registrations');
       }}
       isCancelling={cancelMutation.isPending}
+      onResendTicket={(id) => resendMutation.mutate(id)}
+      isResending={resendMutation.isPending}
     />
   );
 }

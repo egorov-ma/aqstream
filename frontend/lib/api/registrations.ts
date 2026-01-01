@@ -67,4 +67,11 @@ export const registrationsApi = {
   cancel: async (registrationId: string): Promise<void> => {
     await apiClient.delete(`/registrations/${registrationId}`);
   },
+
+  /**
+   * Повторно отправить билет в Telegram
+   */
+  resendTicket: async (registrationId: string): Promise<void> => {
+    await apiClient.post(`/registrations/${registrationId}/resend-ticket`);
+  },
 };

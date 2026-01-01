@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, Calendar, Copy, ExternalLink, Share2, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Copy, ExternalLink, Send, Share2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -35,15 +35,25 @@ interface TicketDetailProps {
   registration: Registration;
   onCancel: (id: string) => void;
   isCancelling: boolean;
+  onResendTicket: (id: string) => void;
+  isResending: boolean;
 }
 
 /**
  * Детальная страница билета.
  * Показывает крупный QR-код, информацию о регистрации и действия.
  */
-export function TicketDetail({ registration, onCancel, isCancelling }: TicketDetailProps) {
+export function TicketDetail({
+  registration,
+  onCancel,
+  isCancelling,
+  onResendTicket,
+  isResending,
+}: TicketDetailProps) {
   const router = useRouter();
   const canCancel = canCancelRegistration(registration.status);
+  // Можно отправить билет только для активных регистраций
+  const canResend = registration.status === 'CONFIRMED' || registration.status === 'CHECKED_IN';
 
   // Копировать код подтверждения
   const handleCopyCode = async () => {
@@ -189,6 +199,18 @@ export function TicketDetail({ registration, onCancel, isCancelling }: TicketDet
 
             {/* Действия */}
             <div className="space-y-2">
+              {canResend && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => onResendTicket(registration.id)}
+                  disabled={isResending}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  {isResending ? 'Отправка...' : 'Отправить в Telegram'}
+                </Button>
+              )}
+
               <Button variant="outline" className="w-full" onClick={handleAddToCalendar}>
                 <Calendar className="mr-2 h-4 w-4" />
                 Добавить в календарь
