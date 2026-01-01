@@ -39,12 +39,18 @@ vi.mock('@/lib/hooks/use-organizations', () => ({
     isPending: mockIsPending,
     isError: mockIsError,
   }),
+  useMyMembership: () => ({
+    data: { role: 'ADMIN' },
+    isLoading: false,
+  }),
 }));
 
 vi.mock('@/lib/store/organization-store', () => ({
   useOrganizationStore: () => ({
     currentOrganization: mockCurrentOrganization,
+    currentRole: 'ADMIN',
     setCurrentOrganization: mockSetCurrentOrganization,
+    setCurrentRole: vi.fn(),
   }),
 }));
 

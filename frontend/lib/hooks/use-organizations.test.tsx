@@ -15,18 +15,23 @@ const mockSwitchResponse = {
   // refreshToken передаётся через httpOnly cookie, не в body
 };
 
+// Мок данные членства
+const mockMembership = { role: 'ADMIN', userId: 'user-1', organizationId: 'org-2' };
+
 // Мок API
 const mockList = vi.fn().mockResolvedValue(mockOrganizations);
 const mockGetById = vi.fn().mockImplementation((id: string) =>
   Promise.resolve(mockOrganizations.find((o) => o.id === id))
 );
 const mockSwitch = vi.fn().mockResolvedValue(mockSwitchResponse);
+const mockGetMyMembership = vi.fn().mockResolvedValue(mockMembership);
 
 vi.mock('@/lib/api/organizations', () => ({
   organizationsApi: {
     list: () => mockList(),
     getById: (id: string) => mockGetById(id),
     switch: (id: string) => mockSwitch(id),
+    getMyMembership: (id: string) => mockGetMyMembership(id),
   },
 }));
 
@@ -42,11 +47,11 @@ vi.mock('@/lib/store/auth-store', () => ({
 }));
 
 // Мок organization store
-const mockSetCurrentOrganization = vi.fn();
+const mockSetOrganizationWithRole = vi.fn();
 
 vi.mock('@/lib/store/organization-store', () => ({
   useOrganizationStore: () => ({
-    setCurrentOrganization: mockSetCurrentOrganization,
+    setOrganizationWithRole: mockSetOrganizationWithRole,
   }),
 }));
 
@@ -185,7 +190,7 @@ describe('useSwitchOrganization', () => {
 
     expect(mockSwitch).toHaveBeenCalledWith('org-2');
     expect(mockSetAccessToken).toHaveBeenCalledWith('new-access-token');
-    expect(mockSetCurrentOrganization).toHaveBeenCalledWith(mockOrganizations[1]);
+    expect(mockSetOrganizationWithRole).toHaveBeenCalledWith(mockOrganizations[1], 'ADMIN');
   });
 
   it('shows error toast on failure', async () => {
