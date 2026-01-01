@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changes/000-create-schema.xml
+  - include:
+      file: db/changelog/changes/001-create-media-files.xml

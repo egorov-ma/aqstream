@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-media-files" author="aqstream">
+        <comment>Таблица для хранения метаданных загруженных файлов</comment>
+
+        <createTable tableName="media_files" schemaName="media_service">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tenant_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_key" type="varchar(500)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="original_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content_type" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_size" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bucket" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="purpose" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_id" type="uuid">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="timestamptz" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="timestamptz">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_media_files_tenant_id" tableName="media_files" schemaName="media_service">
+            <column name="tenant_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_media_files_user_id" tableName="media_files" schemaName="media_service">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_media_files_purpose_entity" tableName="media_files" schemaName="media_service">
+            <column name="purpose"/>
+            <column name="entity_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="media_files" schemaName="media_service"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="001-rls" author="aqstream">
+        <comment>Включение RLS для таблицы media_files</comment>
+        <sql>
+            ALTER TABLE media_service.media_files ENABLE ROW LEVEL SECURITY;
+
+            CREATE POLICY tenant_isolation_media_files ON media_service.media_files
+                FOR ALL
+                USING (tenant_id = current_tenant_id())
+                WITH CHECK (tenant_id = current_tenant_id());
+
+            ALTER TABLE media_service.media_files FORCE ROW LEVEL SECURITY;
+        </sql>
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS tenant_isolation_media_files ON media_service.media_files;
+                ALTER TABLE media_service.media_files NO FORCE ROW LEVEL SECURITY;
+                ALTER TABLE media_service.media_files DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
