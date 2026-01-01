@@ -1,4 +1,4 @@
-.PHONY: build test clean help build-docker up down logs infra-up infra-down infra-logs infra-ps infra-reset db-backup db-restore docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc
+.PHONY: build test clean help build-docker up down logs infra-up infra-down infra-logs infra-ps infra-reset db-backup db-restore docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc backend-gateway backend-user backend-event backend-notification backend-media
 
 # Цвета для вывода
 CYAN := \033[36m
@@ -116,12 +116,36 @@ frontend-lint: ## Проверить код frontend
 frontend-typecheck: ## Проверить типы frontend
 	cd frontend && pnpm typecheck
 
+# === Backend Services ===
+
+backend-gateway: ## Запустить API Gateway
+	./gradlew :services:gateway:bootRun
+
+backend-user: ## Запустить User Service
+	./gradlew :services:user-service:bootRun
+
+backend-event: ## Запустить Event Service
+	./gradlew :services:event-service:bootRun
+
+backend-notification: ## Запустить Notification Service
+	./gradlew :services:notification-service:bootRun
+
+backend-media: ## Запустить Media Service
+	./gradlew :services:media-service:bootRun
+
 # === Development ===
 
 dev: infra-up ## Запустить локальное окружение для разработки
 	@echo ""
 	@echo "$(GREEN)Готово к разработке!$(RESET)"
-	@echo "Запустите сервисы через IDE или ./gradlew :services:<service>:bootRun"
+	@echo ""
+	@echo "$(YELLOW)Запуск сервисов (в отдельных терминалах):$(RESET)"
+	@echo "  make backend-gateway       # API Gateway (порт 8080)"
+	@echo "  make backend-user          # User Service (порт 8081)"
+	@echo "  make backend-event         # Event Service (порт 8082)"
+	@echo "  make backend-notification  # Notification Service (порт 8084)"
+	@echo "  make backend-media         # Media Service (порт 8085)"
+	@echo "  make frontend-dev          # Frontend (порт 3000)"
 
 stop: infra-down ## Остановить локальное окружение
 

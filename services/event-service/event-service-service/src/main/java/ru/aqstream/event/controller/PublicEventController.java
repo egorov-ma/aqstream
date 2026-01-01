@@ -7,12 +7,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.aqstream.common.api.PageResponse;
 import ru.aqstream.event.api.dto.EventDto;
+import ru.aqstream.event.api.dto.PublicEventSummaryDto;
 import ru.aqstream.event.api.dto.TicketTypeDto;
 import ru.aqstream.event.service.EventService;
 import ru.aqstream.event.service.TicketTypeService;
@@ -27,8 +32,33 @@ import ru.aqstream.event.service.TicketTypeService;
 @Tag(name = "Public Events", description = "Публичный доступ к событиям")
 public class PublicEventController {
 
+    private static final int MAX_PAGE_SIZE = 50;
+
     private final EventService eventService;
     private final TicketTypeService ticketTypeService;
+
+    @Operation(
+        summary = "Получить список предстоящих публичных событий",
+        description = "Возвращает пагинированный список публичных опубликованных событий, "
+            + "отсортированных по дате начала (ближайшие первые). Не требует авторизации."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Список событий")
+    })
+    @GetMapping
+    public ResponseEntity<PageResponse<PublicEventSummaryDto>> listUpcoming(
+        @Parameter(description = "Номер страницы (0-based)")
+        @RequestParam(defaultValue = "0") int page,
+        @Parameter(description = "Размер страницы (макс 50)")
+        @RequestParam(defaultValue = "12") int size
+    ) {
+        // Ограничиваем размер страницы для защиты от abuse
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(page, safeSize);
+
+        PageResponse<PublicEventSummaryDto> events = eventService.findUpcomingPublicEvents(pageable);
+        return ResponseEntity.ok(events);
+    }
 
     @Operation(
         summary = "Получить публичное событие по slug",

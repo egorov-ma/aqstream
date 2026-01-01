@@ -1,4 +1,7 @@
 export { AddToCalendarButton } from './add-to-calendar';
+export { EventCard } from './event-card';
+export { EventCardSkeleton } from './event-card-skeleton';
+export { EventGrid } from './event-grid';
 export { EventHero } from './event-hero';
 export { EventInfo } from './event-info';
 export { EventStateMessage } from './event-state-message';

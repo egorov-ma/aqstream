@@ -198,6 +198,23 @@ export interface Event {
   location?: string;
 }
 
+/**
+ * Публичное событие для карточки на главной странице.
+ * Содержит только поля, необходимые для отображения карточки.
+ */
+export interface PublicEventSummary {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  startsAt: string;
+  timezone: string;
+  locationType: LocationType;
+  locationAddress?: string;
+  coverImageUrl?: string;
+  organizerName?: string;
+}
+
 export interface CreateRecurrenceRuleRequest {
   frequency: RecurrenceFrequency;
   interval?: number;

@@ -13,12 +13,13 @@ import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.event.api.dto.CreateEventRequest;
 import ru.aqstream.event.api.dto.CreateRecurrenceRuleRequest;
-import ru.aqstream.event.api.dto.RecurrenceRuleDto;
-import ru.aqstream.event.api.event.EventCreatedEvent;
-import ru.aqstream.event.api.event.EventUpdatedEvent;
 import ru.aqstream.event.api.dto.EventDto;
 import ru.aqstream.event.api.dto.EventStatus;
+import ru.aqstream.event.api.dto.PublicEventSummaryDto;
+import ru.aqstream.event.api.dto.RecurrenceRuleDto;
 import ru.aqstream.event.api.dto.UpdateEventRequest;
+import ru.aqstream.event.api.event.EventCreatedEvent;
+import ru.aqstream.event.api.event.EventUpdatedEvent;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.api.exception.EventNotEditableException;
 import ru.aqstream.event.api.exception.EventSlugAlreadyExistsException;
@@ -349,6 +350,65 @@ public class EventService {
     }
 
     // ==================== Публичные ====================
+
+    private static final int MAX_DESCRIPTION_LENGTH = 150;
+
+    /**
+     * Возвращает список предстоящих публичных событий для главной страницы.
+     * Не требует tenant context. Включает название организатора.
+     *
+     * @param pageable параметры пагинации
+     * @return страница публичных событий
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<PublicEventSummaryDto> findUpcomingPublicEvents(Pageable pageable) {
+        Instant now = Instant.now();
+        Page<Event> page = eventRepository.findUpcomingPublicEvents(now, pageable);
+        return PageResponse.of(page, this::mapToPublicSummary);
+    }
+
+    /**
+     * Преобразует Event в PublicEventSummaryDto с загрузкой названия организатора.
+     *
+     * @param event событие
+     * @return DTO для карточки события
+     */
+    private PublicEventSummaryDto mapToPublicSummary(Event event) {
+        String organizerName = organizationNameResolver.resolve(event.getTenantId());
+        String truncatedDescription = truncateDescription(event.getDescription(), MAX_DESCRIPTION_LENGTH);
+
+        return new PublicEventSummaryDto(
+            event.getId(),
+            event.getTitle(),
+            event.getSlug(),
+            truncatedDescription,
+            event.getStartsAt(),
+            event.getTimezone(),
+            event.getLocationType(),
+            event.getLocationAddress(),
+            event.getCoverImageUrl(),
+            organizerName
+        );
+    }
+
+    /**
+     * Обрезает описание до указанной длины по последнему пробелу.
+     *
+     * @param description текст описания
+     * @param maxLength   максимальная длина
+     * @return обрезанное описание с многоточием или исходное
+     */
+    private String truncateDescription(String description, int maxLength) {
+        if (description == null || description.length() <= maxLength) {
+            return description;
+        }
+        // Обрезаем по последнему пробелу + добавляем многоточие
+        int lastSpace = description.lastIndexOf(' ', maxLength - 3);
+        if (lastSpace > 0) {
+            return description.substring(0, lastSpace) + "...";
+        }
+        return description.substring(0, maxLength - 3) + "...";
+    }
 
     /**
      * Возвращает публичное событие по slug.
