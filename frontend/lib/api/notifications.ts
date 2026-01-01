@@ -1,6 +1,20 @@
 import { apiClient } from './client';
 import type { PageResponse, UnreadCountResponse, UserNotification } from './types';
 
+export interface NotificationSettings {
+  eventReminders: boolean;
+  registrationUpdates: boolean;
+  organizationNews: boolean;
+}
+
+export interface NotificationPreferencesDto {
+  settings: NotificationSettings;
+}
+
+export interface UpdatePreferencesRequest {
+  settings: NotificationSettings;
+}
+
 export const notificationsApi = {
   /**
    * Получить список уведомлений пользователя.
@@ -32,5 +46,26 @@ export const notificationsApi = {
    */
   markAllAsRead: async (): Promise<void> => {
     await apiClient.post('/api/v1/notifications/read-all');
+  },
+
+  /**
+   * Получить настройки уведомлений.
+   */
+  getPreferences: async (): Promise<NotificationPreferencesDto> => {
+    const response = await apiClient.get<NotificationPreferencesDto>(
+      '/api/v1/notifications/preferences'
+    );
+    return response.data;
+  },
+
+  /**
+   * Обновить настройки уведомлений.
+   */
+  updatePreferences: async (data: UpdatePreferencesRequest): Promise<NotificationPreferencesDto> => {
+    const response = await apiClient.put<NotificationPreferencesDto>(
+      '/api/v1/notifications/preferences',
+      data
+    );
+    return response.data;
   },
 };

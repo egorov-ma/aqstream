@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { notificationsApi } from '@/lib/api/notifications';
+import { toast } from 'sonner';
+import { notificationsApi, type UpdatePreferencesRequest } from '@/lib/api/notifications';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 /**
@@ -56,6 +57,37 @@ export function useMarkAllAsRead() {
     onSuccess: () => {
       // Инвалидируем список и счётчик
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
+/**
+ * Получить настройки уведомлений.
+ */
+export function useNotificationPreferences() {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: ['notification-preferences'],
+    queryFn: () => notificationsApi.getPreferences(),
+    enabled: isAuthenticated,
+  });
+}
+
+/**
+ * Обновить настройки уведомлений.
+ */
+export function useUpdateNotificationPreferences() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdatePreferencesRequest) => notificationsApi.updatePreferences(data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['notification-preferences'], data);
+      toast.success('Настройки сохранены');
+    },
+    onError: () => {
+      toast.error('Ошибка при сохранении настроек');
     },
   });
 }
