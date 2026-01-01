@@ -25,6 +25,11 @@ public enum RegistrationStatus {
     CONFIRMED,
 
     /**
+     * Участник прошёл check-in на событии.
+     */
+    CHECKED_IN,
+
+    /**
      * Регистрация отменена (участником или организатором).
      */
     CANCELLED,

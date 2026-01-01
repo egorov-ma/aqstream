@@ -379,6 +379,7 @@ public class DeeplinkHandler {
         }
         return switch (status) {
             case CONFIRMED -> "✅ Подтверждена";
+            case CHECKED_IN -> "✅ Check-in выполнен";
             case CANCELLED -> "❌ Отменена";
             case RESERVED -> "🕐 Ожидает оплаты";
             case PENDING -> "⏳ Обработка платежа";
