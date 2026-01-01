@@ -79,6 +79,18 @@ export interface User {
   createdAt: string;
 }
 
+// Profile
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 // Organization
 
 export interface Organization {

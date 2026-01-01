@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { CalendarDays, Users, Settings, BarChart3, LayoutDashboard } from 'lucide-react';
+import { CalendarDays, Users, Settings, BarChart3, LayoutDashboard, Ticket, User } from 'lucide-react';
 
-const navigation = [
+// Навигация для организаторов
+const organizerNavigation = [
   {
     name: 'Обзор',
     href: '/dashboard',
@@ -32,6 +33,23 @@ const navigation = [
     icon: Settings,
   },
 ];
+
+// Навигация для участников (личный кабинет)
+const participantNavigation = [
+  {
+    name: 'Мои билеты',
+    href: '/dashboard/my-registrations',
+    icon: Ticket,
+  },
+  {
+    name: 'Профиль',
+    href: '/dashboard/account/profile',
+    icon: User,
+  },
+];
+
+// Объединённая навигация
+const navigation = [...organizerNavigation, ...participantNavigation];
 
 interface SidebarNavProps {
   className?: string;

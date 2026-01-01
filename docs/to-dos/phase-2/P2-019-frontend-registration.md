@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `ready` |
+| Статус | `done` |
 | Приоритет | `high` |
 | Связь с roadmap | [Roadmap - Frontend](../../business/roadmap.md#фаза-2-core) |
 
