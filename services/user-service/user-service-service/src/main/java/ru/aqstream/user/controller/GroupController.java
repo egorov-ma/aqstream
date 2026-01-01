@@ -40,6 +40,25 @@ public class GroupController {
 
     private final GroupService groupService;
 
+    // ==================== Мои группы ====================
+
+    @Operation(
+        summary = "Получить мои группы",
+        description = "Возвращает список групп, в которых текущий пользователь является участником."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Список групп"),
+        @ApiResponse(responseCode = "401", description = "Не авторизован")
+    })
+    @GetMapping("/groups/my")
+    public ResponseEntity<List<GroupDto>> getMyGroups(
+        @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        requireAuthenticated(principal);
+        List<GroupDto> groups = groupService.getMyGroups(principal.userId());
+        return ResponseEntity.ok(groups);
+    }
+
     // ==================== CRUD Групп ====================
 
     @Operation(

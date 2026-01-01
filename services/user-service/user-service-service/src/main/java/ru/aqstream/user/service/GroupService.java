@@ -57,6 +57,23 @@ public class GroupService {
     private final GroupMemberMapper memberMapper;
     private final EventPublisher eventPublisher;
 
+    // ==================== Мои группы ====================
+
+    /**
+     * Получает список групп, в которых состоит пользователь.
+     *
+     * @param userId идентификатор пользователя
+     * @return список групп
+     */
+    @Transactional(readOnly = true)
+    public List<GroupDto> getMyGroups(UUID userId) {
+        List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
+
+        return memberships.stream()
+            .map(membership -> toDtoWithMemberCount(membership.getGroup()))
+            .toList();
+    }
+
     // ==================== CRUD Групп ====================
 
     /**

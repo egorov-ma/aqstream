@@ -6,3 +6,4 @@ export { ChangePasswordForm } from './change-password-form';
 export { TelegramLink } from './telegram-link';
 export { NotificationSettingsForm } from './notification-settings';
 export { OrganizationList } from './organization-list';
+export { GroupList } from './group-list';

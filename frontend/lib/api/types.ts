@@ -102,6 +102,30 @@ export interface Organization {
   createdAt: string;
 }
 
+// Group
+
+export interface Group {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  name: string;
+  description: string | null;
+  inviteCode: string;
+  createdById: string;
+  createdByName: string;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JoinGroupResponse {
+  groupId: string;
+  groupName: string;
+  organizationId: string;
+  organizationName: string;
+  joinedAt: string;
+}
+
 // Event
 
 export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
