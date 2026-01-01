@@ -39,3 +39,15 @@ export function useChangePassword() {
     // Ошибки обрабатываются в компоненте для показа конкретных сообщений
   });
 }
+
+/**
+ * Хук для генерации токена привязки Telegram.
+ */
+export function useGenerateTelegramLinkToken() {
+  return useMutation({
+    mutationFn: () => profileApi.generateTelegramLinkToken(),
+    onError: () => {
+      toast.error('Ошибка при генерации токена');
+    },
+  });
+}

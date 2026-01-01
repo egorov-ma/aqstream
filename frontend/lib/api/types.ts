@@ -75,6 +75,7 @@ export interface User {
   firstName: string;
   lastName: string | null;
   avatarUrl: string | null;
+  telegramId: string | null;
   emailVerified: boolean;
   createdAt: string;
 }

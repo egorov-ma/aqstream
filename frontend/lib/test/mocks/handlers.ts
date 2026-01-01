@@ -19,6 +19,7 @@ const mockUser = {
   firstName: 'Иван',
   lastName: 'Иванов',
   avatarUrl: null,
+  telegramId: null,
   emailVerified: true,
   createdAt: new Date().toISOString(),
 };
