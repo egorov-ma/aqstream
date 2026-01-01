@@ -1,9 +1,11 @@
 package ru.aqstream.event.service;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,51 @@ import ru.aqstream.event.db.repository.EventAuditLogRepository;
 @RequiredArgsConstructor
 @Slf4j
 public class EventAuditService {
+
+    /**
+     * Переводы названий полей для audit log.
+     */
+    private static final Map<String, String> FIELD_TRANSLATIONS = Map.ofEntries(
+        Map.entry("title", "Название"),
+        Map.entry("description", "Описание"),
+        Map.entry("startsAt", "Дата начала"),
+        Map.entry("endsAt", "Дата окончания"),
+        Map.entry("timezone", "Часовой пояс"),
+        Map.entry("locationType", "Тип локации"),
+        Map.entry("locationAddress", "Адрес"),
+        Map.entry("onlineUrl", "Ссылка"),
+        Map.entry("maxCapacity", "Макс. участников"),
+        Map.entry("registrationOpensAt", "Открытие регистрации"),
+        Map.entry("registrationClosesAt", "Закрытие регистрации"),
+        Map.entry("isPublic", "Публичность"),
+        Map.entry("participantsVisibility", "Видимость участников"),
+        Map.entry("groupId", "Группа")
+    );
+
+    /**
+     * Определение поля для аудита.
+     */
+    private record AuditedField(String name, Function<Event, String> getter) { }
+
+    /**
+     * Список полей события для отслеживания изменений.
+     */
+    private static final List<AuditedField> AUDITED_FIELDS = List.of(
+        new AuditedField("title", Event::getTitle),
+        new AuditedField("description", Event::getDescription),
+        new AuditedField("startsAt", e -> toString(e.getStartsAt())),
+        new AuditedField("endsAt", e -> toString(e.getEndsAt())),
+        new AuditedField("timezone", Event::getTimezone),
+        new AuditedField("locationType", e -> toString(e.getLocationType())),
+        new AuditedField("locationAddress", Event::getLocationAddress),
+        new AuditedField("onlineUrl", Event::getOnlineUrl),
+        new AuditedField("maxCapacity", e -> toString(e.getMaxCapacity())),
+        new AuditedField("registrationOpensAt", e -> toString(e.getRegistrationOpensAt())),
+        new AuditedField("registrationClosesAt", e -> toString(e.getRegistrationClosesAt())),
+        new AuditedField("isPublic", e -> String.valueOf(e.isPublic())),
+        new AuditedField("participantsVisibility", e -> toString(e.getParticipantsVisibility())),
+        new AuditedField("groupId", e -> toString(e.getGroupId()))
+    );
 
     private final EventAuditLogRepository auditLogRepository;
 
@@ -168,40 +215,23 @@ public class EventAuditService {
 
     /**
      * Определяет изменённые поля между старой и новой версией события.
+     * Использует список AUDITED_FIELDS для снижения cyclomatic complexity.
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity") // Последовательное сравнение полей
     private Map<String, FieldChange> detectChanges(Event oldEvent, Event newEvent) {
         Map<String, FieldChange> changes = new LinkedHashMap<>();
 
-        compareField(changes, "title", oldEvent.getTitle(), newEvent.getTitle());
-        compareField(changes, "description", oldEvent.getDescription(), newEvent.getDescription());
-        compareField(changes, "startsAt", toString(oldEvent.getStartsAt()), toString(newEvent.getStartsAt()));
-        compareField(changes, "endsAt", toString(oldEvent.getEndsAt()), toString(newEvent.getEndsAt()));
-        compareField(changes, "timezone", oldEvent.getTimezone(), newEvent.getTimezone());
-        compareField(changes, "locationType", toString(oldEvent.getLocationType()),
-            toString(newEvent.getLocationType()));
-        compareField(changes, "locationAddress", oldEvent.getLocationAddress(), newEvent.getLocationAddress());
-        compareField(changes, "onlineUrl", oldEvent.getOnlineUrl(), newEvent.getOnlineUrl());
-        compareField(changes, "maxCapacity", toString(oldEvent.getMaxCapacity()), toString(newEvent.getMaxCapacity()));
-        compareField(changes, "registrationOpensAt", toString(oldEvent.getRegistrationOpensAt()),
-            toString(newEvent.getRegistrationOpensAt()));
-        compareField(changes, "registrationClosesAt", toString(oldEvent.getRegistrationClosesAt()),
-            toString(newEvent.getRegistrationClosesAt()));
-        compareField(changes, "isPublic", String.valueOf(oldEvent.isPublic()), String.valueOf(newEvent.isPublic()));
-        compareField(changes, "participantsVisibility", toString(oldEvent.getParticipantsVisibility()),
-            toString(newEvent.getParticipantsVisibility()));
-        compareField(changes, "groupId", toString(oldEvent.getGroupId()), toString(newEvent.getGroupId()));
+        for (AuditedField field : AUDITED_FIELDS) {
+            String oldValue = field.getter().apply(oldEvent);
+            String newValue = field.getter().apply(newEvent);
+            if (!Objects.equals(oldValue, newValue)) {
+                changes.put(field.name(), new FieldChange(oldValue, newValue));
+            }
+        }
 
         return changes;
     }
 
-    private void compareField(Map<String, FieldChange> changes, String field, String oldValue, String newValue) {
-        if (!Objects.equals(oldValue, newValue)) {
-            changes.put(field, new FieldChange(oldValue, newValue));
-        }
-    }
-
-    private String toString(Object value) {
+    private static String toString(Object value) {
         return value != null ? value.toString() : null;
     }
 
@@ -217,23 +247,7 @@ public class EventAuditService {
     }
 
     private String translateFieldName(String field) {
-        return switch (field) {
-            case "title" -> "Название";
-            case "description" -> "Описание";
-            case "startsAt" -> "Дата начала";
-            case "endsAt" -> "Дата окончания";
-            case "timezone" -> "Часовой пояс";
-            case "locationType" -> "Тип локации";
-            case "locationAddress" -> "Адрес";
-            case "onlineUrl" -> "Ссылка";
-            case "maxCapacity" -> "Макс. участников";
-            case "registrationOpensAt" -> "Открытие регистрации";
-            case "registrationClosesAt" -> "Закрытие регистрации";
-            case "isPublic" -> "Публичность";
-            case "participantsVisibility" -> "Видимость участников";
-            case "groupId" -> "Группа";
-            default -> field;
-        };
+        return FIELD_TRANSLATIONS.getOrDefault(field, field);
     }
 
     /**

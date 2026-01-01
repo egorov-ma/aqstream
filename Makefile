@@ -1,4 +1,4 @@
-.PHONY: build test clean help up down logs infra-up infra-down infra-logs infra-ps infra-reset db-backup db-restore docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc
+.PHONY: build test clean help build-docker up down logs infra-up infra-down infra-logs infra-ps infra-reset db-backup db-restore docs-install docs-serve docs-build docs-validate docs-openapi docs-redoc
 
 # Цвета для вывода
 CYAN := \033[36m
@@ -86,6 +86,9 @@ db-restore: ## Восстановить базы из бэкапа (требуе
 	@echo "$(GREEN)Базы данных восстановлены$(RESET)"
 
 # === Docker Full Stack ===
+
+build-docker: build ## Собрать Docker образы (сначала Gradle build)
+	docker compose build
 
 up: ## Запустить весь стек (инфраструктура + сервисы)
 	docker compose up -d

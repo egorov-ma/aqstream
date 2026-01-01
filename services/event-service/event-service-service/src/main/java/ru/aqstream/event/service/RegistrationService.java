@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aqstream.common.api.PageResponse;
-import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CancelRegistrationRequest;
@@ -17,9 +16,6 @@ import ru.aqstream.event.api.dto.CreateRegistrationRequest;
 import ru.aqstream.event.api.dto.EventStatus;
 import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.dto.RegistrationStatus;
-import ru.aqstream.event.api.event.RegistrationCancelledEvent;
-import ru.aqstream.event.api.event.RegistrationCreatedEvent;
-import ru.aqstream.event.api.event.TicketResendRequestedEvent;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.api.exception.EventRegistrationClosedException;
 import ru.aqstream.event.api.exception.PrivateEventAccessDeniedException;
@@ -58,7 +54,7 @@ public class RegistrationService {
     private final EventRepository eventRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final RegistrationMapper registrationMapper;
-    private final EventPublisher eventPublisher;
+    private final RegistrationEventPublisher registrationEventPublisher;
     private final UserClient userClient;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -135,7 +131,7 @@ public class RegistrationService {
             registration.getId(), eventId, userId, confirmationCode);
 
         // Публикуем событие в RabbitMQ для отправки уведомления
-        publishRegistrationCreatedEvent(registration);
+        registrationEventPublisher.publishCreated(registration);
 
         return registrationMapper.toDto(registration);
     }
@@ -238,7 +234,7 @@ public class RegistrationService {
         }
 
         // Публикуем событие для отправки билета
-        publishTicketResendRequestedEvent(registration);
+        registrationEventPublisher.publishResendRequested(registration);
 
         log.info("Запрос на повторную отправку билета отправлен: registrationId={}", registrationId);
     }
@@ -459,7 +455,7 @@ public class RegistrationService {
             registrationId, byOrganizer, reason);
 
         // Публикуем событие в RabbitMQ
-        publishRegistrationCancelledEvent(registration, byOrganizer);
+        registrationEventPublisher.publishCancelled(registration, byOrganizer);
     }
 
     /**
@@ -480,75 +476,5 @@ public class RegistrationService {
      */
     private boolean isOrganizer(UserPrincipal principal) {
         return principal.isOrganizer();
-    }
-
-    /**
-     * Публикует событие создания регистрации.
-     */
-    private void publishRegistrationCreatedEvent(Registration registration) {
-        Event event = registration.getEvent();
-        TicketType ticketType = registration.getTicketType();
-
-        eventPublisher.publish(new RegistrationCreatedEvent(
-            registration.getId(),
-            event.getId(),
-            registration.getTenantId(),
-            registration.getUserId(),
-            event.getTitle(),
-            event.getSlug(),
-            event.getStartsAt(),
-            ticketType.getName(),
-            registration.getConfirmationCode(),
-            registration.getFirstName(),
-            registration.getLastName(),
-            registration.getEmail()
-        ));
-    }
-
-    /**
-     * Публикует событие отмены регистрации.
-     */
-    private void publishRegistrationCancelledEvent(Registration registration, boolean byOrganizer) {
-        Event event = registration.getEvent();
-        TicketType ticketType = registration.getTicketType();
-
-        eventPublisher.publish(new RegistrationCancelledEvent(
-            registration.getId(),
-            event.getId(),
-            registration.getTenantId(),
-            registration.getUserId(),
-            event.getTitle(),
-            event.getSlug(),
-            event.getStartsAt(),
-            ticketType.getName(),
-            registration.getFirstName(),
-            registration.getLastName(),
-            registration.getEmail(),
-            registration.getCancellationReason(),
-            byOrganizer
-        ));
-    }
-
-    /**
-     * Публикует событие запроса повторной отправки билета.
-     */
-    private void publishTicketResendRequestedEvent(Registration registration) {
-        Event event = registration.getEvent();
-        TicketType ticketType = registration.getTicketType();
-
-        eventPublisher.publish(new TicketResendRequestedEvent(
-            registration.getId(),
-            event.getId(),
-            registration.getTenantId(),
-            registration.getUserId(),
-            event.getTitle(),
-            event.getSlug(),
-            event.getStartsAt(),
-            ticketType.getName(),
-            registration.getConfirmationCode(),
-            registration.getFirstName(),
-            registration.getLastName(),
-            registration.getEmail()
-        ));
     }
 }
