@@ -6,7 +6,6 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -195,28 +194,4 @@ public class RabbitMQConfig {
         return template;
     }
 
-    // === Listener Container Factory ===
-
-    /**
-     * Фабрика контейнеров для слушателей RabbitMQ.
-     * Настраивает JSON конвертер и поведение при ошибках.
-     *
-     * @param connectionFactory фабрика соединений
-     * @param messageConverter  конвертер сообщений
-     * @return настроенная фабрика
-     */
-    @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
-        ConnectionFactory connectionFactory,
-        MessageConverter messageConverter) {
-
-        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-        factory.setConnectionFactory(connectionFactory);
-        factory.setMessageConverter(messageConverter);
-        // При ошибке не возвращать в очередь - отправлять в DLQ
-        factory.setDefaultRequeueRejected(false);
-        // Количество сообщений для предварительной загрузки
-        factory.setPrefetchCount(10);
-        return factory;
-    }
 }

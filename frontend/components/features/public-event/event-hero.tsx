@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, MapPin, Globe, Building2 } from 'lucide-react';
 import { formatEventDate } from '@/lib/utils/seo';
@@ -39,10 +40,13 @@ export function EventHero({ event }: EventHeroProps) {
       {/* Обложка */}
       <div className="relative h-64 md:h-80 lg:h-96 w-full overflow-hidden rounded-lg bg-muted">
         {event.coverImageUrl ? (
-          <img
+          <Image
             src={event.coverImageUrl}
             alt={event.title}
-            className="h-full w-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+            priority
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">

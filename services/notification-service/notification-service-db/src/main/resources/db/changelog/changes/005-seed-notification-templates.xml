@@ -27,7 +27,7 @@
 • Дата: {{eventDate}}
 
 [Подробнее о событии]({{eventUrl}})]]></column>
-            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"confirmationCode\": \"Код подтверждения\", \"ticketTypeName\": \"Тип билета\", \"eventDate\": \"Дата события\", \"eventUrl\": \"Ссылка на событие\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;firstName&quot;: &quot;Имя участника&quot;, &quot;eventTitle&quot;: &quot;Название события&quot;, &quot;confirmationCode&quot;: &quot;Код подтверждения&quot;, &quot;ticketTypeName&quot;: &quot;Тип билета&quot;, &quot;eventDate&quot;: &quot;Дата события&quot;, &quot;eventUrl&quot;: &quot;Ссылка на событие&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -52,7 +52,7 @@
 
 Комментарий: {{cancellationReason}}
 {{/cancellationReason}}]]></column>
-            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\", \"cancelledByOrganizer\": \"Отменено организатором\", \"cancellationReason\": \"Причина отмены\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;firstName&quot;: &quot;Имя участника&quot;, &quot;eventTitle&quot;: &quot;Название события&quot;, &quot;eventDate&quot;: &quot;Дата события&quot;, &quot;cancelledByOrganizer&quot;: &quot;Отменено организатором&quot;, &quot;cancellationReason&quot;: &quot;Причина отмены&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -83,7 +83,7 @@
 {{/eventLocation}}
 
 [Подробнее]({{eventUrl}})]]></column>
-            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\", \"eventLocation\": \"Место проведения\", \"eventUrl\": \"Ссылка на событие\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;firstName&quot;: &quot;Имя участника&quot;, &quot;eventTitle&quot;: &quot;Название события&quot;, &quot;eventDate&quot;: &quot;Дата события&quot;, &quot;eventLocation&quot;: &quot;Место проведения&quot;, &quot;eventUrl&quot;: &quot;Ссылка на событие&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -99,7 +99,7 @@
 К сожалению, событие *{{eventTitle}}* ({{eventDate}}) было отменено организатором.
 
 Приносим извинения за неудобства.]]></column>
-            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;firstName&quot;: &quot;Имя участника&quot;, &quot;eventTitle&quot;: &quot;Название события&quot;, &quot;eventDate&quot;: &quot;Дата события&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -120,7 +120,7 @@
 {{/eventLocation}}
 
 [Подробнее]({{eventUrl}})]]></column>
-            <column name="variables" valueComputed="'{\"firstName\": \"Имя участника\", \"eventTitle\": \"Название события\", \"eventDate\": \"Дата события\", \"eventLocation\": \"Место проведения\", \"eventUrl\": \"Ссылка на событие\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;firstName&quot;: &quot;Имя участника&quot;, &quot;eventTitle&quot;: &quot;Название события&quot;, &quot;eventDate&quot;: &quot;Дата события&quot;, &quot;eventLocation&quot;: &quot;Место проведения&quot;, &quot;eventUrl&quot;: &quot;Ссылка на событие&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -146,7 +146,7 @@
 Теперь вы можете создавать события и приглашать участников.
 
 [Перейти в организацию]({{organizationUrl}})]]></column>
-            <column name="variables" valueComputed="'{\"organizationName\": \"Название организации\", \"organizationUrl\": \"Ссылка на организацию\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;organizationName&quot;: &quot;Название организации&quot;, &quot;organizationUrl&quot;: &quot;Ссылка на организацию&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -164,7 +164,7 @@
 {{/rejectionReason}}
 
 Вы можете подать новый запрос после исправления замечаний.]]></column>
-            <column name="variables" valueComputed="'{\"organizationName\": \"Название организации\", \"rejectionReason\": \"Причина отклонения\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;organizationName&quot;: &quot;Название организации&quot;, &quot;rejectionReason&quot;: &quot;Причина отклонения&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -219,7 +219,7 @@
     </div>
 </body>
 </html>]]></column>
-            <column name="variables" valueComputed="'{\"verificationUrl\": \"Ссылка для подтверждения\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;verificationUrl&quot;: &quot;Ссылка для подтверждения&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -265,7 +265,7 @@
     </div>
 </body>
 </html>]]></column>
-            <column name="variables" valueComputed="'{\"resetUrl\": \"Ссылка для сброса пароля\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;resetUrl&quot;: &quot;Ссылка для сброса пароля&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 
@@ -294,7 +294,7 @@
 • Следить за изменениями
 
 Хорошего дня! 🎉]]></column>
-            <column name="variables" valueComputed="'{\"firstName\": \"Имя пользователя\"}'::jsonb"/>
+            <column name="variables" valueComputed="'{&quot;firstName&quot;: &quot;Имя пользователя&quot;}'::jsonb"/>
             <column name="is_system" valueBoolean="true"/>
         </insert>
 

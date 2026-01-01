@@ -31,7 +31,6 @@ import ru.aqstream.event.api.dto.UpdateEventRequest;
 import ru.aqstream.event.api.exception.EventInPastException;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.api.exception.EventNotEditableException;
-import ru.aqstream.event.api.exception.InvalidEventStatusTransitionException;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.event.db.entity.Event;
 import ru.aqstream.event.db.repository.EventRepository;
@@ -60,6 +59,9 @@ class EventServiceTest {
     private EventAuditService eventAuditService;
 
     @Mock
+    private EventLifecycleService eventLifecycleService;
+
+    @Mock
     private OrganizationNameResolver organizationNameResolver;
 
     private EventService service;
@@ -82,6 +84,7 @@ class EventServiceTest {
             recurrenceRuleMapper,
             eventPublisher,
             eventAuditService,
+            eventLifecycleService,
             organizationNameResolver
         );
 
@@ -326,51 +329,27 @@ class EventServiceTest {
         @Test
         @DisplayName("Публикует событие в статусе DRAFT")
         void publish_DraftEvent_PublishesSuccessfully() {
-            // given
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-            when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
+            // given - lifecycle метод делегируется в EventLifecycleService
+            when(eventLifecycleService.publish(eventId)).thenReturn(testEventDto);
 
             // when
-            service.publish(eventId);
+            EventDto result = service.publish(eventId);
 
-            // then
-            assertThat(testEvent.getStatus()).isEqualTo(EventStatus.PUBLISHED);
+            // then - проверяем делегирование
+            assertThat(result).isEqualTo(testEventDto);
+            verify(eventLifecycleService).publish(eventId);
         }
 
         @Test
-        @DisplayName("Выбрасывает исключение при публикации события с датой в прошлом")
-        void publish_EventInPast_ThrowsException() {
+        @DisplayName("Пробрасывает исключение от EventLifecycleService")
+        void publish_LifecycleServiceThrows_PropagatesException() {
             // given
-            Event pastEvent = Event.create(testTitle, "test-slug",
-                Instant.now().minus(1, ChronoUnit.DAYS), "Europe/Moscow");
-            try {
-                var idField = pastEvent.getClass().getSuperclass().getSuperclass().getSuperclass()
-                    .getDeclaredField("id");
-                idField.setAccessible(true);
-                idField.set(pastEvent, eventId);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(pastEvent));
+            when(eventLifecycleService.publish(eventId))
+                .thenThrow(new EventInPastException());
 
             // when/then
             assertThatThrownBy(() -> service.publish(eventId))
                 .isInstanceOf(EventInPastException.class);
-        }
-
-        @Test
-        @DisplayName("Выбрасывает исключение при публикации опубликованного события")
-        void publish_AlreadyPublishedEvent_ThrowsException() {
-            // given
-            testEvent.publish(); // переводим в PUBLISHED
-
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-
-            // when/then
-            assertThatThrownBy(() -> service.publish(eventId))
-                .isInstanceOf(InvalidEventStatusTransitionException.class);
         }
     }
 
@@ -379,31 +358,17 @@ class EventServiceTest {
     class Unpublish {
 
         @Test
-        @DisplayName("Снимает с публикации опубликованное событие")
-        void unpublish_PublishedEvent_ReturnsToD() {
+        @DisplayName("Делегирует unpublish в EventLifecycleService")
+        void unpublish_DelegatesSuccessfully() {
             // given
-            testEvent.publish(); // сначала публикуем
-
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-            when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
+            when(eventLifecycleService.unpublish(eventId)).thenReturn(testEventDto);
 
             // when
-            service.unpublish(eventId);
+            EventDto result = service.unpublish(eventId);
 
             // then
-            assertThat(testEvent.getStatus()).isEqualTo(EventStatus.DRAFT);
-        }
-
-        @Test
-        @DisplayName("Выбрасывает исключение для события не в статусе PUBLISHED")
-        void unpublish_DraftEvent_ThrowsException() {
-            // given
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-
-            // when/then
-            assertThatThrownBy(() -> service.unpublish(eventId))
-                .isInstanceOf(InvalidEventStatusTransitionException.class);
+            assertThat(result).isEqualTo(testEventDto);
+            verify(eventLifecycleService).unpublish(eventId);
         }
     }
 
@@ -412,49 +377,32 @@ class EventServiceTest {
     class Cancel {
 
         @Test
-        @DisplayName("Отменяет событие в статусе DRAFT")
-        void cancel_DraftEvent_CancelsSuccessfully() {
+        @DisplayName("Делегирует cancel в EventLifecycleService")
+        void cancel_DelegatesSuccessfully() {
             // given
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-            when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
+            when(eventLifecycleService.cancel(eventId)).thenReturn(testEventDto);
 
             // when
-            service.cancel(eventId);
+            EventDto result = service.cancel(eventId);
 
             // then
-            assertThat(testEvent.getStatus()).isEqualTo(EventStatus.CANCELLED);
+            assertThat(result).isEqualTo(testEventDto);
+            verify(eventLifecycleService).cancel(eventId);
         }
 
         @Test
-        @DisplayName("Отменяет опубликованное событие")
-        void cancel_PublishedEvent_CancelsSuccessfully() {
+        @DisplayName("Делегирует cancel с reason в EventLifecycleService")
+        void cancel_WithReason_DelegatesSuccessfully() {
             // given
-            testEvent.publish();
-
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-            when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
+            String reason = "Отмена мероприятия";
+            when(eventLifecycleService.cancel(eventId, reason)).thenReturn(testEventDto);
 
             // when
-            service.cancel(eventId);
+            EventDto result = service.cancel(eventId, reason);
 
             // then
-            assertThat(testEvent.getStatus()).isEqualTo(EventStatus.CANCELLED);
-        }
-
-        @Test
-        @DisplayName("Выбрасывает исключение для завершённого события")
-        void cancel_CompletedEvent_ThrowsException() {
-            // given
-            testEvent.publish();
-            testEvent.complete();
-
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-
-            // when/then
-            assertThatThrownBy(() -> service.cancel(eventId))
-                .isInstanceOf(InvalidEventStatusTransitionException.class);
+            assertThat(result).isEqualTo(testEventDto);
+            verify(eventLifecycleService).cancel(eventId, reason);
         }
     }
 
@@ -463,31 +411,17 @@ class EventServiceTest {
     class Complete {
 
         @Test
-        @DisplayName("Завершает опубликованное событие")
-        void complete_PublishedEvent_CompletesSuccessfully() {
+        @DisplayName("Делегирует complete в EventLifecycleService")
+        void complete_DelegatesSuccessfully() {
             // given
-            testEvent.publish();
-
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-            when(eventRepository.save(any(Event.class))).thenReturn(testEvent);
-            when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
+            when(eventLifecycleService.complete(eventId)).thenReturn(testEventDto);
 
             // when
-            service.complete(eventId);
+            EventDto result = service.complete(eventId);
 
             // then
-            assertThat(testEvent.getStatus()).isEqualTo(EventStatus.COMPLETED);
-        }
-
-        @Test
-        @DisplayName("Выбрасывает исключение для черновика")
-        void complete_DraftEvent_ThrowsException() {
-            // given
-            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
-
-            // when/then
-            assertThatThrownBy(() -> service.complete(eventId))
-                .isInstanceOf(InvalidEventStatusTransitionException.class);
+            assertThat(result).isEqualTo(testEventDto);
+            verify(eventLifecycleService).complete(eventId);
         }
     }
 }

@@ -242,7 +242,7 @@ test.describe('Registration Flow', () => {
       await page.goto('/dashboard/my-registrations');
 
       await expect(
-        page.getByText(/у вас пока нет регистраций на события/i)
+        page.getByText(/У вас нет предстоящих регистраций/i)
       ).toBeVisible();
       await expect(page.getByRole('link', { name: /найти события/i })).toBeVisible();
     });

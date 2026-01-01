@@ -192,13 +192,13 @@ export function EventActivityLog({ eventId }: EventActivityLogProps) {
           </div>
         )}
 
-        {data && data.content.length === 0 && (
+        {data?.content?.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             История изменений пуста
           </div>
         )}
 
-        {data && data.content.length > 0 && (
+        {data?.content && data.content.length > 0 && (
           <>
             <div className="divide-y">
               {data.content.map((entry) => (

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Для отключения в тестах: {@code outbox.processor.enabled=false}</p>
  */
 @Component
+@ConditionalOnBean(OutboxRepository.class)
 @ConditionalOnProperty(name = "outbox.processor.enabled", havingValue = "true", matchIfMissing = true)
 public class OutboxProcessor {
 

@@ -18,16 +18,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CreateRegistrationRequest;
 import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.dto.RegistrationStatus;
-import ru.aqstream.event.api.event.RegistrationCancelledEvent;
 import ru.aqstream.event.db.entity.Event;
 import ru.aqstream.event.db.entity.Registration;
 import ru.aqstream.event.db.entity.TicketType;
@@ -55,7 +52,7 @@ class RegistrationServiceValidationTest {
     private RegistrationMapper registrationMapper;
 
     @Mock
-    private EventPublisher eventPublisher;
+    private RegistrationEventPublisher registrationEventPublisher;
 
     @Mock
     private ru.aqstream.user.client.UserClient userClient;
@@ -89,7 +86,7 @@ class RegistrationServiceValidationTest {
             eventRepository,
             ticketTypeRepository,
             registrationMapper,
-            eventPublisher,
+            registrationEventPublisher,
             userClient
         );
 
@@ -214,14 +211,8 @@ class RegistrationServiceValidationTest {
             assertThat(testRegistration.getStatus()).isEqualTo(RegistrationStatus.CANCELLED);
             assertThat(testRegistration.getCancellationReason()).isEqualTo(reason);
 
-            // Проверяем публикацию события
-            ArgumentCaptor<RegistrationCancelledEvent> eventCaptor =
-                ArgumentCaptor.forClass(RegistrationCancelledEvent.class);
-            verify(eventPublisher).publish(eventCaptor.capture());
-
-            RegistrationCancelledEvent publishedEvent = eventCaptor.getValue();
-            assertThat(publishedEvent.isCancelledByOrganizer()).isTrue();
-            assertThat(publishedEvent.getCancellationReason()).isEqualTo(reason);
+            // Проверяем публикацию события организатором
+            verify(registrationEventPublisher).publishCancelled(testRegistration, true);
         }
     }
 

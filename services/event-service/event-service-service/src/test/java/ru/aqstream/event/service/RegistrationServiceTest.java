@@ -3,6 +3,7 @@ package ru.aqstream.event.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,14 +23,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CreateRegistrationRequest;
 import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.dto.RegistrationStatus;
-import ru.aqstream.event.api.event.RegistrationCancelledEvent;
-import ru.aqstream.event.api.event.RegistrationCreatedEvent;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.api.exception.EventRegistrationClosedException;
 import ru.aqstream.event.api.exception.RegistrationAccessDeniedException;
@@ -63,7 +61,7 @@ class RegistrationServiceTest {
     private RegistrationMapper registrationMapper;
 
     @Mock
-    private EventPublisher eventPublisher;
+    private RegistrationEventPublisher registrationEventPublisher;
 
     @Mock
     private ru.aqstream.user.client.UserClient userClient;
@@ -97,7 +95,7 @@ class RegistrationServiceTest {
             eventRepository,
             ticketTypeRepository,
             registrationMapper,
-            eventPublisher,
+            registrationEventPublisher,
             userClient
         );
 
@@ -232,7 +230,7 @@ class RegistrationServiceTest {
             verify(ticketTypeRepository).save(any(TicketType.class));
 
             // Проверяем публикацию события
-            verify(eventPublisher).publish(any(RegistrationCreatedEvent.class));
+            verify(registrationEventPublisher).publishCreated(any(Registration.class));
         }
 
         @Test
@@ -450,7 +448,7 @@ class RegistrationServiceTest {
             assertThat(testTicketType.getSoldCount()).isEqualTo(initialSoldCount - 1);
 
             // Проверяем публикацию события
-            verify(eventPublisher).publish(any(RegistrationCancelledEvent.class));
+            verify(registrationEventPublisher).publishCancelled(any(Registration.class), eq(false));
         }
 
         @Test

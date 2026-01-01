@@ -190,7 +190,7 @@ function PreviewContent({ data }: { data: EventFormData }) {
       )}
 
       {/* Типы билетов */}
-      {data.ticketTypes.length > 0 && (
+      {data.ticketTypes && data.ticketTypes.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">

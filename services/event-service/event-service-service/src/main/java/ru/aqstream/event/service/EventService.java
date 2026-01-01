@@ -14,10 +14,7 @@ import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.event.api.dto.CreateEventRequest;
 import ru.aqstream.event.api.dto.CreateRecurrenceRuleRequest;
 import ru.aqstream.event.api.dto.RecurrenceRuleDto;
-import ru.aqstream.event.api.event.EventCancelledEvent;
-import ru.aqstream.event.api.event.EventCompletedEvent;
 import ru.aqstream.event.api.event.EventCreatedEvent;
-import ru.aqstream.event.api.event.EventPublishedEvent;
 import ru.aqstream.event.api.event.EventUpdatedEvent;
 import ru.aqstream.event.api.dto.EventDto;
 import ru.aqstream.event.api.dto.EventStatus;
@@ -48,6 +45,7 @@ public class EventService {
     private final RecurrenceRuleMapper recurrenceRuleMapper;
     private final EventPublisher eventPublisher;
     private final EventAuditService eventAuditService;
+    private final EventLifecycleService eventLifecycleService;
     private final OrganizationNameResolver organizationNameResolver;
 
     // ==================== CRUD ====================
@@ -239,6 +237,7 @@ public class EventService {
     }
 
     // ==================== Lifecycle ====================
+    // Lifecycle методы делегируются в EventLifecycleService
 
     /**
      * Публикует событие (DRAFT → PUBLISHED).
@@ -246,30 +245,8 @@ public class EventService {
      * @param eventId идентификатор события
      * @return опубликованное событие
      */
-    @Transactional
     public EventDto publish(UUID eventId) {
-        log.info("Публикация события: eventId={}", eventId);
-
-        Event event = findEventById(eventId);
-        event.publish();
-        event = eventRepository.save(event);
-
-        log.info("Событие опубликовано: eventId={}", eventId);
-
-        // Публикуем событие в RabbitMQ
-        eventPublisher.publish(new EventPublishedEvent(
-            event.getId(),
-            event.getTenantId(),
-            event.getTitle(),
-            event.getSlug(),
-            event.getStartsAt(),
-            Instant.now()
-        ));
-
-        // Записываем в audit log
-        eventAuditService.logPublished(event);
-
-        return mapToDto(event);
+        return eventLifecycleService.publish(eventId);
     }
 
     /**
@@ -278,20 +255,8 @@ public class EventService {
      * @param eventId идентификатор события
      * @return событие в статусе DRAFT
      */
-    @Transactional
     public EventDto unpublish(UUID eventId) {
-        log.info("Снятие с публикации: eventId={}", eventId);
-
-        Event event = findEventById(eventId);
-        event.unpublish();
-        event = eventRepository.save(event);
-
-        log.info("Событие снято с публикации: eventId={}", eventId);
-
-        // Записываем в audit log
-        eventAuditService.logUnpublished(event);
-
-        return mapToDto(event);
+        return eventLifecycleService.unpublish(eventId);
     }
 
     /**
@@ -300,9 +265,8 @@ public class EventService {
      * @param eventId идентификатор события
      * @return отменённое событие
      */
-    @Transactional
     public EventDto cancel(UUID eventId) {
-        return cancel(eventId, null);
+        return eventLifecycleService.cancel(eventId);
     }
 
     /**
@@ -312,31 +276,8 @@ public class EventService {
      * @param reason  причина отмены (опционально)
      * @return отменённое событие
      */
-    @Transactional
     public EventDto cancel(UUID eventId, String reason) {
-        log.info("Отмена события: eventId={}, reason={}", eventId, reason != null ? "указана" : "не указана");
-
-        Event event = findEventById(eventId);
-        event.cancel(reason);
-        event = eventRepository.save(event);
-
-        log.info("Событие отменено: eventId={}", eventId);
-
-        // Публикуем событие в RabbitMQ
-        // Notification-service обработает это событие и уведомит всех зарегистрированных участников
-        eventPublisher.publish(new EventCancelledEvent(
-            event.getId(),
-            event.getTenantId(),
-            event.getTitle(),
-            event.getStartsAt(),
-            event.getCancelledAt(),
-            event.getCancelReason()
-        ));
-
-        // Записываем в audit log
-        eventAuditService.logCancelled(event, reason);
-
-        return mapToDto(event);
+        return eventLifecycleService.cancel(eventId, reason);
     }
 
     /**
@@ -345,28 +286,8 @@ public class EventService {
      * @param eventId идентификатор события
      * @return завершённое событие
      */
-    @Transactional
     public EventDto complete(UUID eventId) {
-        log.info("Завершение события: eventId={}", eventId);
-
-        Event event = findEventById(eventId);
-        event.complete();
-        event = eventRepository.save(event);
-
-        log.info("Событие завершено: eventId={}", eventId);
-
-        // Публикуем событие в RabbitMQ
-        eventPublisher.publish(new EventCompletedEvent(
-            event.getId(),
-            event.getTenantId(),
-            event.getTitle(),
-            Instant.now()
-        ));
-
-        // Записываем в audit log
-        eventAuditService.logCompleted(event);
-
-        return mapToDto(event);
+        return eventLifecycleService.complete(eventId);
     }
 
     // ==================== Списки ====================
