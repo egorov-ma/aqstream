@@ -136,6 +136,86 @@ public class RegistrationService {
         return registrationMapper.toDto(registration);
     }
 
+    /**
+     * Создаёт регистрацию на публичное событие.
+     * Используется для регистрации пользователей из любого tenant на публичные события.
+     *
+     * @param slug      URL-slug публичного события
+     * @param request   данные регистрации
+     * @param principal авторизованный пользователь
+     * @return созданная регистрация
+     * @throws EventNotFoundException если событие не найдено или не публичное
+     */
+    @Transactional
+    public RegistrationDto createForPublicEvent(String slug, CreateRegistrationRequest request,
+                                                 UserPrincipal principal) {
+        UUID userId = principal.userId();
+        log.info("Создание регистрации на публичное событие: slug={}, userId={}, ticketTypeId={}",
+            slug, userId, request.ticketTypeId());
+
+        // Находим публичное событие по slug (без проверки tenant)
+        Event event = eventRepository.findPublicBySlug(slug)
+            .orElseThrow(() -> new EventNotFoundException("Событие не найдено или не публичное: " + slug));
+
+        UUID eventId = event.getId();
+        UUID eventTenantId = event.getTenantId();
+
+        // Проверяем, что регистрация открыта
+        if (!event.isRegistrationOpen()) {
+            throw new EventRegistrationClosedException(eventId);
+        }
+
+        // Проверяем, не зарегистрирован ли пользователь уже
+        if (registrationRepository.existsActiveByEventIdAndUserId(eventId, userId)) {
+            throw new RegistrationAlreadyExistsException(eventId, userId);
+        }
+
+        // Находим и блокируем тип билета для обновления (pessimistic lock)
+        TicketType ticketType = ticketTypeRepository.findByIdAndEventIdForUpdate(request.ticketTypeId(), eventId)
+            .orElseThrow(() -> new TicketTypeNotFoundException(request.ticketTypeId(), eventId));
+
+        // Проверяем доступность типа билета
+        validateTicketTypeForRegistration(ticketType);
+
+        // Генерируем уникальный confirmation code
+        String confirmationCode = generateUniqueConfirmationCode();
+
+        // Создаём регистрацию с tenant_id события
+        Registration registration = Registration.create(
+            event,
+            ticketType,
+            userId,
+            confirmationCode,
+            request.firstName(),
+            request.lastName(),
+            request.email()
+        );
+        registration.setCustomFields(request.customFieldsOrDefault());
+        // Устанавливаем tenant_id события (не пользователя!)
+        registration.setTenantId(eventTenantId);
+
+        // Увеличиваем счётчик проданных билетов
+        ticketType.incrementSoldCount();
+        ticketTypeRepository.save(ticketType);
+
+        // Сохраняем с временным переключением tenant context на tenant события
+        UUID originalTenantId = TenantContext.getTenantId();
+        try {
+            TenantContext.setTenantId(eventTenantId);
+            registration = registrationRepository.save(registration);
+        } finally {
+            TenantContext.setTenantId(originalTenantId);
+        }
+
+        log.info("Регистрация на публичное событие создана: registrationId={}, eventId={}, userId={}, confirmationCode={}",
+            registration.getId(), eventId, userId, confirmationCode);
+
+        // Публикуем событие в RabbitMQ для отправки уведомления
+        registrationEventPublisher.publishCreated(registration);
+
+        return registrationMapper.toDto(registration);
+    }
+
     // ==================== Просмотр регистраций ====================
 
     /**
