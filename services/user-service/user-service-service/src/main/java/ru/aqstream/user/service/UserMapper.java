@@ -19,6 +19,7 @@ public interface UserMapper {
      * @param user сущность пользователя
      * @return DTO пользователя
      */
+    @Mapping(source = "admin", target = "isAdmin")
     UserDto toDto(User user);
 
     /**

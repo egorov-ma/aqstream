@@ -12,6 +12,7 @@ import java.util.UUID;
  * @param lastName      фамилия
  * @param avatarUrl     URL аватара
  * @param emailVerified подтверждён ли email
+ * @param isAdmin       является ли администратором
  * @param createdAt     дата регистрации
  */
 public record UserDto(
@@ -21,6 +22,7 @@ public record UserDto(
     String lastName,
     String avatarUrl,
     boolean emailVerified,
+    boolean isAdmin,
     Instant createdAt
 ) {
 }
