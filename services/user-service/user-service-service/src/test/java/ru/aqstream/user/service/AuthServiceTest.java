@@ -418,6 +418,7 @@ class AuthServiceTest {
             user.getLastName(),
             user.getAvatarUrl(),
             user.isEmailVerified(),
+            user.isAdmin(),
             Instant.now()
         );
     }

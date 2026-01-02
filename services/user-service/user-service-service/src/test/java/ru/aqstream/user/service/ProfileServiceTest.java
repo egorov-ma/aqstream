@@ -84,6 +84,7 @@ class ProfileServiceTest {
                 newLastName,
                 null,
                 false,
+                false,
                 Instant.now()
             );
 
@@ -134,6 +135,7 @@ class ProfileServiceTest {
                 newFirstName,
                 null,
                 null,
+                false,
                 false,
                 Instant.now()
             );

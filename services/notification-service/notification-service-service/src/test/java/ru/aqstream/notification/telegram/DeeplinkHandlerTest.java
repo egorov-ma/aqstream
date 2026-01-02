@@ -398,6 +398,7 @@ class DeeplinkHandlerTest {
             FAKER.name().lastName(),
             null, // avatarUrl
             true, // emailVerified
+            false, // isAdmin
             Instant.now()
         );
     }
