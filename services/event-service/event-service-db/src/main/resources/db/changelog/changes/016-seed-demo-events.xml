@@ -7,8 +7,9 @@
 
     <!-- Seed: демонстрационные публичные события -->
 
-    <changeSet id="016-1" author="aqstream">
-        <comment>Добавление демо-событий для разработки</comment>
+    <!-- context="dev" означает, что миграция запускается только в dev окружении -->
+    <changeSet id="016-1" author="aqstream" context="dev">
+        <comment>Добавление демо-событий для разработки (только для dev окружения)</comment>
 
         <sql>
             INSERT INTO event_service.events (
