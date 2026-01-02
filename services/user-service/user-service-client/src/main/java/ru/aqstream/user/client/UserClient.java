@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.aqstream.user.api.dto.AcceptInviteByTelegramRequest;
+import ru.aqstream.user.api.dto.ConfirmTelegramAuthRequest;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
@@ -101,4 +102,13 @@ public interface UserClient {
      */
     @GetMapping("/api/v1/internal/users/organizations/{organizationId}")
     Optional<OrganizationDto> findOrganizationById(@PathVariable("organizationId") UUID organizationId);
+
+    /**
+     * Подтверждает авторизацию через Telegram бота.
+     * Вызывается ботом при нажатии кнопки "Подтвердить вход".
+     *
+     * @param request данные для подтверждения
+     */
+    @PostMapping("/api/v1/internal/users/auth/telegram/confirm")
+    void confirmTelegramAuth(@RequestBody ConfirmTelegramAuthRequest request);
 }

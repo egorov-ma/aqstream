@@ -23,6 +23,7 @@ import ru.aqstream.user.client.UserClient;
  * Обработчик deeplink параметров в команде /start.
  *
  * Поддерживаемые deeplinks:
+ * - /start auth_{token} — авторизация через Telegram бота
  * - /start invite_{code} — приглашение в организацию
  * - /start link_{token} — привязка Telegram к email-аккаунту
  * - /start reg_{id} — просмотр регистрации
@@ -39,6 +40,44 @@ public class DeeplinkHandler {
     private final TelegramMessageSender messageSender;
     private final UserClient userClient;
     private final EventClient eventClient;
+
+    /**
+     * Обработка авторизации через Telegram бота.
+     * /start auth_{token}
+     *
+     * <p>Показывает сообщение с кнопкой "Подтвердить вход".
+     * При нажатии кнопки callback_query обрабатывается в TelegramBotService.</p>
+     *
+     * @param chatId ID чата
+     * @param token  токен авторизации
+     * @param from   информация о пользователе
+     */
+    public void handleAuth(Long chatId, String token, User from) {
+        log.info("Обработка авторизации: chatId={}, token={}...",
+            chatId, token.length() > 8 ? token.substring(0, 8) : token);
+
+        if (from == null) {
+            log.warn("Не удалось получить информацию о пользователе Telegram для авторизации");
+            sendErrorMessage(chatId, "Не удалось получить информацию о вашем Telegram аккаунте.");
+            return;
+        }
+
+        String message = """
+            🔐 *Вход в AqStream*
+
+            Вы запросили вход в систему.
+
+            Если это были вы, нажмите кнопку ниже для подтверждения.
+            """;
+
+        // Кнопка с callbackData для подтверждения
+        String[][] buttons = {
+            {"✅ Подтвердить вход", "confirm_auth:" + token}
+        };
+
+        messageSender.sendMessageWithButtons(chatId, message, buttons);
+        log.debug("Отправлена кнопка подтверждения авторизации: chatId={}", chatId);
+    }
 
     /**
      * Обработка приглашения в организацию.

@@ -23,4 +23,19 @@ public final class TelegramUtils {
         }
         return telegramId.substring(0, 3) + "***" + telegramId.substring(telegramId.length() - 3);
     }
+
+    /**
+     * Маскирует токен авторизации для безопасного логирования.
+     *
+     * <p>Пример: abcdefghijklmnop -> abcdefgh...</p>
+     *
+     * @param token токен для маскирования
+     * @return маскированный токен (первые 8 символов + ...)
+     */
+    public static String maskToken(String token) {
+        if (token == null || token.length() <= 8) {
+            return "***";
+        }
+        return token.substring(0, 8) + "...";
+    }
 }

@@ -62,6 +62,59 @@ class DeeplinkHandlerTest {
         lenient().when(telegramUser.id()).thenReturn(telegramId);
     }
 
+    // ==================== handleAuth ====================
+
+    @Nested
+    @DisplayName("handleAuth")
+    class HandleAuth {
+
+        private String authToken;
+
+        @BeforeEach
+        void setUp() {
+            authToken = FAKER.regexify("[a-zA-Z0-9]{32}");
+        }
+
+        @Test
+        @DisplayName("from is null — отправляет сообщение об ошибке")
+        void handleAuth_FromNull_SendsErrorMessage() {
+            // when
+            deeplinkHandler.handleAuth(chatId, authToken, null);
+
+            // then
+            verify(messageSender).sendMessage(eq(chatId), contains("Не удалось получить информацию"));
+            verify(messageSender, never()).sendMessageWithButtons(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("валидный запрос — отправляет сообщение с кнопкой подтверждения")
+        void handleAuth_ValidRequest_SendsConfirmButton() {
+            // when
+            deeplinkHandler.handleAuth(chatId, authToken, telegramUser);
+
+            // then
+            verify(messageSender).sendMessageWithButtons(
+                eq(chatId),
+                contains("Вход в AqStream"),
+                any(String[][].class)
+            );
+        }
+
+        @Test
+        @DisplayName("сообщение содержит инструкцию для подтверждения")
+        void handleAuth_MessageContainsConfirmInstructions() {
+            // when
+            deeplinkHandler.handleAuth(chatId, authToken, telegramUser);
+
+            // then
+            verify(messageSender).sendMessageWithButtons(
+                eq(chatId),
+                contains("нажмите кнопку"),
+                any(String[][].class)
+            );
+        }
+    }
+
     // ==================== handleInvite ====================
 
     @Nested

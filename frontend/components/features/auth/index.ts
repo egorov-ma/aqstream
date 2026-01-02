@@ -3,3 +3,5 @@ export { RegisterForm } from './register-form';
 export { ForgotPasswordForm } from './forgot-password-form';
 export { ResetPasswordForm } from './reset-password-form';
 export { TelegramLogin } from './telegram-login';
+export { TelegramBotLogin } from './telegram-bot-login';
+export { TelegramAuth } from './telegram-auth';

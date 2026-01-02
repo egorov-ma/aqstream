@@ -14,6 +14,7 @@ import ru.aqstream.notification.config.TelegramProperties;
 @Slf4j
 public class TelegramCommandHandler {
 
+    private static final String AUTH_PREFIX = "auth_";
     private static final String INVITE_PREFIX = "invite_";
     private static final String LINK_PREFIX = "link_";
     private static final String REG_PREFIX = "reg_";
@@ -39,7 +40,10 @@ public class TelegramCommandHandler {
         }
 
         // Обработка deeplinks
-        if (param.startsWith(INVITE_PREFIX)) {
+        if (param.startsWith(AUTH_PREFIX)) {
+            String authToken = param.substring(AUTH_PREFIX.length());
+            deeplinkHandler.handleAuth(chatId, authToken, from);
+        } else if (param.startsWith(INVITE_PREFIX)) {
             String inviteCode = param.substring(INVITE_PREFIX.length());
             deeplinkHandler.handleInvite(chatId, inviteCode, from);
         } else if (param.startsWith(LINK_PREFIX)) {

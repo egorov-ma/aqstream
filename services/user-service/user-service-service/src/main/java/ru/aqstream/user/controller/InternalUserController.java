@@ -2,11 +2,12 @@ package ru.aqstream.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.aqstream.common.web.ClientIpResolver;
 import ru.aqstream.user.api.dto.AcceptInviteByTelegramRequest;
+import ru.aqstream.user.api.dto.ConfirmTelegramAuthRequest;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
@@ -25,6 +28,7 @@ import ru.aqstream.user.db.repository.GroupMemberRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.service.OrganizationInviteService;
 import ru.aqstream.user.service.OrganizationService;
+import ru.aqstream.user.service.TelegramBotAuthService;
 import ru.aqstream.user.service.TelegramLinkService;
 import ru.aqstream.user.service.UserMapper;
 
@@ -48,6 +52,7 @@ public class InternalUserController {
     private final OrganizationService organizationService;
     private final OrganizationInviteService inviteService;
     private final TelegramLinkService telegramLinkService;
+    private final TelegramBotAuthService telegramBotAuthService;
 
     /**
      * Получает данные пользователя по ID.
@@ -100,10 +105,9 @@ public class InternalUserController {
         log.info("Internal: очистка Telegram chat_id: chatId=***{}",
             chatId.length() > 3 ? chatId.substring(chatId.length() - 3) : "");
 
+        // Ищем по telegram_id или по telegram_chat_id
         userRepository.findByTelegramId(chatId)
-            .or(() -> userRepository.findAll().stream()
-                .filter(u -> chatId.equals(u.getTelegramChatId()))
-                .findFirst())
+            .or(() -> userRepository.findByTelegramChatId(chatId))
             .ifPresent(user -> {
                 user.setTelegramChatId(null);
                 userRepository.save(user);
@@ -223,5 +227,32 @@ public class InternalUserController {
         return organizationService.findByIdInternal(organizationId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Подтверждает авторизацию через Telegram бота.
+     * Вызывается ботом при нажатии кнопки "Подтвердить вход".
+     *
+     * @param request     данные для подтверждения
+     * @param httpRequest HTTP запрос для извлечения IP
+     * @return 200 OK при успешном подтверждении
+     */
+    @Operation(
+        summary = "Подтвердить авторизацию через Telegram",
+        description = "Вызывается ботом при нажатии кнопки подтверждения входа"
+    )
+    @PostMapping("/auth/telegram/confirm")
+    public ResponseEntity<Void> confirmTelegramAuth(
+        @Valid @RequestBody ConfirmTelegramAuthRequest request,
+        HttpServletRequest httpRequest
+    ) {
+        log.info("Internal: подтверждение авторизации через Telegram: telegramId={}", request.telegramId());
+
+        String userAgent = httpRequest.getHeader("User-Agent");
+        String ipAddress = ClientIpResolver.resolve(httpRequest);
+
+        telegramBotAuthService.confirmAuth(request, userAgent, ipAddress);
+
+        return ResponseEntity.ok().build();
     }
 }

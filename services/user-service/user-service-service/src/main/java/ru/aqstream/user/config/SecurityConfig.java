@@ -57,6 +57,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Публичные эндпоинты аутентификации
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                // WebSocket для авторизации через Telegram бота
+                .requestMatchers("/ws/telegram-auth/**").permitAll()
                 // Internal endpoints для межсервисного взаимодействия
                 // (защита на уровне сети, не доступны извне)
                 .requestMatchers("/api/v1/internal/**").permitAll()

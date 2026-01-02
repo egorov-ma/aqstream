@@ -6,7 +6,9 @@ import type {
   RegisterRequest,
   ResendVerificationRequest,
   ResetPasswordRequest,
+  TelegramAuthInitResponse,
   TelegramAuthRequest,
+  TelegramAuthStatusResponse,
   User,
   VerifyEmailRequest,
 } from './types';
@@ -56,6 +58,19 @@ export const authApi = {
 
   telegramAuth: async (data: TelegramAuthRequest): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/api/v1/auth/telegram', data);
+    return response.data;
+  },
+
+  // Telegram Bot Auth (авторизация через бота)
+  telegramBotInit: async (): Promise<TelegramAuthInitResponse> => {
+    const response = await apiClient.post<TelegramAuthInitResponse>('/api/v1/auth/telegram/init');
+    return response.data;
+  },
+
+  telegramBotStatus: async (token: string): Promise<TelegramAuthStatusResponse> => {
+    const response = await apiClient.get<TelegramAuthStatusResponse>(
+      `/api/v1/auth/telegram/status/${token}`
+    );
     return response.data;
   },
 };

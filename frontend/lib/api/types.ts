@@ -67,6 +67,21 @@ export interface TelegramAuthRequest {
   hash: string;
 }
 
+// Telegram Bot Auth (авторизация через бота)
+export type TelegramAuthTokenStatus = 'PENDING' | 'CONFIRMED' | 'EXPIRED' | 'USED';
+
+export interface TelegramAuthInitResponse {
+  token: string;
+  deeplink: string;
+  expiresAt: string;
+}
+
+export interface TelegramAuthStatusResponse {
+  status: TelegramAuthTokenStatus;
+  accessToken?: string;
+  user?: User;
+}
+
 // User
 
 export interface User {

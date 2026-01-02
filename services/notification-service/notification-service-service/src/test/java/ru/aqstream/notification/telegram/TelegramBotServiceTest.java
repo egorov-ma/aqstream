@@ -19,11 +19,23 @@ import ru.aqstream.notification.config.TelegramProperties;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
+
+import com.pengrad.telegrambot.model.CallbackQuery;
+import com.pengrad.telegrambot.request.AnswerCallbackQuery;
+import feign.FeignException;
+import feign.Request;
+import feign.RequestTemplate;
+import ru.aqstream.user.api.dto.ConfirmTelegramAuthRequest;
+import ru.aqstream.user.client.UserClient;
+import java.util.Collections;
 
 /**
  * Unit тесты для TelegramBotService.
@@ -43,6 +55,12 @@ class TelegramBotServiceTest {
 
     @Mock
     private TelegramCommandHandler commandHandler;
+
+    @Mock
+    private TelegramMessageSender messageSender;
+
+    @Mock
+    private UserClient userClient;
 
     @InjectMocks
     private TelegramBotService telegramBotService;
@@ -148,6 +166,7 @@ class TelegramBotServiceTest {
             // given
             Update update = mock(Update.class);
             when(update.message()).thenReturn(null);
+            when(update.callbackQuery()).thenReturn(null);
 
             // when
             telegramBotService.processUpdate(update);
@@ -155,6 +174,89 @@ class TelegramBotServiceTest {
             // then
             verify(commandHandler, times(0)).handleStart(anyLong(), anyString(), any());
             verify(commandHandler, times(0)).handleHelp(anyLong());
+        }
+
+        @Test
+        @DisplayName("callbackQuery с confirm_auth — вызывает userClient")
+        void processUpdate_CallbackQuery_ConfirmAuth_CallsUserClient() {
+            // given
+            String token = "test-token-12345678";
+            Update update = createCallbackUpdate("confirm_auth:" + token);
+
+            // when
+            telegramBotService.processUpdate(update);
+
+            // then
+            verify(userClient).confirmTelegramAuth(any(ConfirmTelegramAuthRequest.class));
+            verify(bot).execute(any(AnswerCallbackQuery.class));
+            verify(messageSender).sendMessage(eq(chatId), anyString());
+        }
+
+        @Test
+        @DisplayName("callbackQuery с confirm_auth — успешно отправляет сообщение")
+        void processUpdate_CallbackQuery_ConfirmAuth_SendsSuccessMessage() {
+            // given
+            String token = "test-token-12345678";
+            Update update = createCallbackUpdate("confirm_auth:" + token);
+
+            // when
+            telegramBotService.processUpdate(update);
+
+            // then
+            verify(messageSender).sendMessage(eq(chatId),
+                org.mockito.ArgumentMatchers.contains("Вход выполнен"));
+        }
+
+        @Test
+        @DisplayName("callbackQuery с confirm_auth — ошибка 404 отправляет сообщение об устаревшей ссылке")
+        void processUpdate_CallbackQuery_ConfirmAuth_NotFound_SendsExpiredMessage() {
+            // given
+            String token = "expired-token-12345";
+            Update update = createCallbackUpdate("confirm_auth:" + token);
+
+            Request request = Request.create(Request.HttpMethod.POST, "/test",
+                Collections.emptyMap(), null, new RequestTemplate());
+            FeignException.NotFound notFoundException =
+                new FeignException.NotFound("Not found", request, null, null);
+
+            doThrow(notFoundException).when(userClient).confirmTelegramAuth(any());
+
+            // when
+            telegramBotService.processUpdate(update);
+
+            // then
+            verify(messageSender).sendMessage(eq(chatId),
+                org.mockito.ArgumentMatchers.contains("устарела"));
+        }
+
+        @Test
+        @DisplayName("callbackQuery с неизвестными данными — игнорируется")
+        void processUpdate_CallbackQuery_UnknownData_Ignored() {
+            // given
+            Update update = createCallbackUpdate("unknown_action:data");
+
+            // when
+            telegramBotService.processUpdate(update);
+
+            // then
+            verify(userClient, never()).confirmTelegramAuth(any());
+            verify(messageSender, never()).sendMessage(anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("callbackQuery без data — игнорируется")
+        void processUpdate_CallbackQuery_NullData_Ignored() {
+            // given
+            Update update = mock(Update.class);
+            CallbackQuery callbackQuery = mock(CallbackQuery.class);
+            when(update.callbackQuery()).thenReturn(callbackQuery);
+            when(callbackQuery.data()).thenReturn(null);
+
+            // when
+            telegramBotService.processUpdate(update);
+
+            // then
+            verify(userClient, never()).confirmTelegramAuth(any());
         }
     }
 
@@ -189,6 +291,37 @@ class TelegramBotServiceTest {
 
         when(update.message()).thenReturn(message);
         when(message.text()).thenReturn(null);
+
+        return update;
+    }
+
+    /**
+     * Создаёт Update с CallbackQuery (нажатие inline-кнопки).
+     * Использует lenient stubbing для полей, которые могут не использоваться в некоторых тестах.
+     */
+    @SuppressWarnings("deprecation")
+    private Update createCallbackUpdate(String callbackData) {
+        Update update = mock(Update.class);
+        CallbackQuery callbackQuery = mock(CallbackQuery.class);
+        Message message = mock(Message.class);
+        Chat chat = mock(Chat.class);
+        User user = mock(User.class);
+
+        when(update.callbackQuery()).thenReturn(callbackQuery);
+        lenient().when(update.message()).thenReturn(null);
+
+        when(callbackQuery.data()).thenReturn(callbackData);
+        lenient().when(callbackQuery.id()).thenReturn("callback-id-123");
+        lenient().when(callbackQuery.from()).thenReturn(user);
+        lenient().when(callbackQuery.message()).thenReturn(message);
+
+        lenient().when(message.chat()).thenReturn(chat);
+        lenient().when(chat.id()).thenReturn(chatId);
+
+        lenient().when(user.id()).thenReturn(telegramUserId);
+        lenient().when(user.firstName()).thenReturn(FAKER.name().firstName());
+        lenient().when(user.lastName()).thenReturn(FAKER.name().lastName());
+        lenient().when(user.username()).thenReturn(FAKER.internet().username());
 
         return update;
     }

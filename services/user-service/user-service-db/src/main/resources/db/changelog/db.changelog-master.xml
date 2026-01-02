@@ -22,5 +22,6 @@
     <include file="db/changelog/changes/011-create-groups-table.xml"/>
     <include file="db/changelog/changes/012-create-group-members-table.xml"/>
     <include file="db/changelog/changes/013-create-telegram-link-tokens-table.xml"/>
+    <include file="db/changelog/changes/014-create-telegram-auth-tokens-table.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Таблица для токенов авторизации через Telegram бота -->
+    <changeSet id="014-create-telegram-auth-tokens-table" author="aqstream">
+        <comment>Создание таблицы telegram_auth_tokens для авторизации через Telegram бота</comment>
+
+        <createTable tableName="telegram_auth_tokens" schemaName="user_service">
+            <column name="id" type="UUID" defaultValueComputed="uuid_generate_v4()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="token" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="telegram_id" type="VARCHAR(64)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="telegram_first_name" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="telegram_last_name" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="telegram_username" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="telegram_chat_id" type="VARCHAR(64)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="confirmed_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Уникальный индекс на token -->
+        <createIndex
+            indexName="idx_telegram_auth_tokens_token"
+            tableName="telegram_auth_tokens"
+            schemaName="user_service"
+            unique="true">
+            <column name="token"/>
+        </createIndex>
+
+        <!-- Индекс для поиска по статусу и времени истечения -->
+        <createIndex
+            indexName="idx_telegram_auth_tokens_status_expires"
+            tableName="telegram_auth_tokens"
+            schemaName="user_service">
+            <column name="status"/>
+            <column name="expires_at"/>
+        </createIndex>
+
+        <!-- Индекс для очистки старых токенов -->
+        <createIndex
+            indexName="idx_telegram_auth_tokens_created_at"
+            tableName="telegram_auth_tokens"
+            schemaName="user_service">
+            <column name="created_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="telegram_auth_tokens" schemaName="user_service"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

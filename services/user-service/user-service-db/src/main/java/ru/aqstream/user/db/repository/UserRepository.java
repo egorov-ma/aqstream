@@ -46,4 +46,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return true если пользователь существует
      */
     boolean existsByTelegramId(String telegramId);
+
+    /**
+     * Ищет пользователя по Telegram Chat ID.
+     *
+     * @param telegramChatId Telegram Chat ID
+     * @return пользователь если найден
+     */
+    Optional<User> findByTelegramChatId(String telegramChatId);
 }

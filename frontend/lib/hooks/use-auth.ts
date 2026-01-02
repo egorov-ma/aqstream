@@ -137,3 +137,14 @@ export function useResendVerification() {
     },
   });
 }
+
+/**
+ * Hook для инициализации авторизации через Telegram бота.
+ * Возвращает токен и deeplink для открытия бота.
+ */
+export function useTelegramBotAuthInit() {
+  return useMutation({
+    mutationFn: () => authApi.telegramBotInit(),
+    // Ошибки обрабатываются в компоненте
+  });
+}
