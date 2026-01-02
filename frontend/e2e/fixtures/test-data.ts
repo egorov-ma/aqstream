@@ -3,13 +3,25 @@
  * These users must exist in the test database (created by Docker seed data)
  *
  * Роли (согласно docs/business/role-model.md):
- * - owner: Админ платформы (is_admin=true) + Владелец организации
- * - user: Обычный пользователь платформы
+ * - admin: Платформенный администратор (is_admin=true) — одобряет заявки на организации
+ * - owner: Владелец организации — управляет своей организацией, событиями, группами
+ * - user: Обычный пользователь платформы — регистрируется на события, подаёт заявки
  */
 export const testUsers = {
   /**
-   * Админ платформы + Владелец организации "Test Organization"
-   * Используй для: одобрения заявок на организации, управления платформой
+   * Платформенный администратор (is_admin=true)
+   * Используй для: одобрения/отклонения заявок на создание организаций
+   */
+  admin: {
+    email: 'admin@test.local',
+    password: '123123Qw!',
+    firstName: 'Test',
+    lastName: 'Admin',
+  },
+  /**
+   * Владелец организации "Test Organization"
+   * Используй для: создания событий, управления билетами, check-in
+   * НЕ является платформенным админом (is_admin=false)
    */
   owner: {
     email: 'owner@test.local',
@@ -30,6 +42,7 @@ export const testUsers = {
 } as const;
 
 export const testOrganization = {
+  id: '11111111-1111-1111-1111-111111111111',
   name: 'Test Organization',
   slug: 'test-organization',
 } as const;

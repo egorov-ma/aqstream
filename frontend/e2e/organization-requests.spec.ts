@@ -1,10 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { login, logout } from './fixtures/auth';
+import { login } from './fixtures/auth';
 import { testUsers } from './fixtures/test-data';
-
-// Все тесты в этом файле выполняются последовательно в одном worker
-// Это необходимо из-за shared state (login sessions, created data)
-test.describe.configure({ mode: 'serial' });
+import { TestDataHelper } from './fixtures/api-helpers';
 
 /**
  * E2E тесты для Organization Requests (J3)
@@ -12,136 +9,113 @@ test.describe.configure({ mode: 'serial' });
  * Тестирует полный flow:
  * 1. User подаёт заявку на создание организации
  * 2. Admin видит заявку в списке
- * 3. Admin одобряет заявку
- * 4. User видит статус "Одобрено"
+ * 3. Admin одобряет/отклоняет заявку
+ * 4. User видит статус "Одобрено"/"Отклонено"
  *
- * Примечание: owner@test.local является администратором платформы (is_admin=true)
+ * Примечание: admin@test.local — платформенный администратор (is_admin=true)
  */
-test.describe('Organization Requests (J3)', () => {
+test.describe('Organization Requests - Approval Flow (J3)', () => {
   const timestamp = Date.now();
-  const testOrgName = `E2E Test Org ${timestamp}`;
-  const testOrgSlug = `e2e-test-org-${timestamp}`;
-  const testOrgDescription = 'Организация для E2E тестирования';
+  const testOrgName = `E2E Approve Org ${timestamp}`;
+  const testOrgSlug = `e2e-approve-org-${timestamp}`;
 
+  // Cleanup pending requests before tests
   test.beforeAll(async ({ browser }) => {
-    // Проверяем что Docker стек запущен
-    const page = await browser.newPage();
-    try {
-      const response = await page.request.get('http://localhost:8080/actuator/health');
-      expect(response.ok()).toBeTruthy();
-    } finally {
-      await page.close();
-    }
+    const context = await browser.newContext();
+
+    const userToken = await TestDataHelper.getAuthToken(
+      context.request,
+      testUsers.user.email,
+      testUsers.user.password
+    );
+    const adminToken = await TestDataHelper.getAuthToken(
+      context.request,
+      testUsers.admin.email,
+      testUsers.admin.password
+    );
+
+    await TestDataHelper.cleanupPendingOrganizationRequests(
+      context.request,
+      userToken,
+      adminToken
+    );
+
+    await context.close();
   });
 
-  test('user can navigate to organization request page', async ({ page }) => {
-    await login(page, testUsers.user);
+  test('complete approval flow: user submits → admin approves → user sees status', async ({
+    page,
+  }) => {
+    // Шаг 1: User подаёт заявку
+    await test.step('User входит и открывает страницу заявки', async () => {
+      await login(page, testUsers.user);
+      await page.goto('/dashboard/organization-request');
+      await expect(page.getByRole('heading', { name: /заявка на организацию/i })).toBeVisible();
+    });
 
-    await page.goto('/dashboard/organization-request');
-    await expect(page.getByRole('heading', { name: /заявка на организацию/i })).toBeVisible();
-    await expect(page.getByTestId('org-request-form')).toBeVisible();
-  });
+    await test.step('User заполняет и отправляет заявку', async () => {
+      await expect(page.getByTestId('org-request-form')).toBeVisible({ timeout: 10000 });
 
-  test('user can submit organization request', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
+      await page.getByTestId('org-name-input').fill(testOrgName);
+      await page.getByTestId('org-slug-input').fill(testOrgSlug);
+      await page.getByTestId('org-description-input').fill('E2E тест: организация для одобрения');
+      await page.getByTestId('org-request-submit').click();
+    });
 
-    // Ждём загрузку формы
-    await expect(page.getByTestId('org-request-form')).toBeVisible({ timeout: 10000 });
+    await test.step('User видит уведомление и заявку в списке', async () => {
+      await expect(page.getByText(/заявка отправлена/i)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByTestId('my-requests-list')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(testOrgName)).toBeVisible();
+      await expect(page.getByTestId('request-status-pending')).toBeVisible();
+    });
 
-    // Ждём загрузку списка заявок (чтобы проверить есть ли уже pending)
-    // Ждём либо список заявок, либо пустое состояние
-    await page.waitForTimeout(2000);
+    // Шаг 2: Admin одобряет заявку
+    await test.step('Admin входит и открывает страницу заявок', async () => {
+      await login(page, testUsers.admin);
+      await page.goto('/dashboard/admin/organization-requests');
+      await expect(page.getByTestId('admin-requests-table')).toBeVisible({ timeout: 10000 });
+    });
 
-    // Проверяем наличие pending статуса в списке
-    const pendingBadge = page.getByTestId('request-status-pending');
-    const hasPendingRequest = await pendingBadge.isVisible().catch(() => false);
+    await test.step('Admin находит и одобряет заявку', async () => {
+      // Находим строку с нашей заявкой
+      const row = page.locator('tr', { hasText: testOrgName });
+      await expect(row).toBeVisible({ timeout: 10000 });
 
-    if (hasPendingRequest) {
-      // Уже есть pending запрос - тест успешен, просто проверяем что видим его
-      await expect(page.getByTestId('my-requests-list')).toBeVisible();
-      return;
-    }
+      // Одобряем
+      await row.getByRole('button', { name: /одобрить/i }).click();
+      await expect(page.getByText(/заявка одобрена/i)).toBeVisible({ timeout: 10000 });
+    });
 
-    // Нет pending запроса - можем создать новый
-    await page.getByTestId('org-name-input').fill(testOrgName);
-    await page.getByTestId('org-slug-input').fill(testOrgSlug);
-    await page.getByTestId('org-description-input').fill(testOrgDescription);
+    // Шаг 3: User видит одобренный статус
+    await test.step('User видит одобренную заявку', async () => {
+      await login(page, testUsers.user);
+      await page.goto('/dashboard/organization-request');
 
-    // Отправляем заявку
-    await page.getByTestId('org-request-submit').click();
+      await expect(page.getByTestId('my-requests-list')).toBeVisible({ timeout: 10000 });
 
-    // Ждём toast об успешной отправке
-    await expect(page.getByText(/заявка отправлена/i)).toBeVisible({ timeout: 10000 });
+      // Находим конкретную карточку по названию организации
+      const requestCard = page
+        .getByTestId('my-requests-list')
+        .locator('div')
+        .filter({ hasText: testOrgName })
+        .first();
 
-    // Проверяем что заявка появилась в списке "Мои заявки" со статусом "На рассмотрении"
-    await expect(page.getByTestId('my-requests-list')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(testOrgName)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('request-status-pending')).toBeVisible();
-  });
-
-  test('user sees their pending request in list', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
-
-    // Проверяем что заявка видна в списке (может быть наша или от предыдущего запуска)
-    await expect(page.getByTestId('my-requests-list')).toBeVisible();
-    // Проверяем что есть хотя бы один pending статус
-    await expect(page.getByTestId('request-status-pending').first()).toBeVisible();
-  });
-
-  test('admin can see pending requests', async ({ page }) => {
-    // Owner является администратором платформы (is_admin=true)
-    await login(page, testUsers.owner);
-    await page.goto('/dashboard/admin/organization-requests');
-
-    // Проверяем что админ видит таблицу заявок
-    await expect(page.getByTestId('admin-requests-table')).toBeVisible({ timeout: 10000 });
-    // Должна быть хотя бы одна заявка с кнопкой "Одобрить"
-    await expect(page.getByRole('button', { name: /одобрить/i }).first()).toBeVisible();
-  });
-
-  test('admin can approve request', async ({ page }) => {
-    await login(page, testUsers.owner);
-    await page.goto('/dashboard/admin/organization-requests');
-
-    // Ждём загрузку таблицы
-    await expect(page.getByTestId('admin-requests-table')).toBeVisible({ timeout: 10000 });
-
-    // Получаем первую кнопку "Одобрить" и кликаем
-    const approveButton = page.getByRole('button', { name: /одобрить/i }).first();
-
-    // Проверяем что кнопка видима
-    if (!(await approveButton.isVisible())) {
-      // Нет pending заявок - пропускаем
-      return;
-    }
-
-    await approveButton.click();
-
-    // Ждём toast об успешном одобрении
-    await expect(page.getByText(/заявка одобрена/i)).toBeVisible({ timeout: 10000 });
-  });
-
-  test('user sees approved status after approval', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
-
-    // Проверяем что список заявок видим
-    await expect(page.getByTestId('my-requests-list')).toBeVisible();
-    // Проверяем что есть хотя бы одна одобренная заявка
-    await expect(page.getByTestId('request-status-approved').first()).toBeVisible();
+      await expect(requestCard).toContainText('Одобрено');
+    });
   });
 
   test('user becomes organizer after approval', async ({ page }) => {
-    await login(page, testUsers.user);
+    await test.step('User входит в систему', async () => {
+      await login(page, testUsers.user);
+    });
 
-    // После одобрения заявки user должен иметь доступ к странице событий
-    // (секция "Организатор" в sidebar может не отображаться сразу из-за кеширования)
-    await page.goto('/dashboard/events');
-
-    // Проверяем что страница событий загружается (у организатора есть доступ)
-    await expect(page.getByRole('heading', { name: /события|events/i })).toBeVisible({ timeout: 10000 });
+    await test.step('User имеет доступ к странице событий', async () => {
+      await page.goto('/dashboard/events');
+      // После одобрения заявки user должен иметь доступ к странице событий
+      await expect(page.getByRole('heading', { name: /события|events/i })).toBeVisible({
+        timeout: 10000,
+      });
+    });
   });
 });
 
@@ -150,122 +124,184 @@ test.describe('Organization Requests - Rejection Flow', () => {
   const rejectOrgName = `E2E Reject Org ${timestamp}`;
   const rejectOrgSlug = `e2e-reject-org-${timestamp}`;
 
-  test('user submits another request for rejection test', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
+  // Cleanup pending requests before tests
+  test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext();
 
-    // Ждём загрузку формы
-    await expect(page.getByTestId('org-request-form')).toBeVisible({ timeout: 10000 });
+    const userToken = await TestDataHelper.getAuthToken(
+      context.request,
+      testUsers.user.email,
+      testUsers.user.password
+    );
+    const adminToken = await TestDataHelper.getAuthToken(
+      context.request,
+      testUsers.admin.email,
+      testUsers.admin.password
+    );
 
-    // Ждём загрузку списка заявок
-    await page.waitForTimeout(2000);
+    await TestDataHelper.cleanupPendingOrganizationRequests(
+      context.request,
+      userToken,
+      adminToken
+    );
 
-    // Проверяем наличие pending статуса в списке
-    const pendingBadge = page.getByTestId('request-status-pending');
-    const hasPendingRequest = await pendingBadge.isVisible().catch(() => false);
-
-    if (hasPendingRequest) {
-      // Уже есть pending запрос - тест успешен
-      await expect(page.getByTestId('my-requests-list')).toBeVisible();
-      return;
-    }
-
-    await page.getByTestId('org-name-input').fill(rejectOrgName);
-    await page.getByTestId('org-slug-input').fill(rejectOrgSlug);
-    await page.getByTestId('org-request-submit').click();
-
-    // Ждём toast об успешной отправке
-    await expect(page.getByText(/заявка отправлена/i)).toBeVisible({ timeout: 10000 });
-
-    await expect(page.getByText(rejectOrgName)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('request-status-pending')).toBeVisible();
+    await context.close();
   });
 
-  test('admin can reject request with comment', async ({ page }) => {
-    await login(page, testUsers.owner);
-    await page.goto('/dashboard/admin/organization-requests');
+  test('complete rejection flow: user submits → admin rejects → user sees status', async ({
+    page,
+  }) => {
+    // Шаг 1: User подаёт заявку
+    await test.step('User входит и открывает страницу заявки', async () => {
+      await login(page, testUsers.user);
+      await page.goto('/dashboard/organization-request');
+      await expect(page.getByTestId('org-request-form')).toBeVisible({ timeout: 10000 });
+    });
 
-    // Ждём загрузку таблицы
-    await expect(page.getByTestId('admin-requests-table')).toBeVisible({ timeout: 10000 });
+    await test.step('User заполняет и отправляет заявку', async () => {
+      await page.getByTestId('org-name-input').fill(rejectOrgName);
+      await page.getByTestId('org-slug-input').fill(rejectOrgSlug);
+      await page.getByTestId('org-request-submit').click();
+    });
 
-    // Находим первую кнопку "Отклонить" и кликаем
-    const rejectButton = page.getByRole('button', { name: /отклонить/i }).first();
+    await test.step('User видит уведомление и заявку в списке', async () => {
+      await expect(page.getByText(/заявка отправлена/i)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(rejectOrgName)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByTestId('request-status-pending')).toBeVisible();
+    });
 
-    // Проверяем что кнопка видима
-    if (!(await rejectButton.isVisible())) {
-      // Нет pending заявок для отклонения - пропускаем
-      return;
-    }
+    // Шаг 2: Admin отклоняет заявку
+    await test.step('Admin входит и открывает страницу заявок', async () => {
+      await login(page, testUsers.admin);
+      await page.goto('/dashboard/admin/organization-requests');
+      await expect(page.getByTestId('admin-requests-table')).toBeVisible({ timeout: 10000 });
+    });
 
-    await rejectButton.click();
+    await test.step('Admin находит и отклоняет заявку с комментарием', async () => {
+      const row = page.locator('tr', { hasText: rejectOrgName });
+      await expect(row).toBeVisible({ timeout: 10000 });
 
-    // Появляется диалог для ввода причины
-    await expect(page.getByTestId('reject-dialog')).toBeVisible();
+      await row.getByRole('button', { name: /отклонить/i }).click();
+      await expect(page.getByTestId('reject-dialog')).toBeVisible();
 
-    // Вводим причину отклонения (минимум 10 символов)
-    await page.getByTestId('reject-comment-input').fill('Недостаточно информации о деятельности организации');
-    await page.getByTestId('reject-confirm').click();
+      await page.getByTestId('reject-comment-input').fill('E2E тест: недостаточно информации');
+      await page.getByTestId('reject-confirm').click();
 
-    // Ждём toast об отклонении
-    await expect(page.getByText(/заявка отклонена/i)).toBeVisible({ timeout: 10000 });
-  });
+      await expect(page.getByText(/заявка отклонена/i)).toBeVisible({ timeout: 10000 });
+    });
 
-  test('user sees rejected status with comment', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
+    // Шаг 3: User видит отклонённый статус
+    await test.step('User видит отклонённую заявку с комментарием', async () => {
+      await login(page, testUsers.user);
+      await page.goto('/dashboard/organization-request');
 
-    // Проверяем список заявок
-    await expect(page.getByTestId('my-requests-list')).toBeVisible();
+      await expect(page.getByTestId('my-requests-list')).toBeVisible({ timeout: 10000 });
 
-    // Проверяем что есть заявка со статусом "Отклонено"
-    const rejectedBadge = page.getByTestId('request-status-rejected').first();
-    if (await rejectedBadge.isVisible().catch(() => false)) {
-      // Если есть отклонённая заявка, проверяем что показывается комментарий
-      await expect(page.getByText(/причина отклонения/i).first()).toBeVisible();
-    }
-    // Если нет отклонённых заявок, тест всё равно проходит
+      // Находим конкретную карточку по названию организации
+      const requestCard = page
+        .getByTestId('my-requests-list')
+        .locator('div')
+        .filter({ hasText: rejectOrgName })
+        .first();
+
+      await expect(requestCard).toContainText('Отклонено');
+      await expect(requestCard).toContainText(/причина отклонения/i);
+    });
   });
 });
 
 test.describe('Organization Requests - Validation', () => {
   test('form validates required fields', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
+    await test.step('User входит и открывает страницу заявки', async () => {
+      await login(page, testUsers.user);
+      await page.goto('/dashboard/organization-request');
+      await expect(page.getByTestId('org-request-form')).toBeVisible({ timeout: 10000 });
+    });
 
-    // Пытаемся отправить пустую форму
-    await page.getByTestId('org-request-submit').click();
+    await test.step('User пытается отправить пустую форму', async () => {
+      await page.getByTestId('org-request-submit').click();
+    });
 
-    // Должны появиться ошибки валидации
-    // Zod: "Название должно содержать минимум 2 символа"
-    await expect(page.getByText(/название должно содержать минимум/i)).toBeVisible();
+    await test.step('Отображаются ошибки валидации', async () => {
+      await expect(page.getByText(/название должно содержать минимум/i)).toBeVisible();
+    });
   });
 
   test('form validates slug format', async ({ page }) => {
-    await login(page, testUsers.user);
-    await page.goto('/dashboard/organization-request');
+    await test.step('User входит и открывает страницу заявки', async () => {
+      await login(page, testUsers.user);
+      await page.goto('/dashboard/organization-request');
+      await expect(page.getByTestId('org-request-form')).toBeVisible({ timeout: 10000 });
+    });
 
-    // Заполняем название
-    await page.getByTestId('org-name-input').fill('Test Org');
+    await test.step('User заполняет название', async () => {
+      await page.getByTestId('org-name-input').fill('Test Org');
+    });
 
-    // Вводим невалидный slug (с пробелами)
-    await page.getByTestId('org-slug-input').fill('invalid slug');
-    await page.getByTestId('org-request-submit').click();
+    await test.step('User вводит невалидный slug', async () => {
+      await page.getByTestId('org-slug-input').fill('invalid slug with spaces');
+      await page.getByTestId('org-request-submit').click();
+    });
 
-    // Должна появиться ошибка валидации slug
-    // Сообщение: "Slug может содержать только строчные латинские буквы, цифры и дефис..."
-    await expect(page.getByText(/slug может содержать только/i)).toBeVisible();
+    await test.step('Отображается ошибка валидации slug', async () => {
+      await expect(page.getByText(/slug может содержать только/i)).toBeVisible();
+    });
   });
 
   test('admin section is not visible for regular users', async ({ page }) => {
-    await login(page, testUsers.user);
+    await test.step('User входит в систему', async () => {
+      await login(page, testUsers.user);
+    });
 
-    // У обычного пользователя не должно быть секции "Администратор"
-    await expect(page.getByText(/администратор/i)).not.toBeVisible();
+    await test.step('Секция Администратор не отображается', async () => {
+      // У обычного пользователя не должно быть секции "Администратор"
+      await expect(page.getByText(/^администратор$/i)).not.toBeVisible();
+    });
 
-    // Прямой переход на admin страницу должен показать ошибку доступа
-    await page.goto('/dashboard/admin/organization-requests');
+    await test.step('Прямой переход на admin страницу не даёт доступа', async () => {
+      await page.goto('/dashboard/admin/organization-requests');
+      // Ожидаем либо редирект, либо ошибку доступа
+      // Проверяем что admin таблица НЕ видна
+      await expect(page.getByTestId('admin-requests-table')).not.toBeVisible();
+    });
+  });
+});
 
-    // Ожидаем либо редирект, либо ошибку доступа
-    // (зависит от реализации - может быть 403 или редирект на dashboard)
+test.describe('Organization Requests - Navigation', () => {
+  test('user can navigate to organization request page', async ({ page }) => {
+    await test.step('User входит в систему', async () => {
+      await login(page, testUsers.user);
+    });
+
+    await test.step('User открывает страницу заявки на организацию', async () => {
+      await page.goto('/dashboard/organization-request');
+    });
+
+    await test.step('Страница отображается корректно', async () => {
+      await expect(page.getByRole('heading', { name: /заявка на организацию/i })).toBeVisible();
+      await expect(page.getByTestId('org-request-form')).toBeVisible();
+    });
+  });
+
+  test('admin can access organization requests admin page', async ({ page }) => {
+    await test.step('Admin входит в систему', async () => {
+      await login(page, testUsers.admin);
+    });
+
+    await test.step('Admin открывает страницу заявок', async () => {
+      await page.goto('/dashboard/admin/organization-requests');
+    });
+
+    await test.step('Страница загружается корректно', async () => {
+      // Проверяем заголовок страницы
+      await expect(page.getByRole('heading', { name: /заявки на организации/i })).toBeVisible({
+        timeout: 10000,
+      });
+
+      // Должна быть либо таблица заявок, либо сообщение "Нет заявок"
+      const table = page.getByTestId('admin-requests-table');
+      const emptyState = page.getByText(/нет заявок на рассмотрение/i);
+      await expect(table.or(emptyState)).toBeVisible({ timeout: 10000 });
+    });
   });
 });
