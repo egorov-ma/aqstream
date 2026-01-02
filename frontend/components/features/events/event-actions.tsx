@@ -10,6 +10,7 @@ import {
   XCircle,
   Trash2,
   EyeOff,
+  QrCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,6 +71,10 @@ export function EventActions({ event }: EventActionsProps) {
     router.push(`/dashboard/events/${event.id}/edit`);
   };
 
+  const handleCheckIn = () => {
+    router.push(`/dashboard/events/${event.id}/check-in`);
+  };
+
   const handlePublish = async () => {
     await publishEvent.mutateAsync(event.id);
   };
@@ -122,6 +127,14 @@ export function EventActions({ event }: EventActionsProps) {
             Редактировать
           </DropdownMenuItem>
 
+          {/* Check-in для опубликованных событий */}
+          {event.status === 'PUBLISHED' && (
+            <DropdownMenuItem onClick={handleCheckIn} data-testid="event-check-in-menu-item">
+              <QrCode className="mr-2 h-4 w-4" />
+              Check-in
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuSeparator />
 
           {/* Публикация / Снятие с публикации */}
@@ -145,6 +158,7 @@ export function EventActions({ event }: EventActionsProps) {
               <DropdownMenuItem
                 onClick={() => setDialogOpen('cancel')}
                 className="text-orange-600 focus:text-orange-600"
+                data-testid="event-cancel-menu-item"
               >
                 <XCircle className="mr-2 h-4 w-4" />
                 Отменить событие
@@ -196,10 +210,13 @@ export function EventActions({ event }: EventActionsProps) {
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDialogClose}>Назад</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleDialogClose} data-testid="cancel-dialog-back">
+              Назад
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancel}
               className="bg-orange-600 hover:bg-orange-700"
+              data-testid="cancel-dialog-confirm"
             >
               Отменить событие
             </AlertDialogAction>

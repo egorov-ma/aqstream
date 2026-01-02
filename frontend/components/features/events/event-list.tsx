@@ -81,7 +81,7 @@ export function EventList({ data, isLoading, onPageChange }: EventListProps) {
     return <EventListSkeleton />;
   }
 
-  if (!data || data.content.length === 0) {
+  if (!data || data.data.length === 0) {
     return <EmptyState />;
   }
 
@@ -100,7 +100,7 @@ export function EventList({ data, isLoading, onPageChange }: EventListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.content.map((event) => (
+            {data.data.map((event) => (
               <TableRow key={event.id} data-testid={`event-row-${event.id}`}>
                 <TableCell>
                   <Link
@@ -147,7 +147,7 @@ export function EventList({ data, isLoading, onPageChange }: EventListProps) {
       {data.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Показано {data.content.length} из {data.totalElements}
+            Показано {data.data.length} из {data.totalElements}
           </p>
           <div className="flex gap-2">
             <Button

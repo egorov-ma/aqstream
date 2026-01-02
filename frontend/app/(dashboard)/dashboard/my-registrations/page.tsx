@@ -15,7 +15,7 @@ export default function MyRegistrationsPage() {
   const { data, isLoading, error } = useMyRegistrations({ size: PAGE_SIZE });
   const cancelMutation = useCancelRegistration();
 
-  const registrations = data?.content ?? [];
+  const registrations = data?.data ?? [];
 
   if (isLoading) {
     return (

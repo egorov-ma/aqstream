@@ -12,9 +12,14 @@ import {
   Ticket,
   User,
   Building2,
+  Bell,
+  Send,
+  UsersRound,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { usePermissions } from '@/lib/hooks/use-permissions';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 
 interface NavItem {
@@ -52,6 +57,15 @@ const organizerNavigation: NavItem[] = [
   },
 ];
 
+// Навигация для админа платформы
+const adminNavigation: NavItem[] = [
+  {
+    name: 'Заявки на организации',
+    href: '/dashboard/admin/organization-requests',
+    icon: ShieldCheck,
+  },
+];
+
 // Навигация для участников (личный кабинет)
 const participantNavigation: NavItem[] = [
   {
@@ -64,6 +78,26 @@ const participantNavigation: NavItem[] = [
     href: '/dashboard/account/profile',
     icon: User,
   },
+  {
+    name: 'Организации',
+    href: '/dashboard/account/organizations',
+    icon: Building2,
+  },
+  {
+    name: 'Группы',
+    href: '/dashboard/account/groups',
+    icon: UsersRound,
+  },
+  {
+    name: 'Уведомления',
+    href: '/dashboard/account/notifications',
+    icon: Bell,
+  },
+  {
+    name: 'Telegram',
+    href: '/dashboard/account/telegram',
+    icon: Send,
+  },
 ];
 
 interface SidebarNavProps {
@@ -73,9 +107,24 @@ interface SidebarNavProps {
 export function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname();
   const { isOrganizer } = usePermissions();
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.isAdmin ?? false;
 
   return (
     <nav className={cn('grid items-start gap-1', className)}>
+      {/* Секция админа платформы */}
+      {isAdmin && (
+        <>
+          <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Администратор
+          </div>
+          {adminNavigation.map((item) => (
+            <NavLink key={item.href} item={item} pathname={pathname} />
+          ))}
+          <div className="my-2 border-t" />
+        </>
+      )}
+
       {/* Секция организатора */}
       {isOrganizer && (
         <>
@@ -130,7 +179,7 @@ function CreateOrganizationCta() {
         Чтобы создавать события и управлять регистрациями
       </p>
       <Button asChild size="sm" variant="outline" className="w-full">
-        <Link href="/dashboard/create-organization">Создать</Link>
+        <Link href="/dashboard/organization-request">Подать заявку</Link>
       </Button>
     </div>
   );

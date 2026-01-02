@@ -37,6 +37,7 @@ export function createMockUser(overrides?: Partial<User>): User {
     avatarUrl: null,
     telegramId: null,
     emailVerified: true,
+    isAdmin: false,
     createdAt: '2025-01-01T00:00:00.000Z',
     ...overrides,
   };
@@ -252,15 +253,15 @@ export function createMockTelegramLinkToken(
 // PageResponse
 
 export function createMockPageResponse<T>(
-  content: T[],
-  overrides?: Partial<Omit<PageResponse<T>, 'content'>>
+  data: T[],
+  overrides?: Partial<Omit<PageResponse<T>, 'data'>>
 ): PageResponse<T> {
   return {
-    content,
+    data,
     page: 0,
     size: 20,
-    totalElements: content.length,
-    totalPages: Math.ceil(content.length / 20) || 1,
+    totalElements: data.length,
+    totalPages: Math.ceil(data.length / 20) || 1,
     hasNext: false,
     hasPrevious: false,
     ...overrides,

@@ -33,6 +33,7 @@ export function EventStatusBadge({ status, className }: EventStatusBadgeProps) {
         status === 'COMPLETED' && 'border-blue-500 text-blue-600',
         className
       )}
+      data-testid={`event-status-${status.toLowerCase()}`}
     >
       {config.label}
     </Badge>

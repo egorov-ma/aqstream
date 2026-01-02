@@ -21,6 +21,7 @@ const mockUser = {
   avatarUrl: null,
   telegramId: null,
   emailVerified: true,
+  isAdmin: false,
   createdAt: new Date().toISOString(),
 };
 

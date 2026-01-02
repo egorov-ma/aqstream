@@ -35,20 +35,20 @@ export function AttendeeCard({
   const fullName = [registration.firstName, registration.lastName].filter(Boolean).join(' ');
 
   return (
-    <Card className={isCheckedIn ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''}>
+    <Card className={isCheckedIn ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''} data-testid="attendee-card">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg" data-testid="attendee-name">
             <User className="h-5 w-5" />
             {fullName}
           </CardTitle>
           {isCheckedIn ? (
-            <Badge variant="default" className="bg-green-500">
+            <Badge variant="default" className="bg-green-500" data-testid="attendee-status-checked-in">
               <Check className="mr-1 h-3 w-3" />
               Отмечен
             </Badge>
           ) : (
-            <Badge variant="outline">Ожидает</Badge>
+            <Badge variant="outline" data-testid="attendee-status-pending">Ожидает</Badge>
           )}
         </div>
       </CardHeader>
@@ -91,6 +91,7 @@ export function AttendeeCard({
             disabled={isCheckingIn}
             className="w-full"
             size="lg"
+            data-testid="check-in-confirm-button"
           >
             {isCheckingIn ? (
               'Отмечаем...'

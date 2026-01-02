@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, Settings, User } from 'lucide-react';
+import { Bell, Building2, LogOut, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,15 +54,21 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings?tab=profile" className="flex items-center">
+          <Link href="/dashboard/account/profile" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
             Профиль
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings?tab=organization" className="flex items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            Настройки
+          <Link href="/dashboard/account/organizations" className="flex items-center">
+            <Building2 className="mr-2 h-4 w-4" />
+            Организации
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/account/notifications" className="flex items-center">
+            <Bell className="mr-2 h-4 w-4" />
+            Уведомления
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

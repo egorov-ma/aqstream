@@ -81,6 +81,7 @@ export function DateTimePicker({
               'w-[200px] justify-start text-left font-normal',
               !isValidDate && 'text-muted-foreground'
             )}
+            data-testid={dataTestId ? `${dataTestId}-button` : undefined}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {isValidDate ? format(date, 'd MMMM yyyy', { locale: ru }) : placeholder}

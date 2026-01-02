@@ -108,7 +108,7 @@ export function useDeleteEvent() {
           if (!old) return old;
           return {
             ...old,
-            content: old.content.filter((e) => e.id !== id),
+            data: old.data.filter((e) => e.id !== id),
             totalElements: old.totalElements - 1,
           };
         }

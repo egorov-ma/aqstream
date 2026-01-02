@@ -15,7 +15,7 @@ export const ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
-  VERIFY_EMAIL: '/verify-email',
+  VERIFY_EMAIL_SENT: '/verify-email-sent',
 
   // Dashboard
   DASHBOARD: '/dashboard',
@@ -24,7 +24,16 @@ export const ROUTES = {
   CREATE_EVENT: '/dashboard/events/new',
   EDIT_EVENT: (id: string) => `/dashboard/events/${id}/edit`,
   EVENT_DETAILS: (id: string) => `/dashboard/events/${id}`,
+  EVENT_CHECK_IN: (id: string) => `/dashboard/events/${id}/check-in`,
   SETTINGS: '/dashboard/settings',
+  SETTINGS_TAB: (tab: string) => `/dashboard/settings?tab=${tab}`,
+
+  // Account
+  ACCOUNT_PROFILE: '/dashboard/account/profile',
+  ACCOUNT_TELEGRAM: '/dashboard/account/telegram',
+  ACCOUNT_NOTIFICATIONS: '/dashboard/account/notifications',
+  ACCOUNT_GROUPS: '/dashboard/account/groups',
+  ACCOUNT_ORGANIZATIONS: '/dashboard/account/organizations',
 } as const;
 
 /**

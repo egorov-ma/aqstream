@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, ChevronRight, LogIn } from 'lucide-react';
+import { Building2, LogIn } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ export function OrganizationList() {
             Вы пока не состоите ни в одной организации
           </CardDescription>
           <Button asChild>
-            <Link href="/dashboard/organizations/new">Создать организацию</Link>
+            <Link href="/dashboard/organization-request">Подать заявку на организацию</Link>
           </Button>
         </CardContent>
       </Card>
@@ -94,11 +94,6 @@ export function OrganizationList() {
                     Переключиться
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href={`/dashboard/organizations/${org.id}`}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </Button>
               </div>
             </CardHeader>
           </Card>
@@ -106,9 +101,9 @@ export function OrganizationList() {
       })}
 
       <Button variant="outline" className="w-full" asChild>
-        <Link href="/dashboard/organizations/new">
+        <Link href="/dashboard/organization-request">
           <Building2 className="mr-2 h-4 w-4" />
-          Создать организацию
+          Подать заявку на организацию
         </Link>
       </Button>
     </div>

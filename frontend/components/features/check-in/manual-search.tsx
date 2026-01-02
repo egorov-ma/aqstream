@@ -37,15 +37,16 @@ export function ManualSearch({ onSearch, isLoading = false }: ManualSearchProps)
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2" data-testid="check-in-search-form">
           <Input
             placeholder="Введите код (напр. ABC123)"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             className="flex-1 uppercase"
             maxLength={10}
+            data-testid="check-in-code-input"
           />
-          <Button type="submit" disabled={!code.trim() || isLoading}>
+          <Button type="submit" disabled={!code.trim() || isLoading} data-testid="check-in-search-button">
             {isLoading ? 'Поиск...' : 'Найти'}
           </Button>
         </form>

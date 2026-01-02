@@ -139,7 +139,7 @@ export function RegistrationList({ eventId }: RegistrationListProps) {
     );
   }
 
-  const registrations = data?.content ?? [];
+  const registrations = data?.data ?? [];
   const totalPages = data?.totalPages ?? 0;
   const totalElements = data?.totalElements ?? 0;
 

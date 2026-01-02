@@ -40,7 +40,7 @@ export function useMyRegistrations(params?: { page?: number; size?: number }) {
 }
 
 /**
- * Создать регистрацию на событие
+ * Создать регистрацию на событие (для пользователей того же tenant)
  * Toast не показывается — пользователь редиректится на success page
  */
 export function useCreateRegistration(eventId: string) {
@@ -53,6 +53,25 @@ export function useCreateRegistration(eventId: string) {
       // Инвалидируем списки регистраций
       queryClient.invalidateQueries({ queryKey: ['registrations', 'my'] });
       queryClient.invalidateQueries({ queryKey: ['registrations', 'event', eventId] });
+      // Toast не показываем — success page уже информирует пользователя
+    },
+    // Ошибки обрабатываются в компоненте формы для показа конкретных сообщений
+  });
+}
+
+/**
+ * Создать регистрацию на публичное событие (по slug).
+ * Позволяет пользователям из любого tenant регистрироваться на публичные события.
+ */
+export function useCreatePublicRegistration(slug: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateRegistrationRequest) =>
+      registrationsApi.createForPublicEvent(slug, data),
+    onSuccess: () => {
+      // Инвалидируем списки регистраций
+      queryClient.invalidateQueries({ queryKey: ['registrations', 'my'] });
       // Toast не показываем — success page уже информирует пользователя
     },
     // Ошибки обрабатываются в компоненте формы для показа конкретных сообщений
@@ -84,7 +103,7 @@ export function useCancelRegistration() {
           if (!old) return old;
           return {
             ...old,
-            content: old.content.map((reg) =>
+            data: old.data.map((reg) =>
               reg.id === registrationId
                 ? { ...reg, status: 'CANCELLED' as const, cancelledAt: new Date().toISOString() }
                 : reg

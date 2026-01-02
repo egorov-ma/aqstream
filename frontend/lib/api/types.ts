@@ -7,7 +7,7 @@ export interface ApiError {
 }
 
 export interface PageResponse<T> {
-  content: T[];
+  data: T[];
   page: number;
   size: number;
   totalElements: number;
@@ -77,6 +77,7 @@ export interface User {
   avatarUrl: string | null;
   telegramId: string | null;
   emailVerified: boolean;
+  isAdmin: boolean;
   createdAt: string;
 }
 
@@ -117,6 +118,34 @@ export interface OrganizationMember {
   invitedByName: string | null;
   joinedAt: string;
   createdAt: string;
+}
+
+// Organization Request
+
+export type OrganizationRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface OrganizationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  name: string;
+  slug: string;
+  description?: string;
+  status: OrganizationRequestStatus;
+  reviewedById?: string;
+  reviewComment?: string;
+  reviewedAt?: string;
+  createdAt: string;
+}
+
+export interface CreateOrganizationRequestRequest {
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export interface RejectOrganizationRequestRequest {
+  comment: string;
 }
 
 // Group

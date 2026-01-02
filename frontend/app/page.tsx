@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { UpcomingEventsSection } from '@/components/features/home';
-import { eventsApi } from '@/lib/api/events';
+import { serverEventsApi } from '@/lib/api/server';
 import type { PublicEventSummary } from '@/lib/api/types';
 
 /**
@@ -13,9 +13,9 @@ async function getUpcomingEvents(): Promise<{
   hasMore: boolean;
 }> {
   try {
-    const data = await eventsApi.listPublic({ size: 6 });
+    const data = await serverEventsApi.listPublic({ size: 6 });
     return {
-      events: data.content,
+      events: data.data,
       hasMore: data.hasNext ?? false,
     };
   } catch {
