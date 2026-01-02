@@ -23,6 +23,6 @@
     <include file="db/changelog/changes/013-add-registration-form-config.xml"/>
     <include file="db/changelog/changes/014-add-cover-image-url.xml"/>
     <include file="db/changelog/changes/015-add-registrations-user-rls.xml"/>
-    <include file="db/changelog/changes/016-seed-demo-events.xml"/>
+    <!-- 016-seed-demo-events.xml удалён: демо-данные только для локальной разработки -->
 
 </databaseChangeLog>
