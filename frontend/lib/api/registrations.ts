@@ -51,13 +51,25 @@ export const registrationsApi = {
   },
 
   /**
-   * Создать регистрацию на событие
+   * Создать регистрацию на событие (для пользователей того же tenant)
    */
   create: async (
     eventId: string,
     data: CreateRegistrationRequest
   ): Promise<Registration> => {
     const response = await apiClient.post(`/api/v1/events/${eventId}/registrations`, data);
+    return response.data;
+  },
+
+  /**
+   * Создать регистрацию на публичное событие (по slug).
+   * Позволяет пользователям из любого tenant регистрироваться на публичные события.
+   */
+  createForPublicEvent: async (
+    slug: string,
+    data: CreateRegistrationRequest
+  ): Promise<Registration> => {
+    const response = await apiClient.post(`/api/v1/public/events/${slug}/registrations`, data);
     return response.data;
   },
 

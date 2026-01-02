@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EventGrid } from '@/components/features/public-event';
-import { eventsApi } from '@/lib/api/events';
+import { serverEventsApi } from '@/lib/api/server';
 import type { PublicEventSummary } from '@/lib/api/types';
 
 export const metadata: Metadata = {
@@ -28,9 +28,9 @@ async function getEvents(page: number): Promise<{
   hasPrevious: boolean;
 }> {
   try {
-    const data = await eventsApi.listPublic({ page, size: PAGE_SIZE });
+    const data = await serverEventsApi.listPublic({ page, size: PAGE_SIZE });
     return {
-      events: data.content,
+      events: data.data,
       totalPages: data.totalPages,
       currentPage: data.page,
       hasNext: data.hasNext ?? false,

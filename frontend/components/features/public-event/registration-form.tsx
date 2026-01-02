@@ -35,7 +35,7 @@ import {
   type RegistrationFormData,
 } from '@/lib/validations/registration';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { useCreateRegistration } from '@/lib/hooks/use-registrations';
+import { useCreatePublicRegistration } from '@/lib/hooks/use-registrations';
 import { getRegistrationErrorMessage } from '@/lib/api/error-codes';
 import { ROUTES, getLoginUrl, getRegisterUrl } from '@/lib/routes';
 import type { Event, TicketType, CustomFieldConfig, Registration, ApiError } from '@/lib/api/types';
@@ -101,7 +101,8 @@ export function RegistrationForm({
   const router = useRouter();
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const createRegistration = useCreateRegistration(event.id);
+  // Используем публичный endpoint для регистрации по slug
+  const createRegistration = useCreatePublicRegistration(event.slug);
 
   // Получаем дефолтные значения с автозаполнением для авторизованных
   const defaultValues = getDefaultRegistrationValues(event.registrationFormConfig, {

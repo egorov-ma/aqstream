@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { eventsApi } from '@/lib/api/events';
+import { serverEventsApi } from '@/lib/api/server';
 import { generateEventJsonLd } from '@/lib/utils/seo';
 import {
   EventHero,
@@ -21,22 +21,24 @@ interface EventPageProps {
 export const revalidate = 60;
 
 /**
- * Получает событие по slug на сервере
+ * Получает событие по slug на сервере.
+ * Использует серверный API клиент для SSR в Docker.
  */
 async function getEvent(slug: string): Promise<Event | null> {
   try {
-    return await eventsApi.getBySlug(slug);
+    return await serverEventsApi.getBySlug(slug);
   } catch {
     return null;
   }
 }
 
 /**
- * Получает типы билетов по slug на сервере
+ * Получает типы билетов по slug на сервере.
+ * Использует серверный API клиент для SSR в Docker.
  */
 async function getTicketTypes(slug: string): Promise<TicketType[]> {
   try {
-    return await eventsApi.getPublicTicketTypes(slug);
+    return await serverEventsApi.getPublicTicketTypes(slug);
   } catch {
     return [];
   }

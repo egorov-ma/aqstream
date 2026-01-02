@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CheckCircle, MessageSquare, Calendar, ArrowLeft } from 'lucide-react';
 
-import { eventsApi } from '@/lib/api/events';
+import { serverEventsApi } from '@/lib/api/server';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,7 @@ interface SuccessPageProps {
  */
 async function getEvent(slug: string): Promise<Event | null> {
   try {
-    return await eventsApi.getBySlug(slug);
+    return await serverEventsApi.getBySlug(slug);
   } catch {
     return null;
   }
@@ -78,7 +78,7 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-12">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto" data-testid="registration-success-card">
           <CardHeader className="text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <CardTitle className="text-2xl">Регистрация успешна!</CardTitle>

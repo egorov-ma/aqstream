@@ -71,7 +71,8 @@ export function TicketTypeCard({
           onSelect();
         }
       }}
-      data-testid={`ticket-type-${ticketType.id}`}
+      data-testid="ticket-type-card"
+      data-ticket-id={ticketType.id}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
