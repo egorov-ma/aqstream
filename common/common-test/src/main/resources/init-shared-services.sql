@@ -22,6 +22,19 @@ $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 COMMENT ON FUNCTION current_tenant_id() IS 'Возвращает tenant_id из session variable app.tenant_id для RLS политик';
 
+-- Функция для получения текущего user_id из session variable
+-- Используется в RLS политиках для доступа пользователей к своим данным
+CREATE OR REPLACE FUNCTION current_user_id() RETURNS UUID AS $$
+BEGIN
+    RETURN NULLIF(current_setting('app.user_id', true), '')::UUID;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+COMMENT ON FUNCTION current_user_id() IS 'Возвращает user_id из session variable app.user_id для RLS политик';
+
 -- Функция для создания стандартных RLS политик на таблице
 CREATE OR REPLACE FUNCTION create_tenant_rls_policies(
     schema_name TEXT,

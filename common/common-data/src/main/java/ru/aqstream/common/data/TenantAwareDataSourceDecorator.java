@@ -8,18 +8,23 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 import org.slf4j.LoggerFactory;
 import ru.aqstream.common.security.TenantContext;
+import ru.aqstream.common.security.UserContext;
 
 /**
- * Декоратор DataSource для установки tenant_id в PostgreSQL session variable.
+ * Декоратор DataSource для установки session variables в PostgreSQL.
  * Обеспечивает работу Row Level Security (RLS) политик.
  *
- * <p>При получении соединения устанавливает {@code SET app.tenant_id = 'uuid'}
- * для текущего tenant из {@link TenantContext}.</p>
+ * <p>При получении соединения устанавливает:</p>
+ * <ul>
+ *   <li>{@code app.tenant_id} — для изоляции данных между организациями</li>
+ *   <li>{@code app.user_id} — для доступа пользователей к своим данным</li>
+ * </ul>
  *
  * <p>ВАЖНО: Используйте этот DataSource вместо обычного для всех сервисов
  * с multi-tenancy через RLS.</p>
  *
  * @see TenantContext
+ * @see UserContext
  */
 public class TenantAwareDataSourceDecorator implements DataSource {
 
@@ -35,10 +40,10 @@ public class TenantAwareDataSourceDecorator implements DataSource {
     public Connection getConnection() throws SQLException {
         Connection connection = delegate.getConnection();
         try {
-            setTenantIdOnConnection(connection);
+            setSessionVariables(connection);
             return connection;
         } catch (SQLException e) {
-            // Закрываем соединение при ошибке установки tenant_id
+            // Закрываем соединение при ошибке установки переменных
             closeQuietly(connection);
             throw e;
         }
@@ -48,7 +53,7 @@ public class TenantAwareDataSourceDecorator implements DataSource {
     public Connection getConnection(String username, String password) throws SQLException {
         Connection connection = delegate.getConnection(username, password);
         try {
-            setTenantIdOnConnection(connection);
+            setSessionVariables(connection);
             return connection;
         } catch (SQLException e) {
             closeQuietly(connection);
@@ -70,29 +75,41 @@ public class TenantAwareDataSourceDecorator implements DataSource {
     }
 
     /**
-     * Устанавливает tenant_id как session variable в PostgreSQL.
-     * Если tenant_id не установлен в TenantContext, сбрасывает переменную.
+     * Устанавливает session variables в PostgreSQL для RLS.
+     * Устанавливает app.tenant_id и app.user_id из соответствующих контекстов.
      *
      * <p>Используем PreparedStatement с set_config() для безопасной установки
-     * параметра сессии без риска SQL injection.</p>
+     * параметров сессии без риска SQL injection.</p>
      */
-    private void setTenantIdOnConnection(Connection connection) throws SQLException {
+    private void setSessionVariables(Connection connection) throws SQLException {
         UUID tenantId = TenantContext.getTenantIdOptional().orElse(null);
+        UUID userId = UserContext.getUserIdOptional().orElse(null);
 
+        // Устанавливаем tenant_id
         if (tenantId != null) {
-            // Используем set_config() с PreparedStatement для безопасности
             try (var stmt = connection.prepareStatement("SELECT set_config('app.tenant_id', ?, false)")) {
                 stmt.setString(1, tenantId.toString());
                 stmt.execute();
             }
-            log.trace("Установлен tenant_id для соединения: {}", tenantId);
         } else {
-            // Сбрасываем tenant_id если контекст не установлен
             try (var stmt = connection.createStatement()) {
                 stmt.execute("RESET app.tenant_id");
             }
-            log.trace("Сброшен tenant_id для соединения");
         }
+
+        // Устанавливаем user_id для RLS политик пользовательских данных
+        if (userId != null) {
+            try (var stmt = connection.prepareStatement("SELECT set_config('app.user_id', ?, false)")) {
+                stmt.setString(1, userId.toString());
+                stmt.execute();
+            }
+        } else {
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("RESET app.user_id");
+            }
+        }
+
+        log.trace("Установлены session variables: tenant_id={}, user_id={}", tenantId, userId);
     }
 
     // Делегирование остальных методов DataSource

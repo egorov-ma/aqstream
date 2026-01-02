@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import ru.aqstream.common.security.TenantContext;
+import ru.aqstream.common.security.UserContext;
 import ru.aqstream.common.security.UserPrincipal;
 
 /**
@@ -50,8 +51,9 @@ public class TenantContextFilter extends OncePerRequestFilter {
                     MDC.put(MDC_TENANT_ID, principal.tenantId().toString());
                 }
 
-                // Добавляем userId в MDC для логирования
+                // Устанавливаем UserContext для RLS политик пользовательских данных
                 if (principal.userId() != null) {
+                    UserContext.setUserId(principal.userId());
                     MDC.put(MDC_USER_ID, principal.userId().toString());
                 }
 
@@ -62,8 +64,9 @@ public class TenantContextFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } finally {
-            // Обязательно очищаем контекст после обработки запроса
+            // Обязательно очищаем контексты после обработки запроса
             TenantContext.clear();
+            UserContext.clear();
             MDC.remove(MDC_TENANT_ID);
             MDC.remove(MDC_USER_ID);
         }
