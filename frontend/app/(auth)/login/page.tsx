@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { LoginForm, TelegramLogin } from '@/components/features/auth';
+import { LoginForm, TelegramAuth } from '@/components/features/auth';
 
 export const metadata: Metadata = {
   title: 'Вход - AqStream',
@@ -34,9 +34,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="flex justify-center">
-          <TelegramLogin />
-        </div>
+        <TelegramAuth />
       </CardContent>
       <CardFooter>
         <p className="w-full text-center text-sm text-muted-foreground">
