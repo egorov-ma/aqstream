@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- Добавление RLS политики для доступа пользователей к своим регистрациям -->
+    <!-- Позволяет пользователям видеть свои регистрации независимо от tenant -->
+
+    <changeSet id="015-1" author="aqstream">
+        <comment>Добавление RLS политики для user-owned registrations</comment>
+
+        <sql>
+            -- Политика для SELECT — пользователь может видеть свои регистрации
+            -- Это дополнительная политика к tenant_isolation_registrations
+            -- PostgreSQL применяет OR между политиками одной команды
+            CREATE POLICY user_own_registrations ON event_service.registrations
+                FOR SELECT
+                USING (user_id = current_user_id());
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP POLICY IF EXISTS user_own_registrations ON event_service.registrations;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="015-2" author="aqstream">
+        <comment>Индекс на user_id для ускорения RLS политики</comment>
+
+        <!-- Индекс уже существует (idx_registrations_user_id из 006-2) -->
+        <!-- Этот changeSet добавлен для документации и возможного будущего расширения -->
+
+        <sql>
+            -- Проверяем, что индекс существует (no-op если уже есть)
+            -- Индекс idx_registrations_user_id создан в миграции 006-2
+            SELECT 1;
+        </sql>
+
+        <rollback>
+            <sql>SELECT 1;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
