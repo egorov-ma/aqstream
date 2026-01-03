@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   Form,
   FormControl,
@@ -90,8 +90,7 @@ export function ResetPasswordForm() {
             <FormItem>
               <FormLabel>Новый пароль</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   placeholder="••••••••"
                   autoComplete="new-password"
                   data-testid="password-input"
@@ -110,8 +109,7 @@ export function ResetPasswordForm() {
             <FormItem>
               <FormLabel>Подтвердите пароль</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   placeholder="••••••••"
                   autoComplete="new-password"
                   data-testid="confirm-password-input"

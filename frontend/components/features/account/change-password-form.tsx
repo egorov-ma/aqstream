@@ -13,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 
 import { useChangePassword } from '@/lib/hooks/use-profile';
 import {
@@ -76,9 +76,8 @@ export function ChangePasswordForm() {
             <FormItem>
               <FormLabel>Текущий пароль</FormLabel>
               <FormControl>
-                <Input
+                <PasswordInput
                   {...field}
-                  type="password"
                   placeholder="Введите текущий пароль"
                   data-testid="currentPassword-input"
                 />
@@ -95,9 +94,8 @@ export function ChangePasswordForm() {
             <FormItem>
               <FormLabel>Новый пароль</FormLabel>
               <FormControl>
-                <Input
+                <PasswordInput
                   {...field}
-                  type="password"
                   placeholder="Минимум 8 символов, буквы и цифры"
                   data-testid="newPassword-input"
                 />
@@ -114,9 +112,8 @@ export function ChangePasswordForm() {
             <FormItem>
               <FormLabel>Подтверждение пароля</FormLabel>
               <FormControl>
-                <Input
+                <PasswordInput
                   {...field}
-                  type="password"
                   placeholder="Повторите новый пароль"
                   data-testid="confirmPassword-input"
                 />
