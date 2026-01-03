@@ -286,6 +286,12 @@ export interface CreateEventRequest {
   groupId?: string;
   coverImageUrl?: string;
   recurrenceRule?: CreateRecurrenceRuleRequest;
+  /**
+   * ID организации для создания события.
+   * Используется только админами для выбора организации.
+   * Обычные пользователи используют свою текущую организацию из JWT.
+   */
+  organizationId?: string;
   // Обратная совместимость
   location?: string;
 }

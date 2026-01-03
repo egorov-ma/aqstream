@@ -31,6 +31,7 @@ export const EVENT_ERROR_CODES = {
   EVENT_ALREADY_CANCELLED: 'event_already_cancelled',
   EVENT_NOT_EDITABLE: 'event_not_editable',
   DUPLICATE_SLUG: 'duplicate_slug',
+  EVENT_HAS_NO_TICKET_TYPES: 'event_has_no_ticket_types',
 } as const;
 
 // Маппинг кодов ошибок событий на сообщения
@@ -41,6 +42,8 @@ export const EVENT_ERROR_MESSAGES: Record<string, string> = {
   [EVENT_ERROR_CODES.EVENT_ALREADY_CANCELLED]: 'Событие уже отменено',
   [EVENT_ERROR_CODES.EVENT_NOT_EDITABLE]: 'Событие нельзя редактировать',
   [EVENT_ERROR_CODES.DUPLICATE_SLUG]: 'Событие с таким URL уже существует',
+  [EVENT_ERROR_CODES.EVENT_HAS_NO_TICKET_TYPES]:
+    'Добавьте хотя бы один тип билета для публикации',
 };
 
 // Получить сообщение об ошибке события по коду

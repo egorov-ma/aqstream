@@ -44,6 +44,24 @@ export function useMyMembership(organizationId: string | undefined) {
 }
 
 /**
+ * Получить все организации (только для админов).
+ * Используется для выбора организации при создании события.
+ */
+export function useAllOrganizations(enabled = true) {
+  const { isAuthenticated, user } = useAuthStore();
+  const isAdmin = user?.isAdmin ?? false;
+
+  return useQuery({
+    queryKey: ['organizations', 'all'],
+    queryFn: async () => {
+      const response = await organizationsApi.getAllOrganizations(0, 100);
+      return response.data;
+    },
+    enabled: isAuthenticated && isAdmin && enabled,
+  });
+}
+
+/**
  * Переключиться на другую организацию.
  * Обновляет токены, загружает роль и перезагружает данные.
  */

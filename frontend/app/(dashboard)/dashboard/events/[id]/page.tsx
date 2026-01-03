@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { useEvent } from '@/lib/hooks/use-events';
 import { useTicketTypes } from '@/lib/hooks/use-ticket-types';
+import { useEventRegistrations } from '@/lib/hooks/use-registrations';
 import {
   EventStatusBadge,
   EventActions,
@@ -42,6 +43,11 @@ export default function EventDetailPage() {
 
   const { data: event, isLoading: isLoadingEvent, error } = useEvent(id);
   const { data: ticketTypes, isLoading: isLoadingTickets } = useTicketTypes(id);
+  const { data: registrations, isLoading: isLoadingRegistrations } = useEventRegistrations(id);
+
+  // Подсчитываем статистику регистраций
+  const registrationsCount = registrations?.totalElements ?? 0;
+  const checkedInCount = registrations?.data?.filter((r) => r.status === 'CHECKED_IN').length ?? 0;
 
   // Если событие не найдено
   if (error) {
@@ -96,10 +102,10 @@ export default function EventDetailPage() {
       {/* Статистика */}
       <EventStatsCard
         event={event}
-        registrationsCount={0}
-        checkedInCount={0}
+        registrationsCount={registrationsCount}
+        checkedInCount={checkedInCount}
         ticketTypesCount={ticketTypes?.length ?? 0}
-        isLoading={isLoadingTickets}
+        isLoading={isLoadingTickets || isLoadingRegistrations}
       />
 
       <div className="grid gap-6 md:grid-cols-2">

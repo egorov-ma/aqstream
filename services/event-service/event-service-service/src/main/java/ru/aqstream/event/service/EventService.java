@@ -54,16 +54,16 @@ public class EventService {
     /**
      * Создаёт новое событие в статусе DRAFT.
      *
-     * @param request данные для создания
+     * @param request        данные для создания
+     * @param organizationId идентификатор организации для создания события
      * @return созданное событие
      */
     @Transactional
-    public EventDto create(CreateEventRequest request) {
-        UUID tenantId = TenantContext.getTenantId();
-        log.info("Создание события: tenantId={}, title={}", tenantId, request.title());
+    public EventDto create(CreateEventRequest request, UUID organizationId) {
+        log.info("Создание события: organizationId={}, title={}", organizationId, request.title());
 
         // Генерируем уникальный slug
-        String slug = generateUniqueSlug(request.title(), tenantId);
+        String slug = generateUniqueSlug(request.title(), organizationId);
 
         // Создаём событие
         Event event = Event.create(
@@ -72,6 +72,9 @@ public class EventService {
             request.startsAt(),
             request.timezoneOrDefault()
         );
+
+        // Устанавливаем tenantId явно (для админов, создающих события для других организаций)
+        event.setTenantId(organizationId);
 
         // Устанавливаем опциональные поля
         event.setDescription(request.description());
@@ -89,7 +92,7 @@ public class EventService {
         // Обрабатываем правило повторения если указано
         RecurrenceRule recurrenceRule = null;
         if (request.recurrenceRule() != null) {
-            recurrenceRule = createRecurrenceRule(request.recurrenceRule(), tenantId);
+            recurrenceRule = createRecurrenceRule(request.recurrenceRule(), organizationId);
             event.setRecurrenceRuleId(recurrenceRule.getId());
             log.info("Создано правило повторения: ruleId={}, frequency={}",
                 recurrenceRule.getId(), recurrenceRule.getFrequency());
@@ -97,13 +100,13 @@ public class EventService {
 
         event = eventRepository.save(event);
 
-        log.info("Событие создано: eventId={}, slug={}, tenantId={}",
-            event.getId(), event.getSlug(), tenantId);
+        log.info("Событие создано: eventId={}, slug={}, organizationId={}",
+            event.getId(), event.getSlug(), organizationId);
 
         // Публикуем событие в RabbitMQ
         eventPublisher.publish(new EventCreatedEvent(
             event.getId(),
-            tenantId,
+            organizationId,
             event.getTitle(),
             event.getSlug(),
             event.getStartsAt()

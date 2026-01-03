@@ -57,6 +57,12 @@ export default function EditEventPage() {
 
   const handleSubmit = async (data: EventFormData, publish: boolean) => {
     try {
+      // Валидация: для публикации нужен хотя бы один тип билета
+      if (publish && event.status === 'DRAFT' && data.ticketTypes.length === 0) {
+        toast.error('Добавьте хотя бы один тип билета для публикации');
+        return;
+      }
+
       // 1. Обновляем событие
       await updateEvent.mutateAsync({
         id: event.id,

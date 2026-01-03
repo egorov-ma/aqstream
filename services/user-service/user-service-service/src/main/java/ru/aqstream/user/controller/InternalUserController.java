@@ -22,9 +22,11 @@ import ru.aqstream.user.api.dto.ConfirmTelegramAuthRequest;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
+import ru.aqstream.user.api.dto.OrganizationMembershipDto;
 import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.dto.UserTelegramInfoDto;
 import ru.aqstream.user.db.repository.GroupMemberRepository;
+import ru.aqstream.user.db.repository.OrganizationMemberRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.service.OrganizationInviteService;
 import ru.aqstream.user.service.OrganizationService;
@@ -49,6 +51,7 @@ public class InternalUserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final GroupMemberRepository groupMemberRepository;
+    private final OrganizationMemberRepository organizationMemberRepository;
     private final OrganizationService organizationService;
     private final OrganizationInviteService inviteService;
     private final TelegramLinkService telegramLinkService;
@@ -227,6 +230,38 @@ public class InternalUserController {
         return organizationService.findByIdInternal(organizationId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Получает роль пользователя в организации.
+     * Используется event-service для проверки прав на создание событий.
+     *
+     * @param organizationId ID организации
+     * @param userId         ID пользователя
+     * @return членство с ролью или информацию об отсутствии членства
+     */
+    @Operation(
+        summary = "Получить роль пользователя в организации",
+        description = "Возвращает членство с ролью (OWNER/MODERATOR) или isMember=false"
+    )
+    @GetMapping("/organizations/{organizationId}/members/{userId}/role")
+    public ResponseEntity<OrganizationMembershipDto> getMembershipRole(
+        @PathVariable UUID organizationId,
+        @PathVariable UUID userId
+    ) {
+        log.debug("Internal: проверка роли в организации: organizationId={}, userId={}",
+            organizationId, userId);
+
+        return organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, userId)
+            .map(member -> OrganizationMembershipDto.member(
+                organizationId,
+                userId,
+                member.getRole()
+            ))
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.ok(
+                OrganizationMembershipDto.notMember(organizationId, userId)
+            ));
     }
 
     /**

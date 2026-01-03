@@ -1,5 +1,10 @@
 import { apiClient } from './client';
-import type { Organization, OrganizationMember, SwitchOrganizationResponse } from './types';
+import type {
+  Organization,
+  OrganizationMember,
+  PageResponse,
+  SwitchOrganizationResponse,
+} from './types';
 
 export const organizationsApi = {
   /**
@@ -35,6 +40,21 @@ export const organizationsApi = {
   switch: async (organizationId: string): Promise<SwitchOrganizationResponse> => {
     const response = await apiClient.post<SwitchOrganizationResponse>(
       `/api/v1/organizations/${organizationId}/switch`
+    );
+    return response.data;
+  },
+
+  /**
+   * Получить список всех организаций (только для админов).
+   * Используется для выбора организации при создании события.
+   */
+  getAllOrganizations: async (
+    page = 0,
+    size = 50
+  ): Promise<PageResponse<Organization>> => {
+    const response = await apiClient.get<PageResponse<Organization>>(
+      '/api/v1/organizations/all',
+      { params: { page, size } }
     );
     return response.data;
   },

@@ -161,7 +161,7 @@ class EventServiceTest {
             // given
             CreateEventRequest request = new CreateEventRequest(
                 testTitle, null, testStartsAt, null, null, null, null, null,
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
             );
 
             when(eventRepository.existsBySlugAndTenantId(any(), eq(tenantId))).thenReturn(false);
@@ -169,7 +169,7 @@ class EventServiceTest {
             when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
-            EventDto result = service.create(request);
+            EventDto result = service.create(request, tenantId);
 
             // then
             assertThat(result).isNotNull();
@@ -189,7 +189,7 @@ class EventServiceTest {
             // given
             CreateEventRequest request = new CreateEventRequest(
                 "Конференция Spring 2025", null, testStartsAt, null, null, null, null, null,
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
             );
 
             when(eventRepository.existsBySlugAndTenantId(any(), eq(tenantId))).thenReturn(false);
@@ -197,7 +197,7 @@ class EventServiceTest {
             when(eventMapper.toDto(eq(testEvent), any())).thenReturn(testEventDto);
 
             // when
-            service.create(request);
+            service.create(request, tenantId);
 
             // then
             ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);

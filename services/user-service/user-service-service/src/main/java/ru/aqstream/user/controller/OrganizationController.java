@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -71,6 +74,26 @@ public class OrganizationController {
     ) {
         requireAuthenticated(principal);
         List<OrganizationDto> organizations = organizationService.getMyOrganizations(principal.userId());
+        return ResponseEntity.ok(organizations);
+    }
+
+    @Operation(
+        summary = "Получить список всех организаций (админ)",
+        description = "Возвращает страницу всех организаций. Доступно только администраторам платформы."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Список организаций"),
+        @ApiResponse(responseCode = "401", description = "Не авторизован"),
+        @ApiResponse(responseCode = "403", description = "Требуется роль ADMIN")
+    })
+    @GetMapping("/all")
+    public ResponseEntity<Page<OrganizationDto>> getAllOrganizations(
+        @AuthenticationPrincipal UserPrincipal principal,
+        @PageableDefault(size = 50, sort = "name") Pageable pageable
+    ) {
+        requireAuthenticated(principal);
+        requireAdmin(principal);
+        Page<OrganizationDto> organizations = organizationService.getAllOrganizations(pageable);
         return ResponseEntity.ok(organizations);
     }
 
@@ -358,6 +381,18 @@ public class OrganizationController {
     private void requireAuthenticated(UserPrincipal principal) {
         if (principal == null) {
             throw new AccessDeniedException("Требуется аутентификация");
+        }
+    }
+
+    /**
+     * Проверяет, что пользователь является администратором платформы.
+     *
+     * @param principal данные пользователя
+     * @throws AccessDeniedException если пользователь не администратор
+     */
+    private void requireAdmin(UserPrincipal principal) {
+        if (!principal.roles().contains("ADMIN")) {
+            throw new AccessDeniedException("Требуется роль ADMIN");
         }
     }
 

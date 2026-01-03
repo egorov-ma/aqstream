@@ -32,7 +32,7 @@ import {
   validateEventCrossFields,
   type EventFormData,
 } from '@/lib/validations/events';
-import type { Event } from '@/lib/api/types';
+import type { Event, Organization } from '@/lib/api/types';
 import { DateTimePicker } from './date-time-picker';
 import { TimezoneSelect } from './timezone-select';
 import { MarkdownEditor } from './markdown-editor';
@@ -45,6 +45,16 @@ interface EventFormProps {
   event?: Event;
   onSubmit: (data: EventFormData, publish: boolean) => Promise<void>;
   isLoading?: boolean;
+  /**
+   * Список организаций для выбора (только для админов).
+   * Если передан и isAdmin=true, показывается dropdown выбора организации.
+   */
+  organizations?: Organization[];
+  /**
+   * Является ли пользователь админом платформы.
+   * Если true и передан organizations, показывается dropdown выбора организации.
+   */
+  isAdmin?: boolean;
 }
 
 // Маппинг Event в форму
@@ -69,8 +79,15 @@ function mapEventToForm(event: Event): Partial<EventFormData> {
   };
 }
 
-export function EventForm({ event, onSubmit, isLoading }: EventFormProps) {
+export function EventForm({
+  event,
+  onSubmit,
+  isLoading,
+  organizations,
+  isAdmin = false,
+}: EventFormProps) {
   const [isPublishing, setIsPublishing] = React.useState(false);
+  const showOrganizationSelect = isAdmin && organizations && organizations.length > 0;
 
   // Type assertion: Zod .default() creates input/output type mismatch
   const form = useForm<EventFormData>({
@@ -123,6 +140,48 @@ export function EventForm({ event, onSubmit, isLoading }: EventFormProps) {
         className="space-y-6"
         data-testid="event-form"
       >
+        {/* Выбор организации (только для админов) */}
+        {showOrganizationSelect && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Организация</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="organizationId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Выберите организацию *</FormLabel>
+                    <Select
+                      value={field.value ?? ''}
+                      onValueChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="event-organization-select">
+                          <SelectValue placeholder="Выберите организацию" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {organizations.map((org) => (
+                          <SelectItem key={org.id} value={org.id}>
+                            {org.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Событие будет создано для выбранной организации
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Основная информация */}
         <Card>
           <CardHeader>

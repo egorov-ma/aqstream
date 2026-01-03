@@ -13,10 +13,12 @@ import ru.aqstream.event.api.dto.RecurrenceRuleDto;
 import ru.aqstream.event.api.event.EventCancelledEvent;
 import ru.aqstream.event.api.event.EventCompletedEvent;
 import ru.aqstream.event.api.event.EventPublishedEvent;
+import ru.aqstream.event.api.exception.EventHasNoTicketTypesException;
 import ru.aqstream.event.api.exception.EventNotFoundException;
 import ru.aqstream.event.db.entity.Event;
 import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RecurrenceRuleRepository;
+import ru.aqstream.event.db.repository.TicketTypeRepository;
 
 /**
  * Сервис управления жизненным циклом событий.
@@ -29,6 +31,7 @@ public class EventLifecycleService {
 
     private final EventRepository eventRepository;
     private final RecurrenceRuleRepository recurrenceRuleRepository;
+    private final TicketTypeRepository ticketTypeRepository;
     private final EventMapper eventMapper;
     private final RecurrenceRuleMapper recurrenceRuleMapper;
     private final EventPublisher eventPublisher;
@@ -45,6 +48,13 @@ public class EventLifecycleService {
         log.info("Публикация события: eventId={}", eventId);
 
         Event event = findEventById(eventId);
+
+        // Проверяем наличие хотя бы одного активного типа билета
+        if (!ticketTypeRepository.existsByEventIdAndActiveIsTrue(eventId)) {
+            log.warn("Попытка публикации события без типов билетов: eventId={}", eventId);
+            throw new EventHasNoTicketTypesException();
+        }
+
         event.publish();
         event = eventRepository.save(event);
 

@@ -12,6 +12,7 @@ import ru.aqstream.user.api.dto.ConfirmTelegramAuthRequest;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
+import ru.aqstream.user.api.dto.OrganizationMembershipDto;
 import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.api.dto.UserTelegramInfoDto;
 
@@ -102,6 +103,20 @@ public interface UserClient {
      */
     @GetMapping("/api/v1/internal/users/organizations/{organizationId}")
     Optional<OrganizationDto> findOrganizationById(@PathVariable("organizationId") UUID organizationId);
+
+    /**
+     * Получает роль пользователя в организации.
+     * Используется для проверки прав на создание событий.
+     *
+     * @param organizationId ID организации
+     * @param userId         ID пользователя
+     * @return членство с ролью или isMember=false
+     */
+    @GetMapping("/api/v1/internal/users/organizations/{organizationId}/members/{userId}/role")
+    OrganizationMembershipDto getMembershipRole(
+        @PathVariable("organizationId") UUID organizationId,
+        @PathVariable("userId") UUID userId
+    );
 
     /**
      * Подтверждает авторизацию через Telegram бота.

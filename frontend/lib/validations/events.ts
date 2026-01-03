@@ -96,6 +96,9 @@ export const baseEventFormSchema = z.object({
 
   // Повторение
   recurrenceRule: recurrenceRuleSchema.nullable().optional(),
+
+  // Организация (только для админов)
+  organizationId: z.string().uuid().optional().nullable().or(z.literal('')),
 });
 
 // Тип для формы (используется в useForm)
@@ -192,6 +195,7 @@ export const defaultEventFormValues: EventFormData = {
   coverImageUrl: '',
   ticketTypes: [],
   recurrenceRule: null,
+  organizationId: '',
 };
 
 // Ошибка cross-field валидации

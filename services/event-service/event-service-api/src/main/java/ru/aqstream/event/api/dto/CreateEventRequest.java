@@ -24,6 +24,7 @@ import java.util.UUID;
  * @param isPublic               публичность события (по умолчанию false)
  * @param participantsVisibility видимость списка участников (по умолчанию CLOSED)
  * @param groupId                ID группы для приватных событий (опционально)
+ * @param organizationId         ID организации для создания события (только для админов)
  * @param recurrenceRule         правило повторения для серии событий (опционально)
  */
 public record CreateEventRequest(
@@ -61,6 +62,8 @@ public record CreateEventRequest(
     ParticipantsVisibility participantsVisibility,
 
     UUID groupId,
+
+    UUID organizationId,
 
     @Valid
     CreateRecurrenceRuleRequest recurrenceRule

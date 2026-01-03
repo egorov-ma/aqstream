@@ -408,6 +408,23 @@ public class OrganizationService {
             .map(organizationMapper::toDto);
     }
 
+    // ==================== Admin API ====================
+
+    /**
+     * Возвращает список всех организаций (для админов).
+     * Используется для dropdown выбора организации при создании события.
+     *
+     * @param pageable параметры пагинации
+     * @return страница организаций
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<OrganizationDto> getAllOrganizations(
+        org.springframework.data.domain.Pageable pageable
+    ) {
+        return organizationRepository.findAll(pageable)
+            .map(organizationMapper::toDto);
+    }
+
     // ==================== Вспомогательные методы ====================
 
     /**

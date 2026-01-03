@@ -53,6 +53,8 @@ export function useCreateRegistration(eventId: string) {
       // Инвалидируем списки регистраций
       queryClient.invalidateQueries({ queryKey: ['registrations', 'my'] });
       queryClient.invalidateQueries({ queryKey: ['registrations', 'event', eventId] });
+      // Инвалидируем типы билетов для обновления счётчиков (soldCount, available)
+      queryClient.invalidateQueries({ queryKey: ['events', eventId, 'ticket-types'] });
       // Toast не показываем — success page уже информирует пользователя
     },
     // Ошибки обрабатываются в компоненте формы для показа конкретных сообщений
@@ -69,9 +71,13 @@ export function useCreatePublicRegistration(slug: string) {
   return useMutation({
     mutationFn: (data: CreateRegistrationRequest) =>
       registrationsApi.createForPublicEvent(slug, data),
-    onSuccess: () => {
+    onSuccess: (registration) => {
       // Инвалидируем списки регистраций
       queryClient.invalidateQueries({ queryKey: ['registrations', 'my'] });
+      // Инвалидируем типы билетов для обновления счётчиков (soldCount, available)
+      if (registration.eventId) {
+        queryClient.invalidateQueries({ queryKey: ['events', registration.eventId, 'ticket-types'] });
+      }
       // Toast не показываем — success page уже информирует пользователя
     },
     // Ошибки обрабатываются в компоненте формы для показа конкретных сообщений
@@ -91,10 +97,22 @@ export function useCancelRegistration() {
       // Отменяем исходящие запросы
       await queryClient.cancelQueries({ queryKey: ['registrations', 'my'] });
 
-      // Сохраняем предыдущие данные
+      // Сохраняем предыдущие данные и находим eventId
       const previousQueries = queryClient.getQueriesData<PageResponse<Registration>>({
         queryKey: ['registrations', 'my'],
       });
+
+      // Находим eventId отменяемой регистрации
+      let eventId: string | undefined;
+      for (const [, data] of previousQueries) {
+        if (data?.data) {
+          const registration = data.data.find((reg) => reg.id === registrationId);
+          if (registration?.eventId) {
+            eventId = registration.eventId;
+            break;
+          }
+        }
+      }
 
       // Оптимистично обновляем статус
       queryClient.setQueriesData<PageResponse<Registration>>(
@@ -112,7 +130,7 @@ export function useCancelRegistration() {
         }
       );
 
-      return { previousQueries };
+      return { previousQueries, eventId };
     },
     onError: (_error, _registrationId, context) => {
       // Откатываем при ошибке
@@ -123,8 +141,12 @@ export function useCancelRegistration() {
       }
       toast.error('Ошибка при отмене регистрации');
     },
-    onSuccess: () => {
+    onSuccess: (_data, _registrationId, context) => {
       queryClient.invalidateQueries({ queryKey: ['registrations'] });
+      // Инвалидируем типы билетов для обновления счётчиков (soldCount, available)
+      if (context?.eventId) {
+        queryClient.invalidateQueries({ queryKey: ['events', context.eventId, 'ticket-types'] });
+      }
       toast.success('Регистрация отменена');
     },
   });
