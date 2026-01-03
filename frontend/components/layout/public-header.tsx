@@ -33,7 +33,7 @@ function HeaderSkeleton() {
  * Публичный хедер с условной навигацией.
  *
  * Для неавторизованных: кнопки "Войти" и "Регистрация".
- * Для авторизованных: ссылки "События", "Мои билеты", "Dashboard",
+ * Для авторизованных: ссылки "События", "Мои билеты", "Личный кабинет",
  * уведомления и UserNav dropdown.
  */
 export function PublicHeader() {
@@ -76,8 +76,8 @@ export function PublicHeader() {
                   </Link>
                 </Button>
                 <Button variant="ghost" asChild>
-                  <Link href="/dashboard" data-testid="header-dashboard-link">
-                    Dashboard
+                  <Link href="/dashboard" data-testid="header-personal-cabinet-link">
+                    Личный кабинет
                   </Link>
                 </Button>
               </div>

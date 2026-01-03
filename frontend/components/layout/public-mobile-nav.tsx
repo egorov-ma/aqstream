@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/s
 
 /**
  * Hamburger меню для public header на mobile.
- * Показывает навигационные ссылки (События, Мои билеты, Dashboard)
+ * Показывает навигационные ссылки (События, Мои билеты, Личный кабинет)
  * для авторизованных пользователей.
  */
 export function PublicMobileNav() {
@@ -48,9 +48,9 @@ export function PublicMobileNav() {
             <Link
               href="/dashboard"
               className="text-lg font-medium hover:text-primary"
-              data-testid="public-mobile-nav-dashboard"
+              data-testid="public-mobile-nav-personal-cabinet"
             >
-              Dashboard
+              Личный кабинет
             </Link>
           </SheetClose>
         </div>

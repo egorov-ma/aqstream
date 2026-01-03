@@ -3,6 +3,12 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
 
+  // Compiler optimizations для INP
+  compiler: {
+    // Удалять console.* в production
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
   // Версионирование: переменные доступны в build-time
   env: {
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || '0.1.0',
