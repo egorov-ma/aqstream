@@ -80,7 +80,12 @@ export function Notifications() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9"
+          data-testid="notifications-trigger"
+        >
           <Bell className="h-4 w-4" />
           {!isCountLoading && unreadCount > 0 && (
             <Badge
@@ -103,6 +108,7 @@ export function Notifications() {
               className="h-auto py-1 px-2 text-xs"
               onClick={handleMarkAllAsRead}
               disabled={markAllAsRead.isPending}
+              data-testid="notifications-mark-all-read"
             >
               <CheckCheck className="h-3 w-3 mr-1" />
               Прочитать все
@@ -131,7 +137,10 @@ export function Notifications() {
             </Button>
           </div>
         ) : !notifications?.data || notifications.data.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div
+            className="p-8 text-center text-muted-foreground"
+            data-testid="notifications-empty-state"
+          >
             <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Нет уведомлений</p>
           </div>

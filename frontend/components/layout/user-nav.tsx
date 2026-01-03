@@ -36,7 +36,11 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button
+          variant="ghost"
+          className="relative h-8 w-8 rounded-full"
+          data-testid="user-nav-trigger"
+        >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.avatarUrl || ''} alt={displayName} />
             <AvatarFallback>{initials.toUpperCase() || 'U'}</AvatarFallback>
@@ -54,19 +58,31 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/account/profile" className="flex items-center">
+          <Link
+            href="/dashboard/account/profile"
+            className="flex items-center"
+            data-testid="user-nav-profile-link"
+          >
             <User className="mr-2 h-4 w-4" />
             Профиль
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/account/organizations" className="flex items-center">
+          <Link
+            href="/dashboard/account/organizations"
+            className="flex items-center"
+            data-testid="user-nav-organizations-link"
+          >
             <Building2 className="mr-2 h-4 w-4" />
             Организации
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/account/notifications" className="flex items-center">
+          <Link
+            href="/dashboard/account/notifications"
+            className="flex items-center"
+            data-testid="user-nav-notifications-link"
+          >
             <Bell className="mr-2 h-4 w-4" />
             Уведомления
           </Link>
@@ -76,6 +92,7 @@ export function UserNav() {
           className="text-destructive focus:text-destructive cursor-pointer"
           onClick={handleLogout}
           disabled={logout.isPending}
+          data-testid="user-nav-logout-button"
         >
           <LogOut className="mr-2 h-4 w-4" />
           {logout.isPending ? 'Выход...' : 'Выйти'}

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { Notifications } from './notifications';
 import { UserNav } from './user-nav';
 import { ThemeToggle } from './theme-toggle';
+import { PublicMobileNav } from './public-mobile-nav';
 
 /**
  * Skeleton для хедера во время гидратации.
@@ -56,35 +57,36 @@ export function PublicHeader() {
           AqStream
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-2" data-testid="public-header-nav">
           {isAuthenticated ? (
             <>
-              {/* Навигация для авторизованных */}
-              <Button variant="ghost" asChild>
-                <Link href="/events" data-testid="header-events-link">
-                  События
-                </Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link href="/dashboard/my-registrations" data-testid="header-my-tickets-link">
-                  Мои билеты
-                </Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link href="/dashboard" data-testid="header-dashboard-link">
-                  Dashboard
-                </Link>
-              </Button>
+              {/* Hamburger меню на mobile */}
+              <PublicMobileNav />
 
-              {/* Уведомления */}
+              {/* Навигация для авторизованных (скрыта на mobile) */}
+              <div className="hidden md:flex items-center gap-2">
+                <Button variant="ghost" asChild>
+                  <Link href="/events" data-testid="header-events-link">
+                    События
+                  </Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/dashboard/my-registrations" data-testid="header-my-tickets-link">
+                    Мои билеты
+                  </Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/dashboard" data-testid="header-dashboard-link">
+                    Dashboard
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Quick-access элементы (видны всегда) */}
               <div data-testid="header-notifications">
                 <Notifications />
               </div>
-
-              {/* Тема */}
               <ThemeToggle />
-
-              {/* Профиль */}
               <UserNav />
             </>
           ) : (

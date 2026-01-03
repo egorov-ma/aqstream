@@ -10,7 +10,12 @@ export function MobileNav() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          data-testid="mobile-nav-trigger"
+        >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Открыть меню</span>
         </Button>

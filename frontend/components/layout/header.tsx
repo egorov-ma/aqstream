@@ -20,7 +20,7 @@ export function Header() {
           <OrganizationSwitcher />
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" data-testid="dashboard-header-menu">
         <Notifications />
         <ThemeToggle />
         <UserNav />
