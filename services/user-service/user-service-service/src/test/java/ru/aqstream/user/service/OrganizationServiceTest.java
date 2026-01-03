@@ -20,11 +20,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.user.api.dto.CreateOrganizationRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
+import ru.aqstream.user.api.dto.OrganizationRequestStatus;
 import ru.aqstream.user.api.dto.OrganizationRole;
 import ru.aqstream.user.api.dto.UpdateOrganizationRequest;
+import ru.aqstream.user.api.event.OrganizationCreatedEvent;
 import ru.aqstream.user.api.exception.InsufficientOrganizationPermissionsException;
 import ru.aqstream.user.api.exception.NoApprovedRequestException;
 import ru.aqstream.user.api.exception.OrganizationMemberNotFoundException;
@@ -372,6 +375,84 @@ class OrganizationServiceTest {
                 .isInstanceOf(InsufficientOrganizationPermissionsException.class);
 
             verify(organizationRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("CreateFromApprovedRequest")
+    class CreateFromApprovedRequest {
+
+        @Test
+        @DisplayName("Создаёт организацию из одобренного запроса")
+        void createFromApprovedRequest_ValidRequest_CreatesOrganization() {
+            // Given
+            OrganizationRequest approvedRequest = OrganizationRequest.create(
+                testUser, testName, testSlug, testDescription
+            );
+            ReflectionTestUtils.setField(approvedRequest, "id", UUID.randomUUID());
+            ReflectionTestUtils.setField(approvedRequest, "status", OrganizationRequestStatus.APPROVED);
+
+            when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+            when(organizationRepository.existsBySlug(testSlug.toLowerCase())).thenReturn(false);
+            when(organizationRepository.save(any(Organization.class))).thenAnswer(invocation -> {
+                Organization saved = invocation.getArgument(0);
+                ReflectionTestUtils.setField(saved, "id", testOrgId);
+                return saved;
+            });
+            when(memberRepository.save(any(OrganizationMember.class))).thenAnswer(i -> i.getArgument(0));
+
+            // When
+            Organization result = service.createFromApprovedRequest(approvedRequest);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getName()).isEqualTo(testName);
+            assertThat(result.getSlug()).isEqualTo(testSlug.toLowerCase());
+
+            // Проверяем создание Organization
+            ArgumentCaptor<Organization> orgCaptor = ArgumentCaptor.forClass(Organization.class);
+            verify(organizationRepository).save(orgCaptor.capture());
+            Organization savedOrg = orgCaptor.getValue();
+            assertThat(savedOrg.getName()).isEqualTo(testName);
+
+            // Проверяем создание OrganizationMember (OWNER)
+            ArgumentCaptor<OrganizationMember> memberCaptor = ArgumentCaptor.forClass(OrganizationMember.class);
+            verify(memberRepository).save(memberCaptor.capture());
+            OrganizationMember savedMember = memberCaptor.getValue();
+            assertThat(savedMember.getRole()).isEqualTo(OrganizationRole.OWNER);
+            assertThat(savedMember.getUserId()).isEqualTo(testUserId);
+
+            // Проверяем публикацию OrganizationCreatedEvent
+            ArgumentCaptor<OrganizationCreatedEvent> eventCaptor =
+                ArgumentCaptor.forClass(OrganizationCreatedEvent.class);
+            verify(eventPublisher).publish(eventCaptor.capture());
+            OrganizationCreatedEvent event = eventCaptor.getValue();
+            assertThat(event.getOrganizationId()).isEqualTo(testOrgId);
+            assertThat(event.getName()).isEqualTo(testName);
+            assertThat(event.getSlug()).isEqualTo(testSlug.toLowerCase());
+            assertThat(event.getOwnerId()).isEqualTo(testUserId);
+            assertThat(event.getEventType()).isEqualTo("organization.created");
+        }
+
+        @Test
+        @DisplayName("Выбрасывает исключение если slug уже занят")
+        void createFromApprovedRequest_SlugExists_ThrowsException() {
+            // Given
+            OrganizationRequest approvedRequest = OrganizationRequest.create(
+                testUser, testName, testSlug, testDescription
+            );
+            ReflectionTestUtils.setField(approvedRequest, "status", OrganizationRequestStatus.APPROVED);
+
+            when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+            when(organizationRepository.existsBySlug(testSlug.toLowerCase())).thenReturn(true);
+
+            // When/Then
+            assertThatThrownBy(() -> service.createFromApprovedRequest(approvedRequest))
+                .isInstanceOf(OrganizationSlugAlreadyExistsException.class);
+
+            verify(organizationRepository, never()).save(any());
+            verify(memberRepository, never()).save(any());
+            verify(eventPublisher, never()).publish(any());
         }
     }
 

@@ -24,6 +24,7 @@ import ru.aqstream.user.api.dto.RejectOrganizationRequestRequest;
 import ru.aqstream.user.api.exception.AccessDeniedException;
 import ru.aqstream.user.api.exception.OrganizationRequestAlreadyReviewedException;
 import ru.aqstream.user.api.exception.OrganizationRequestNotFoundException;
+import ru.aqstream.user.api.exception.OrganizationSlugAlreadyExistsException;
 import ru.aqstream.user.api.exception.PendingRequestAlreadyExistsException;
 import ru.aqstream.user.api.exception.SlugAlreadyExistsException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
@@ -46,6 +47,7 @@ public class OrganizationRequestService {
     private final OrganizationRequestMapper requestMapper;
     private final EventPublisher eventPublisher;
     private final OrganizationRepository organizationRepository;
+    private final OrganizationService organizationService;
 
     /**
      * Создаёт запрос на создание организации.
@@ -206,6 +208,17 @@ public class OrganizationRequestService {
         request = requestRepository.save(request);
 
         log.info("Запрос одобрен: requestId={}, userId={}", requestId, request.getUserId());
+
+        // Автоматически создаём организацию
+        try {
+            organizationService.createFromApprovedRequest(request);
+            log.info("Организация автоматически создана после одобрения: requestId={}", requestId);
+        } catch (OrganizationSlugAlreadyExistsException e) {
+            // Slug уже занят (race condition) - логируем, но не откатываем approve
+            log.warn("Не удалось автоматически создать организацию (slug занят): requestId={}, slug={}",
+                requestId, request.getSlug(), e);
+            // Пользователь сможет создать вручную через POST /api/v1/organizations
+        }
 
         // Публикуем событие для уведомления пользователя
         eventPublisher.publish(new OrganizationRequestApprovedEvent(

@@ -26,12 +26,14 @@ import ru.aqstream.user.api.dto.RejectOrganizationRequestRequest;
 import ru.aqstream.user.api.exception.AccessDeniedException;
 import ru.aqstream.user.api.exception.OrganizationRequestAlreadyReviewedException;
 import ru.aqstream.user.api.exception.OrganizationRequestNotFoundException;
+import ru.aqstream.user.api.exception.OrganizationSlugAlreadyExistsException;
 import ru.aqstream.user.api.exception.PendingRequestAlreadyExistsException;
 import ru.aqstream.user.api.exception.SlugAlreadyExistsException;
 import ru.aqstream.user.api.event.OrganizationRequestApprovedEvent;
 import ru.aqstream.user.api.event.OrganizationRequestCreatedEvent;
 import ru.aqstream.user.api.event.OrganizationRequestRejectedEvent;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.user.db.entity.Organization;
 import ru.aqstream.user.db.entity.OrganizationRequest;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.OrganizationRepository;
@@ -57,6 +59,9 @@ class OrganizationRequestServiceTest {
     @Mock
     private OrganizationRepository organizationRepository;
 
+    @Mock
+    private OrganizationService organizationService;
+
     private OrganizationRequestService service;
 
     private static final Faker FAKER = new Faker();
@@ -73,7 +78,7 @@ class OrganizationRequestServiceTest {
     @BeforeEach
     void setUp() {
         service = new OrganizationRequestService(
-            requestRepository, userRepository, requestMapper, eventPublisher, organizationRepository
+            requestRepository, userRepository, requestMapper, eventPublisher, organizationRepository, organizationService
         );
 
         // Генерируем свежие тестовые данные для каждого теста
@@ -272,8 +277,8 @@ class OrganizationRequestServiceTest {
     class Approve {
 
         @Test
-        @DisplayName("Одобряет pending запрос")
-        void approve_PendingRequest_ApprovesSuccessfully() {
+        @DisplayName("Одобряет pending запрос и автоматически создаёт организацию")
+        void approve_PendingRequest_ApprovesAndCreatesOrganization() {
             // Given
             OrganizationRequest request = createTestRequest(testUser, OrganizationRequestStatus.PENDING);
 
@@ -287,6 +292,11 @@ class OrganizationRequestServiceTest {
                     .build()
             );
 
+            // Мокируем создание организации
+            Organization mockOrg = Organization.create(testUser, testName, testSlug, testDescription);
+            when(organizationService.createFromApprovedRequest(any(OrganizationRequest.class)))
+                .thenReturn(mockOrg);
+
             // When
             OrganizationRequestDto result = service.approve(testRequestId, testAdminId);
 
@@ -294,7 +304,13 @@ class OrganizationRequestServiceTest {
             assertThat(result.status()).isEqualTo(OrganizationRequestStatus.APPROVED);
             verify(requestRepository).save(any(OrganizationRequest.class));
 
-            // Проверяем содержимое опубликованного события
+            // Проверяем, что организация создана автоматически
+            ArgumentCaptor<OrganizationRequest> orgCaptor = ArgumentCaptor.forClass(OrganizationRequest.class);
+            verify(organizationService).createFromApprovedRequest(orgCaptor.capture());
+            OrganizationRequest capturedRequest = orgCaptor.getValue();
+            assertThat(capturedRequest.getId()).isEqualTo(testRequestId);
+
+            // Проверяем событие одобрения
             ArgumentCaptor<OrganizationRequestApprovedEvent> eventCaptor =
                 ArgumentCaptor.forClass(OrganizationRequestApprovedEvent.class);
             verify(eventPublisher).publish(eventCaptor.capture());
@@ -320,6 +336,36 @@ class OrganizationRequestServiceTest {
                 .isInstanceOf(OrganizationRequestAlreadyReviewedException.class);
 
             verify(requestRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Одобряет запрос, но не откатывает если slug уже занят")
+        void approve_SlugAlreadyExists_ApprovesButLogsWarning() {
+            // Given
+            OrganizationRequest request = createTestRequest(testUser, OrganizationRequestStatus.PENDING);
+
+            when(requestRepository.findByIdWithUser(testRequestId)).thenReturn(Optional.of(request));
+            when(userRepository.findById(testAdminId)).thenReturn(Optional.of(testAdmin));
+            when(requestRepository.save(any(OrganizationRequest.class))).thenAnswer(i -> i.getArgument(0));
+            when(requestMapper.toDto(any(OrganizationRequest.class))).thenReturn(
+                OrganizationRequestDto.builder()
+                    .id(testRequestId)
+                    .status(OrganizationRequestStatus.APPROVED)
+                    .build()
+            );
+
+            // Slug уже занят - выбрасываем исключение
+            when(organizationService.createFromApprovedRequest(any(OrganizationRequest.class)))
+                .thenThrow(new OrganizationSlugAlreadyExistsException(testSlug));
+
+            // When
+            OrganizationRequestDto result = service.approve(testRequestId, testAdminId);
+
+            // Then
+            // Approve успешен, несмотря на ошибку создания организации
+            assertThat(result.status()).isEqualTo(OrganizationRequestStatus.APPROVED);
+            verify(requestRepository).save(any(OrganizationRequest.class));
+            verify(eventPublisher).publish(any(OrganizationRequestApprovedEvent.class));
         }
     }
 

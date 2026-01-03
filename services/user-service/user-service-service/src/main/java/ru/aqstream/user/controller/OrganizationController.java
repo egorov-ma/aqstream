@@ -98,9 +98,11 @@ public class OrganizationController {
     }
 
     @Operation(
-        summary = "Создать организацию",
-        description = "Создаёт организацию. Требуется одобренный запрос на создание организации. "
-            + "Slug берётся автоматически из одобренного запроса."
+        summary = "Создать организацию (устаревший)",
+        description = "Создаёт организацию вручную. **DEPRECATED**: Организация создаётся автоматически при одобрении запроса. "
+            + "Этот endpoint оставлен для случаев, когда автоматическое создание не сработало. "
+            + "Slug берётся из одобренного запроса.",
+        deprecated = true
     )
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Организация создана"),
@@ -109,6 +111,7 @@ public class OrganizationController {
         @ApiResponse(responseCode = "409", description = "Нет одобренного запроса или slug уже занят")
     })
     @PostMapping
+    @Deprecated
     public ResponseEntity<OrganizationDto> create(
         @AuthenticationPrincipal UserPrincipal principal,
         @Valid @RequestBody CreateOrganizationRequest request

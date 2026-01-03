@@ -29,6 +29,7 @@ import ru.aqstream.user.api.exception.OrganizationNotFoundException;
 import ru.aqstream.user.api.exception.OrganizationSlugAlreadyExistsException;
 import ru.aqstream.user.api.exception.SlugReservationExpiredException;
 import ru.aqstream.user.api.exception.UserNotFoundException;
+import ru.aqstream.user.api.event.OrganizationCreatedEvent;
 import ru.aqstream.user.api.event.OrganizationDeletedEvent;
 import ru.aqstream.user.db.entity.Organization;
 import ru.aqstream.user.db.entity.OrganizationMember;
@@ -72,6 +73,44 @@ public class OrganizationService {
     // ==================== CRUD Организаций ====================
 
     /**
+     * Внутренняя логика создания организации.
+     * Используется как из публичного API, так и при автоматическом создании после одобрения.
+     *
+     * @param user        пользователь-владелец
+     * @param name        название организации
+     * @param slug        URL-slug (уже нормализованный и проверенный)
+     * @param description описание (nullable)
+     * @return созданная организация
+     */
+    private Organization createOrganizationInternal(User user, String name, String slug, String description) {
+        // Проверяем уникальность slug среди организаций
+        if (organizationRepository.existsBySlug(slug)) {
+            throw new OrganizationSlugAlreadyExistsException(slug);
+        }
+
+        // Создаём организацию
+        Organization organization = Organization.create(user, name, slug, description);
+        organization = organizationRepository.save(organization);
+
+        // Создаём membership для владельца
+        OrganizationMember ownerMember = OrganizationMember.createOwner(organization, user);
+        memberRepository.save(ownerMember);
+
+        log.info("Организация создана: organizationId={}, slug={}, ownerId={}",
+            organization.getId(), slug, user.getId());
+
+        // Публикуем событие для других сервисов
+        eventPublisher.publish(new OrganizationCreatedEvent(
+            organization.getId(),
+            organization.getName(),
+            organization.getSlug(),
+            user.getId()
+        ));
+
+        return organization;
+    }
+
+    /**
      * Создаёт организацию.
      * Требуется одобренный OrganizationRequest — slug берётся из него.
      *
@@ -97,28 +136,44 @@ public class OrganizationService {
             throw new SlugReservationExpiredException(slug);
         }
 
-        // Проверяем уникальность slug среди организаций
-        if (organizationRepository.existsBySlug(slug)) {
-            throw new OrganizationSlugAlreadyExistsException(slug);
-        }
-
-        // Создаём организацию
-        Organization organization = Organization.create(
+        // Создаём организацию (переиспользуем внутренний метод)
+        Organization organization = createOrganizationInternal(
             user,
             request.name(),
             slug,
             request.description()
         );
-        organization = organizationRepository.save(organization);
-
-        // Создаём membership для владельца
-        OrganizationMember ownerMember = OrganizationMember.createOwner(organization, user);
-        memberRepository.save(ownerMember);
-
-        log.info("Организация создана: organizationId={}, slug={}, ownerId={}",
-            organization.getId(), slug, userId);
 
         return organizationMapper.toDto(organization);
+    }
+
+    /**
+     * Создаёт организацию автоматически при одобрении запроса.
+     * Вызывается из OrganizationRequestService.approve().
+     * Использует данные из OrganizationRequest.
+     *
+     * @param approvedRequest одобренный запрос
+     * @return созданная организация
+     */
+    @Transactional
+    public Organization createFromApprovedRequest(OrganizationRequest approvedRequest) {
+        log.info("Автоматическое создание организации: requestId={}, userId={}",
+            approvedRequest.getId(), approvedRequest.getUserId());
+
+        User user = findUserById(approvedRequest.getUserId());
+
+        // Создаём организацию с данными из запроса
+        Organization organization = createOrganizationInternal(
+            user,
+            approvedRequest.getName(),
+            approvedRequest.getSlug(),
+            approvedRequest.getDescription()
+        );
+
+        log.info("Организация автоматически создана: organizationId={}, requestId={}",
+            organization.getId(), approvedRequest.getId());
+
+        return organization;
     }
 
     /**
