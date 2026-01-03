@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import { useUpdateProfile } from '@/lib/hooks/use-profile';
 import { profileSchema, type ProfileFormData } from '@/lib/validations/profile';
@@ -83,7 +84,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
 
         <div>
-          <FormLabel>Email</FormLabel>
+          <Label>Email</Label>
           <Input
             value={user.email}
             disabled
