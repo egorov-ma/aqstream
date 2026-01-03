@@ -1,11 +1,13 @@
 import { useOrganizationStore } from '@/lib/store/organization-store';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 /**
  * Hook для проверки прав доступа пользователя.
- * Определяет, является ли пользователь организатором, владельцем или модератором.
+ * Определяет, является ли пользователь организатором, владельцем, модератором или администратором.
  */
 export function usePermissions() {
   const { currentOrganization, currentRole } = useOrganizationStore();
+  const user = useAuthStore((state) => state.user);
 
   // Пользователь является организатором, если выбрана организация и известна роль
   const isOrganizer = currentOrganization !== null && currentRole !== null;
@@ -14,9 +16,13 @@ export function usePermissions() {
   const isOwner = currentRole === 'OWNER';
   const isModerator = currentRole === 'MODERATOR';
 
+  // Проверка администратора платформы
+  const isAdmin = user?.isAdmin ?? false;
+
   return {
     // Базовые проверки
     isOrganizer,
+    isAdmin,
     isOwner,
     isModerator,
 
