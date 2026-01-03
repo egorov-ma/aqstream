@@ -409,13 +409,13 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
-        @DisplayName("возвращает 403 для чужой регистрации")
-        void getById_NotOwner_ReturnsForbidden() throws Exception {
+        @DisplayName("возвращает 404 для чужой регистрации (не раскрывает существование)")
+        void getById_NotOwner_ReturnsNotFound() throws Exception {
             Registration registration = createTestRegistration();
 
             mockMvc.perform(get("/api/v1/registrations/" + registration.getId())
                     .with(otherUserAuth()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
         }
     }
 
@@ -447,13 +447,13 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
-        @DisplayName("возвращает 403 для чужой регистрации")
-        void cancel_NotOwner_ReturnsForbidden() throws Exception {
+        @DisplayName("возвращает 404 для чужой регистрации (не раскрывает существование)")
+        void cancel_NotOwner_ReturnsNotFound() throws Exception {
             Registration registration = createTestRegistration();
 
             mockMvc.perform(delete("/api/v1/registrations/" + registration.getId())
                     .with(otherUserAuth()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
 
             // Регистрация не должна быть отменена
             Registration notCancelled = registrationRepository.findById(registration.getId()).orElseThrow();
