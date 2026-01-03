@@ -307,11 +307,11 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
-        @DisplayName("возвращает 400 без обязательных полей")
-        void create_MissingFields_ReturnsBadRequest() throws Exception {
+        @DisplayName("возвращает 400 без обязательного ticketTypeId")
+        void create_MissingTicketTypeId_ReturnsBadRequest() throws Exception {
             CreateRegistrationRequest request = new CreateRegistrationRequest(
-                testTicketType.getId(),
-                null, // missing firstName
+                null, // missing ticketTypeId (обязательное поле)
+                testFirstName,
                 testLastName,
                 testEmail,
                 null
@@ -339,6 +339,35 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("автозаполняет данные из профиля когда они не переданы")
+        void create_NoPersonalInfo_FetchesFromUserService() throws Exception {
+            // Подготовка: мокируем UserClient
+            ru.aqstream.user.api.dto.UserDto userDto = new ru.aqstream.user.api.dto.UserDto(
+                userId, testEmail, testFirstName, testLastName,
+                null, true, false, Instant.now()
+            );
+            org.mockito.Mockito.when(userClient.findById(userId))
+                .thenReturn(java.util.Optional.of(userDto));
+
+            // Запрос БЕЗ личных данных
+            CreateRegistrationRequest request = new CreateRegistrationRequest(
+                testTicketType.getId(), null, null, null, null
+            );
+
+            mockMvc.perform(post("/api/v1/events/" + testEvent.getId() + "/registrations")
+                    .with(userAuth())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.firstName").value(testFirstName))
+                .andExpect(jsonPath("$.lastName").value(testLastName))
+                .andExpect(jsonPath("$.email").value(testEmail));
+
+            // Проверяем что UserClient был вызван
+            org.mockito.Mockito.verify(userClient).findById(userId);
         }
     }
 

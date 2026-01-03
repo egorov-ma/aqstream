@@ -376,6 +376,139 @@ class RegistrationServiceTest {
     }
 
     @Nested
+    @DisplayName("Автозаполнение данных из профиля")
+    class AutofillFromProfile {
+
+        @Test
+        @DisplayName("createForPublicEvent: без личных данных - получает из UserService")
+        void createForPublicEvent_NoPersonalInfo_FetchesFromUserService() {
+            // given
+            CreateRegistrationRequest request = new CreateRegistrationRequest(
+                ticketTypeId, null, null, null, null
+            );
+
+            ru.aqstream.user.api.dto.UserDto userDto = new ru.aqstream.user.api.dto.UserDto(
+                userId, testEmail, testFirstName, testLastName,
+                null, true, false, Instant.now()
+            );
+
+            when(eventRepository.findPublicBySlug(testEventSlug)).thenReturn(Optional.of(testEvent));
+            when(userClient.findById(userId)).thenReturn(Optional.of(userDto));
+            when(registrationRepository.existsActiveByEventIdAndUserId(eventId, userId)).thenReturn(false);
+            when(ticketTypeRepository.findByIdAndEventIdForUpdate(ticketTypeId, eventId))
+                .thenReturn(Optional.of(testTicketType));
+            when(registrationRepository.existsByConfirmationCode(any())).thenReturn(false);
+            when(ticketTypeRepository.save(any(TicketType.class))).thenReturn(testTicketType);
+            when(registrationRepository.save(any(Registration.class))).thenReturn(testRegistration);
+            when(registrationMapper.toDto(testRegistration)).thenReturn(testRegistrationDto);
+
+            // when
+            RegistrationDto result = service.createForPublicEvent(testEventSlug, request, testPrincipal);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(userClient).findById(userId);  // Проверяем вызов UserClient
+        }
+
+        @Test
+        @DisplayName("createForPublicEvent: с личными данными - использует данные из request")
+        void createForPublicEvent_WithPersonalInfo_UsesRequestData() {
+            // given
+            CreateRegistrationRequest request = new CreateRegistrationRequest(
+                ticketTypeId, "CustomName", "CustomLast", "custom@example.com", null
+            );
+
+            when(eventRepository.findPublicBySlug(testEventSlug)).thenReturn(Optional.of(testEvent));
+            when(registrationRepository.existsActiveByEventIdAndUserId(eventId, userId)).thenReturn(false);
+            when(ticketTypeRepository.findByIdAndEventIdForUpdate(ticketTypeId, eventId))
+                .thenReturn(Optional.of(testTicketType));
+            when(registrationRepository.existsByConfirmationCode(any())).thenReturn(false);
+            when(ticketTypeRepository.save(any(TicketType.class))).thenReturn(testTicketType);
+            when(registrationRepository.save(any(Registration.class))).thenReturn(testRegistration);
+            when(registrationMapper.toDto(testRegistration)).thenReturn(testRegistrationDto);
+
+            // when
+            RegistrationDto result = service.createForPublicEvent(testEventSlug, request, testPrincipal);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(userClient, never()).findById(any());  // НЕ вызывается
+        }
+
+        @Test
+        @DisplayName("createForPublicEvent: пользователь не найден - выбрасывает UserNotFoundException")
+        void createForPublicEvent_UserNotFound_ThrowsUserNotFoundException() {
+            // given
+            CreateRegistrationRequest request = new CreateRegistrationRequest(
+                ticketTypeId, null, null, null, null
+            );
+
+            when(userClient.findById(userId)).thenReturn(Optional.empty());
+
+            // when/then
+            assertThatThrownBy(() ->
+                service.createForPublicEvent(testEventSlug, request, testPrincipal))
+                .isInstanceOf(ru.aqstream.common.api.exception.UserNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("create: без личных данных - получает из UserService")
+        void create_NoPersonalInfo_FetchesFromUserService() {
+            // given
+            CreateRegistrationRequest request = new CreateRegistrationRequest(
+                ticketTypeId, null, null, null, null
+            );
+
+            ru.aqstream.user.api.dto.UserDto userDto = new ru.aqstream.user.api.dto.UserDto(
+                userId, testEmail, testFirstName, testLastName,
+                null, true, false, Instant.now()
+            );
+
+            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
+            when(userClient.findById(userId)).thenReturn(Optional.of(userDto));
+            when(registrationRepository.existsActiveByEventIdAndUserId(eventId, userId)).thenReturn(false);
+            when(ticketTypeRepository.findByIdAndEventIdForUpdate(ticketTypeId, eventId))
+                .thenReturn(Optional.of(testTicketType));
+            when(registrationRepository.existsByConfirmationCode(any())).thenReturn(false);
+            when(ticketTypeRepository.save(any(TicketType.class))).thenReturn(testTicketType);
+            when(registrationRepository.save(any(Registration.class))).thenReturn(testRegistration);
+            when(registrationMapper.toDto(testRegistration)).thenReturn(testRegistrationDto);
+
+            // when
+            RegistrationDto result = service.create(eventId, request, testPrincipal);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(userClient).findById(userId);
+        }
+
+        @Test
+        @DisplayName("create: с личными данными - использует данные из request")
+        void create_WithPersonalInfo_UsesRequestData() {
+            // given
+            CreateRegistrationRequest request = new CreateRegistrationRequest(
+                ticketTypeId, "CustomName", "CustomLast", "custom@example.com", null
+            );
+
+            when(eventRepository.findByIdAndTenantId(eventId, tenantId)).thenReturn(Optional.of(testEvent));
+            when(registrationRepository.existsActiveByEventIdAndUserId(eventId, userId)).thenReturn(false);
+            when(ticketTypeRepository.findByIdAndEventIdForUpdate(ticketTypeId, eventId))
+                .thenReturn(Optional.of(testTicketType));
+            when(registrationRepository.existsByConfirmationCode(any())).thenReturn(false);
+            when(ticketTypeRepository.save(any(TicketType.class))).thenReturn(testTicketType);
+            when(registrationRepository.save(any(Registration.class))).thenReturn(testRegistration);
+            when(registrationMapper.toDto(testRegistration)).thenReturn(testRegistrationDto);
+
+            // when
+            RegistrationDto result = service.create(eventId, request, testPrincipal);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(userClient, never()).findById(any());
+        }
+    }
+
+    @Nested
     @DisplayName("getById()")
     class GetById {
 

@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aqstream.common.api.PageResponse;
+import ru.aqstream.common.api.exception.UserNotFoundException;
+import ru.aqstream.common.api.exception.ValidationException;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CancelRegistrationRequest;
@@ -28,12 +30,13 @@ import ru.aqstream.event.api.exception.TicketTypeNotFoundException;
 import ru.aqstream.event.api.exception.TicketTypeSalesNotOpenException;
 import ru.aqstream.event.api.exception.TicketTypeSoldOutException;
 import ru.aqstream.event.db.entity.Event;
-import ru.aqstream.user.client.UserClient;
 import ru.aqstream.event.db.entity.Registration;
 import ru.aqstream.event.db.entity.TicketType;
 import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RegistrationRepository;
 import ru.aqstream.event.db.repository.TicketTypeRepository;
+import ru.aqstream.user.api.dto.UserDto;
+import ru.aqstream.user.client.UserClient;
 
 /**
  * Сервис управления регистрациями на события.
@@ -82,6 +85,39 @@ public class RegistrationService {
         log.info("Создание регистрации: eventId={}, userId={}, ticketTypeId={}",
             eventId, userId, request.ticketTypeId());
 
+        // Получение данных участника
+        String firstName;
+        String lastName;
+        String email;
+
+        if (request.hasPersonalInfo()) {
+            // Данные переданы в request
+            log.debug("Использование данных из request: userId={}", userId);
+            firstName = request.firstName();
+            lastName = request.lastName();
+            email = request.email();
+        } else {
+            // Данные НЕ переданы - получаем из профиля
+            log.debug("Получение данных из профиля: userId={}", userId);
+            UserDto user = userClient.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+            firstName = user.firstName();
+            lastName = user.lastName();
+            email = user.email();
+        }
+
+        // Валидация (Defense in Depth)
+        if (firstName == null || firstName.isBlank()) {
+            throw new ValidationException("Имя участника обязательно");
+        }
+        if (lastName == null || lastName.isBlank()) {
+            throw new ValidationException("Фамилия участника обязательна");
+        }
+        if (email == null || email.isBlank()) {
+            throw new ValidationException("Email участника обязателен");
+        }
+
         // Находим событие и проверяем возможность регистрации
         Event event = findEventForRegistration(eventId, tenantId);
 
@@ -116,9 +152,9 @@ public class RegistrationService {
             ticketType,
             userId,
             confirmationCode,
-            request.firstName(),
-            request.lastName(),
-            request.email()
+            firstName,
+            lastName,
+            email
         );
         registration.setCustomFields(request.customFieldsOrDefault());
 
@@ -154,6 +190,39 @@ public class RegistrationService {
         log.info("Создание регистрации на публичное событие: slug={}, userId={}, ticketTypeId={}",
             slug, userId, request.ticketTypeId());
 
+        // Получение данных участника
+        String firstName;
+        String lastName;
+        String email;
+
+        if (request.hasPersonalInfo()) {
+            // Данные переданы в request
+            log.debug("Использование данных из request: userId={}", userId);
+            firstName = request.firstName();
+            lastName = request.lastName();
+            email = request.email();
+        } else {
+            // Данные НЕ переданы - получаем из профиля
+            log.debug("Получение данных из профиля: userId={}", userId);
+            UserDto user = userClient.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+            firstName = user.firstName();
+            lastName = user.lastName();
+            email = user.email();
+        }
+
+        // Валидация (Defense in Depth)
+        if (firstName == null || firstName.isBlank()) {
+            throw new ValidationException("Имя участника обязательно");
+        }
+        if (lastName == null || lastName.isBlank()) {
+            throw new ValidationException("Фамилия участника обязательна");
+        }
+        if (email == null || email.isBlank()) {
+            throw new ValidationException("Email участника обязателен");
+        }
+
         // Находим публичное событие по slug (без проверки tenant)
         Event event = eventRepository.findPublicBySlug(slug)
             .orElseThrow(() -> new EventNotFoundException("Событие не найдено или не публичное: " + slug));
@@ -187,9 +256,9 @@ public class RegistrationService {
             ticketType,
             userId,
             confirmationCode,
-            request.firstName(),
-            request.lastName(),
-            request.email()
+            firstName,
+            lastName,
+            email
         );
         registration.setCustomFields(request.customFieldsOrDefault());
         // Устанавливаем tenant_id события (не пользователя!)

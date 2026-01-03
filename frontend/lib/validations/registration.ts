@@ -2,12 +2,10 @@ import { z } from 'zod';
 import type { CustomFieldConfig, RegistrationFormConfig } from '@/lib/api/types';
 
 /**
- * Схема регистрации с поддержкой custom fields
+ * Схема регистрации для авторизованных пользователей.
+ * Личные данные (firstName, lastName, email) автозаполняются на backend из профиля.
  */
 export const registrationSchema = z.object({
-  firstName: z.string().min(1, 'Имя обязательно'),
-  lastName: z.string().optional(),
-  email: z.string().email('Некорректный email'),
   ticketTypeId: z.string().min(1, 'Выберите тип билета'),
   customFields: z.record(z.string(), z.string()).optional(),
 });
@@ -60,24 +58,21 @@ export function validateCustomFields(
 }
 
 /**
- * Дефолтные значения для формы регистрации
+ * Дефолтные значения для формы регистрации.
+ * Личные данные не включены - автозаполняются на backend.
  */
 export function getDefaultRegistrationValues(
-  formConfig?: RegistrationFormConfig,
-  prefill?: Partial<RegistrationFormData>
+  formConfig?: RegistrationFormConfig
 ): RegistrationFormData {
   const defaults: RegistrationFormData = {
-    firstName: prefill?.firstName ?? '',
-    lastName: prefill?.lastName ?? '',
-    email: prefill?.email ?? '',
-    ticketTypeId: prefill?.ticketTypeId ?? '',
+    ticketTypeId: '',
     customFields: {},
   };
 
   // Инициализируем custom fields пустыми значениями
   if (formConfig?.customFields) {
     for (const field of formConfig.customFields) {
-      defaults.customFields![field.name] = prefill?.customFields?.[field.name] ?? '';
+      defaults.customFields![field.name] = '';
     }
   }
 

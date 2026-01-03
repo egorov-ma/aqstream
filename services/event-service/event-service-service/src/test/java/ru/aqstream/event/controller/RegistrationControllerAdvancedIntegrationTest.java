@@ -1,6 +1,8 @@
 package ru.aqstream.event.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -12,6 +14,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -35,6 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.event.listener.OrganizationEventListener;
+import ru.aqstream.user.api.dto.UserDto;
 import ru.aqstream.user.client.UserClient;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TenantContext;
@@ -109,6 +113,16 @@ class RegistrationControllerAdvancedIntegrationTest extends SharedServicesTestCo
         testFirstName = FAKER.name().firstName();
         testLastName = FAKER.name().lastName();
         testEmail = FAKER.internet().emailAddress();
+
+        // Настройка мока UserClient для всех тестов
+        // Когда передаются данные (hasPersonalInfo() == true), UserClient НЕ вызывается
+        // Но мок должен быть готов на случай автозаполнения
+        UserDto defaultUser = new UserDto(
+            userId, testEmail, testFirstName, testLastName,
+            null, true, false, Instant.now()
+        );
+        when(userClient.findById(any(UUID.class)))
+            .thenReturn(Optional.of(defaultUser));
 
         testEvent = Event.create(
             FAKER.book().title(),

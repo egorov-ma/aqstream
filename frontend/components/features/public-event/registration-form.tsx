@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 
 import { TicketSelector } from './ticket-selector';
+import { TicketTypeList } from './ticket-type-list';
 import {
   registrationSchema,
   getDefaultRegistrationValues,
@@ -104,26 +105,13 @@ export function RegistrationForm({
   // Используем публичный endpoint для регистрации по slug
   const createRegistration = useCreatePublicRegistration(event.slug);
 
-  // Получаем дефолтные значения с автозаполнением для авторизованных
-  const defaultValues = getDefaultRegistrationValues(event.registrationFormConfig, {
-    firstName: user?.firstName,
-    lastName: user?.lastName || undefined,
-    email: user?.email,
-  });
+  // Получаем дефолтные значения формы (без личных данных - автозаполнение на backend)
+  const defaultValues = getDefaultRegistrationValues(event.registrationFormConfig);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues,
   });
-
-  // Обновляем форму при изменении user
-  useEffect(() => {
-    if (user) {
-      form.setValue('firstName', user.firstName);
-      form.setValue('lastName', user.lastName || '');
-      form.setValue('email', user.email);
-    }
-  }, [user, form]);
 
   const onSubmit = async (data: RegistrationFormData) => {
     // Сбрасываем ошибку API
@@ -149,11 +137,9 @@ export function RegistrationForm({
     }
 
     try {
+      // Отправляем только ticketTypeId и customFields (личные данные автозаполняются на backend)
       const registration = await createRegistration.mutateAsync({
         ticketTypeId: data.ticketTypeId,
-        firstName: data.firstName,
-        lastName: data.lastName || undefined,
-        email: data.email,
         customFields: data.customFields as Record<string, string> | undefined,
       });
 
@@ -177,7 +163,7 @@ export function RegistrationForm({
   const customFields = event.registrationFormConfig?.customFields || [];
   const isFormDisabled = disabled || event.status === 'CANCELLED' || event.status === 'COMPLETED';
 
-  // Auth guard: показываем форму входа если пользователь не авторизован
+  // Auth guard: показываем список билетов и форму входа если пользователь не авторизован
   if (!user) {
     return (
       <Card data-testid="registration-form-card">
@@ -187,17 +173,25 @@ export function RegistrationForm({
             Для регистрации на событие необходимо войти в аккаунт
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Список доступных билетов */}
+          {ticketTypes.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium mb-3">Доступные билеты</h3>
+              <TicketTypeList ticketTypes={ticketTypes} />
+            </div>
+          )}
+
           <p className="text-sm text-muted-foreground">
             Войдите в свой аккаунт или зарегистрируйтесь, чтобы записаться на это событие.
           </p>
           <div className="flex flex-col gap-2">
-            <Button asChild>
+            <Button asChild data-testid="login-button">
               <Link href={getLoginUrl(ROUTES.EVENT(event.slug))}>
                 Войти
               </Link>
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild data-testid="register-button">
               <Link href={getRegisterUrl(ROUTES.EVENT(event.slug))}>
                 Зарегистрироваться
               </Link>
@@ -239,67 +233,6 @@ export function RegistrationForm({
                       selectedId={field.value}
                       onSelect={field.onChange}
                       disabled={isFormDisabled}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Базовые поля */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Имя *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Иван"
-                        disabled={isFormDisabled}
-                        data-testid="firstName-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Фамилия</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Иванов"
-                        disabled={isFormDisabled}
-                        data-testid="lastName-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="ivan@example.com"
-                      disabled={isFormDisabled}
-                      data-testid="email-input"
-                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

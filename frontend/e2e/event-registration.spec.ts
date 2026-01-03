@@ -68,9 +68,13 @@ test.describe('Event Registration (J2)', () => {
       await expect(page.getByTestId('registration-form')).toBeVisible();
     });
 
-    await test.step('Проверить предзаполненные поля', async () => {
-      await expect(page.getByTestId('firstName-input')).toHaveValue(testUsers.user.firstName);
-      await expect(page.getByTestId('email-input')).toHaveValue(testUsers.user.email);
+    await test.step('Проверить упрощённую форму (без личных данных)', async () => {
+      // Поля firstName/lastName/email отсутствуют (данные автозаполняются на backend)
+      await expect(page.getByTestId('firstName-input')).not.toBeVisible();
+      await expect(page.getByTestId('lastName-input')).not.toBeVisible();
+      await expect(page.getByTestId('email-input')).not.toBeVisible();
+      // Selector билетов присутствует
+      await expect(page.getByTestId('ticket-type-card').first()).toBeVisible();
     });
 
     await test.step('Выбрать тип билета', async () => {
@@ -132,7 +136,7 @@ test.describe('Event Registration (J2)', () => {
     });
   });
 
-  test('unauthenticated user sees login prompt', async ({ page }) => {
+  test('unauthenticated user sees ticket list and login prompt', async ({ page }) => {
     await test.step('Открыть страницу события без авторизации', async () => {
       await page.goto(`/events/${testEvent.slug}`);
     });
@@ -141,18 +145,25 @@ test.describe('Event Registration (J2)', () => {
       await expect(page.getByTestId('registration-form-card')).toBeVisible();
     });
 
+    await test.step('Проверить список доступных билетов', async () => {
+      await expect(page.getByTestId('ticket-type-list')).toBeVisible();
+      const firstCard = page.getByTestId('ticket-type-card').first();
+      await expect(firstCard).toBeVisible();
+      // Проверяем что карточки disabled (cursor-not-allowed)
+      await expect(firstCard).toHaveClass(/cursor-not-allowed/);
+    });
+
     await test.step('Проверить отсутствие формы регистрации', async () => {
       await expect(page.getByTestId('registration-form')).not.toBeVisible();
     });
 
-    await test.step('Проверить наличие кнопки входа', async () => {
-      await expect(
-        page.getByTestId('registration-form-card').getByRole('link', { name: /войти/i })
-      ).toBeVisible();
+    await test.step('Проверить наличие кнопок входа и регистрации', async () => {
+      await expect(page.getByTestId('login-button')).toBeVisible();
+      await expect(page.getByTestId('register-button')).toBeVisible();
     });
   });
 
-  test('registration form validates required fields', async ({ page }) => {
+  test('registration form validates required ticketTypeId', async ({ page }) => {
     await test.step('Войти как user', async () => {
       await login(page, testUsers.user);
     });
@@ -162,17 +173,15 @@ test.describe('Event Registration (J2)', () => {
       await expect(page.getByTestId('registration-form')).toBeVisible();
     });
 
-    await test.step('Очистить обязательные поля', async () => {
-      await page.getByTestId('firstName-input').clear();
-      await page.getByTestId('email-input').clear();
-    });
-
-    await test.step('Попытаться отправить форму', async () => {
+    await test.step('Попытаться отправить форму без выбора билета', async () => {
+      // Не выбираем тип билета (ticketTypeId остаётся пустым)
       await page.getByTestId('registration-submit').click();
     });
 
-    await test.step('Проверить, что остались на странице (не прошла валидация)', async () => {
+    await test.step('Проверить, что остались на странице (валидация не прошла)', async () => {
       await expect(page).toHaveURL(new RegExp(`/events/${testEvent.slug}`));
+      // Должна быть видна ошибка валидации
+      await expect(page.getByText(/выберите тип билета/i)).toBeVisible();
     });
   });
 
@@ -211,11 +220,8 @@ test.describe('Event Registration (J2)', () => {
       );
       const ticketTypes = await ticketTypesResponse.json();
 
-      await userHelper.createRegistration(freshEvent.slug, ticketTypes[0].id, {
-        firstName: testUsers.user.firstName,
-        lastName: testUsers.user.lastName,
-        email: testUsers.user.email,
-      });
+      // Создаём регистрацию без передачи личных данных (автозаполнение на backend)
+      await userHelper.createRegistration(freshEvent.slug, ticketTypes[0].id, {});
     });
 
     await test.step('Войти как user', async () => {

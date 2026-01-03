@@ -11,9 +11,9 @@ export interface RegistrationFilters {
 
 export interface CreateRegistrationRequest {
   ticketTypeId: string;
-  firstName: string;
-  lastName?: string;
-  email: string;
+  firstName?: string;   // Опционально (автозаполнение из профиля)
+  lastName?: string;    // Опционально (автозаполнение из профиля)
+  email?: string;       // Опционально (автозаполнение из профиля)
   customFields?: Record<string, string>;
 }
 
