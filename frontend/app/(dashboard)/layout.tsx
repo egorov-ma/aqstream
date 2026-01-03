@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
+import { BreadcrumbNav } from '@/components/layout/breadcrumb-nav';
 import { AuthGuard } from '@/components/auth';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -9,6 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar />
         <div className="flex flex-col">
           <Header />
+          <BreadcrumbNav />
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
         </div>
       </div>
