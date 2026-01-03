@@ -1,6 +1,7 @@
 package ru.aqstream.event.service;
 
 import java.security.SecureRandom;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -220,6 +221,7 @@ public class RegistrationService {
 
     /**
      * Возвращает регистрацию по ID.
+     * Поддерживает cross-tenant доступ для владельца регистрации (публичные события).
      *
      * @param registrationId идентификатор регистрации
      * @param principal      авторизованный пользователь
@@ -232,15 +234,17 @@ public class RegistrationService {
         UUID userId = principal.userId();
         UUID tenantId = TenantContext.getTenantId();
 
-        Registration registration = registrationRepository.findByIdAndTenantId(registrationId, tenantId)
-            .orElseThrow(() -> new RegistrationNotFoundException(registrationId, tenantId));
+        // Сначала ищем как владелец (cross-tenant доступ к своим регистрациям)
+        Optional<Registration> registration = registrationRepository.findByIdAndUserId(registrationId, userId);
 
-        // Проверяем, что это регистрация текущего пользователя или он организатор
-        if (!registration.getUserId().equals(userId) && !isOrganizer(principal)) {
-            throw new RegistrationAccessDeniedException(registrationId, userId);
+        // Если не владелец, но организатор — ищем в своём tenant
+        if (registration.isEmpty() && isOrganizer(principal)) {
+            registration = registrationRepository.findByIdAndTenantId(registrationId, tenantId);
         }
 
-        return registrationMapper.toDto(registration);
+        return registration
+            .map(registrationMapper::toDto)
+            .orElseThrow(() -> new RegistrationNotFoundException(registrationId, tenantId));
     }
 
     /**
@@ -287,6 +291,7 @@ public class RegistrationService {
 
     /**
      * Запрашивает повторную отправку билета в Telegram.
+     * Поддерживает cross-tenant доступ для владельца регистрации.
      *
      * @param registrationId идентификатор регистрации
      * @param principal      авторизованный пользователь
@@ -296,16 +301,11 @@ public class RegistrationService {
     @Transactional
     public void resendTicket(UUID registrationId, UserPrincipal principal) {
         UUID userId = principal.userId();
-        UUID tenantId = TenantContext.getTenantId();
         log.info("Запрос повторной отправки билета: registrationId={}, userId={}", registrationId, userId);
 
-        Registration registration = registrationRepository.findByIdAndTenantId(registrationId, tenantId)
-            .orElseThrow(() -> new RegistrationNotFoundException(registrationId, tenantId));
-
-        // Проверяем, что это регистрация текущего пользователя
-        if (!registration.getUserId().equals(userId)) {
-            throw new RegistrationAccessDeniedException(registrationId, userId);
-        }
+        // Ищем по userId (cross-tenant для владельца)
+        Registration registration = registrationRepository.findByIdAndUserId(registrationId, userId)
+            .orElseThrow(() -> new RegistrationNotFoundException(registrationId));
 
         // Проверяем, что регистрация активна (CONFIRMED или CHECKED_IN)
         RegistrationStatus status = registration.getStatus();
@@ -494,11 +494,12 @@ public class RegistrationService {
 
     /**
      * Находит регистрацию для отмены с валидациями.
+     * Поддерживает cross-tenant доступ для владельца.
      */
     private Registration findRegistrationForCancellation(UUID registrationId, UUID userId) {
-        UUID tenantId = TenantContext.getTenantId();
-        Registration registration = registrationRepository.findByIdAndTenantId(registrationId, tenantId)
-            .orElseThrow(() -> new RegistrationNotFoundException(registrationId, tenantId));
+        // Ищем по userId (cross-tenant для владельца)
+        Registration registration = registrationRepository.findByIdAndUserId(registrationId, userId)
+            .orElseThrow(() -> new RegistrationNotFoundException(registrationId));
 
         if (!registration.isCancellable()) {
             throw new RegistrationNotCancellableException(registrationId, registration.getStatus());

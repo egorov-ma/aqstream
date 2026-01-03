@@ -34,6 +34,18 @@ public interface RegistrationRepository extends JpaRepository<Registration, UUID
     Optional<Registration> findByIdAndTenantId(UUID id, UUID tenantId);
 
     /**
+     * Находит регистрацию по ID для владельца (cross-tenant).
+     * Используется для доступа пользователя к своим регистрациям на публичные события.
+     * RLS политика user_own_registrations обеспечивает безопасность на уровне БД.
+     *
+     * @param id     идентификатор регистрации
+     * @param userId идентификатор пользователя
+     * @return регистрация или empty
+     */
+    @EntityGraph(attributePaths = {"event", "ticketType"})
+    Optional<Registration> findByIdAndUserId(UUID id, UUID userId);
+
+    /**
      * Находит регистрацию по confirmation code.
      *
      * @param confirmationCode код подтверждения

@@ -383,7 +383,7 @@ class RegistrationServiceTest {
         @DisplayName("Возвращает регистрацию по ID для владельца")
         void getById_Owner_ReturnsRegistration() {
             // given
-            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
+            when(registrationRepository.findByIdAndUserId(registrationId, userId))
                 .thenReturn(Optional.of(testRegistration));
             when(registrationMapper.toDto(testRegistration)).thenReturn(testRegistrationDto);
 
@@ -399,7 +399,7 @@ class RegistrationServiceTest {
         @DisplayName("Выбрасывает RegistrationNotFoundException если регистрация не найдена")
         void getById_NotFound_ThrowsException() {
             // given
-            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
+            when(registrationRepository.findByIdAndUserId(registrationId, userId))
                 .thenReturn(Optional.empty());
 
             // when/then
@@ -408,18 +408,43 @@ class RegistrationServiceTest {
         }
 
         @Test
-        @DisplayName("Выбрасывает RegistrationAccessDeniedException для чужой регистрации")
-        void getById_NotOwner_ThrowsException() {
+        @DisplayName("Возвращает регистрацию организатору из своего tenant")
+        void getById_Organizer_ReturnsRegistration() {
+            // given
+            UUID organizerId = UUID.randomUUID();
+            UserPrincipal organizerPrincipal = new UserPrincipal(
+                organizerId, "organizer@test.com", tenantId, Set.of("USER", "ORGANIZER")
+            );
+
+            // Организатор не владелец регистрации
+            when(registrationRepository.findByIdAndUserId(registrationId, organizerId))
+                .thenReturn(Optional.empty());
+            // Но может найти по tenant
+            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
+                .thenReturn(Optional.of(testRegistration));
+            when(registrationMapper.toDto(testRegistration)).thenReturn(testRegistrationDto);
+
+            // when
+            RegistrationDto result = service.getById(registrationId, organizerPrincipal);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.id()).isEqualTo(registrationId);
+        }
+
+        @Test
+        @DisplayName("Выбрасывает RegistrationNotFoundException для не-владельца и не-организатора")
+        void getById_NotOwnerNotOrganizer_ThrowsException() {
             // given
             UUID otherUserId = UUID.randomUUID();
             UserPrincipal otherPrincipal = new UserPrincipal(otherUserId, "other@test.com", tenantId, Set.of("USER"));
 
-            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
-                .thenReturn(Optional.of(testRegistration));
+            when(registrationRepository.findByIdAndUserId(registrationId, otherUserId))
+                .thenReturn(Optional.empty());
 
             // when/then
             assertThatThrownBy(() -> service.getById(registrationId, otherPrincipal))
-                .isInstanceOf(RegistrationAccessDeniedException.class);
+                .isInstanceOf(RegistrationNotFoundException.class);
         }
     }
 
@@ -434,7 +459,7 @@ class RegistrationServiceTest {
             testTicketType.incrementSoldCount(); // Была продажа
             int initialSoldCount = testTicketType.getSoldCount();
 
-            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
+            when(registrationRepository.findByIdAndUserId(registrationId, userId))
                 .thenReturn(Optional.of(testRegistration));
             when(ticketTypeRepository.save(any(TicketType.class))).thenReturn(testTicketType);
             when(registrationRepository.save(any(Registration.class))).thenReturn(testRegistration);
@@ -452,18 +477,19 @@ class RegistrationServiceTest {
         }
 
         @Test
-        @DisplayName("Выбрасывает RegistrationAccessDeniedException для чужой регистрации")
+        @DisplayName("Выбрасывает RegistrationNotFoundException для чужой регистрации")
         void cancel_NotOwner_ThrowsException() {
             // given
             UUID otherUserId = UUID.randomUUID();
             UserPrincipal otherPrincipal = new UserPrincipal(otherUserId, "other@test.com", tenantId, Set.of("USER"));
 
-            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
-                .thenReturn(Optional.of(testRegistration));
+            // Регистрация не найдена по userId другого пользователя
+            when(registrationRepository.findByIdAndUserId(registrationId, otherUserId))
+                .thenReturn(Optional.empty());
 
             // when/then
             assertThatThrownBy(() -> service.cancel(registrationId, otherPrincipal))
-                .isInstanceOf(RegistrationAccessDeniedException.class);
+                .isInstanceOf(RegistrationNotFoundException.class);
 
             // Регистрация не отменена
             assertThat(testRegistration.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED);
@@ -475,7 +501,7 @@ class RegistrationServiceTest {
             // given
             testRegistration.cancel(); // Уже отменена
 
-            when(registrationRepository.findByIdAndTenantId(registrationId, tenantId))
+            when(registrationRepository.findByIdAndUserId(registrationId, userId))
                 .thenReturn(Optional.of(testRegistration));
 
             // when/then

@@ -31,6 +31,18 @@ public class ValidationException extends AqStreamException {
     }
 
     /**
+     * Создаёт исключение с кастомным кодом, сообщением и деталями.
+     * Используется в наследниках для добавления контекста ошибки.
+     *
+     * @param code    уникальный код ошибки
+     * @param message описание ошибки валидации (на русском)
+     * @param details дополнительные детали ошибки
+     */
+    protected ValidationException(String code, String message, Map<String, Object> details) {
+        super(code, message, details);
+    }
+
+    /**
      * Создаёт исключение с деталями по полям.
      *
      * @param message сообщение об ошибке
