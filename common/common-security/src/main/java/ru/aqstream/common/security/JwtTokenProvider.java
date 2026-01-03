@@ -66,11 +66,14 @@ public class JwtTokenProvider {
         Instant now = Instant.now();
         Instant expiry = now.plus(accessTokenExpiration);
 
+        // tenantId может быть null для пользователей без организации
+        String tenantIdStr = principal.tenantId() != null ? principal.tenantId().toString() : null;
+
         return Jwts.builder()
             .subject(principal.userId().toString())
             .claim(CLAIM_USER_ID, principal.userId().toString())
             .claim(CLAIM_EMAIL, principal.email())
-            .claim(CLAIM_TENANT_ID, principal.tenantId().toString())
+            .claim(CLAIM_TENANT_ID, tenantIdStr)
             .claim(CLAIM_ROLES, principal.roles())
             .claim(CLAIM_TOKEN_TYPE, TOKEN_TYPE_ACCESS)
             .issuedAt(Date.from(now))
@@ -122,7 +125,10 @@ public class JwtTokenProvider {
 
             UUID userId = UUID.fromString(claims.get(CLAIM_USER_ID, String.class));
             String email = claims.get(CLAIM_EMAIL, String.class);
-            UUID tenantId = UUID.fromString(claims.get(CLAIM_TENANT_ID, String.class));
+
+            // tenantId может быть null для пользователей без организации
+            String tenantIdStr = claims.get(CLAIM_TENANT_ID, String.class);
+            UUID tenantId = tenantIdStr != null ? UUID.fromString(tenantIdStr) : null;
 
             @SuppressWarnings("unchecked")
             List<String> rolesList = claims.get(CLAIM_ROLES, List.class);

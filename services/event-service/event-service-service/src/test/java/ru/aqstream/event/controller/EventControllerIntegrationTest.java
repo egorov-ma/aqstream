@@ -1,6 +1,8 @@
 package ru.aqstream.event.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -8,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.aqstream.common.test.SecurityTestUtils.jwt;
+import static ru.aqstream.common.test.SecurityTestUtils.jwtAdmin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -28,6 +31,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.context.annotation.Import;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.event.listener.OrganizationEventListener;
+import ru.aqstream.user.api.dto.OrganizationMembershipDto;
+import ru.aqstream.user.api.dto.OrganizationRole;
 import ru.aqstream.user.client.UserClient;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TenantContext;
@@ -39,8 +44,10 @@ import ru.aqstream.event.api.dto.EventStatus;
 import ru.aqstream.event.api.dto.LocationType;
 import ru.aqstream.event.api.dto.UpdateEventRequest;
 import ru.aqstream.event.db.entity.Event;
+import ru.aqstream.event.db.entity.TicketType;
 import ru.aqstream.event.db.repository.EventAuditLogRepository;
 import ru.aqstream.event.db.repository.EventRepository;
+import ru.aqstream.event.db.repository.TicketTypeRepository;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -75,6 +82,9 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     @Autowired
     private EventAuditLogRepository eventAuditLogRepository;
 
+    @Autowired
+    private TicketTypeRepository ticketTypeRepository;
+
     private UUID tenantId;
     private UUID userId;
     private Event testEvent;
@@ -82,6 +92,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     @BeforeEach
     void setUp() {
         // Очищаем таблицы (порядок важен из-за FK)
+        ticketTypeRepository.deleteAll();
         eventAuditLogRepository.deleteAll();
         eventRepository.deleteAll();
 
@@ -89,6 +100,10 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         userId = UUID.randomUUID();
         tenantId = UUID.randomUUID();
         TenantContext.setTenantId(tenantId);
+
+        // Мок проверки членства — пользователь является OWNER организации
+        when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+            .thenReturn(OrganizationMembershipDto.member(tenantId, userId, OrganizationRole.OWNER));
 
         // Создаём тестовое событие
         testEvent = Event.create(
@@ -129,7 +144,8 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
                 false,
                 null,
                 null,
-                null // recurrenceRule
+                null, // organizationId (null для обычных пользователей)
+                null  // recurrenceRule
             );
 
             mockMvc.perform(post(BASE_URL)
@@ -147,7 +163,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         void create_MissingRequiredFields_ReturnsBadRequest() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
                 null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
             );
 
             mockMvc.perform(post(BASE_URL)
@@ -231,8 +247,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     class Publish {
 
         @Test
-        @DisplayName("публикует событие в статусе DRAFT")
-        void publish_DraftEvent_ReturnsPublishedEvent() throws Exception {
+        @DisplayName("публикует событие с типами билетов")
+        void publish_EventWithTicketTypes_ReturnsPublishedEvent() throws Exception {
+            // Создаём тип билета для события
+            TicketType ticketType = TicketType.create(testEvent, FAKER.commerce().productName());
+            ticketTypeRepository.save(ticketType);
+
             mockMvc.perform(post(BASE_URL + "/" + testEvent.getId() + "/publish")
                     .with(userAuth()))
                 .andExpect(status().isOk())
@@ -240,6 +260,18 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
 
             Event updated = eventRepository.findById(testEvent.getId()).orElseThrow();
             assertThat(updated.getStatus()).isEqualTo(EventStatus.PUBLISHED);
+        }
+
+        @Test
+        @DisplayName("возвращает 400 при попытке опубликовать событие без типов билетов")
+        void publish_EventWithoutTicketTypes_ReturnsBadRequest() throws Exception {
+            // Событие создано в setUp без типов билетов
+
+            mockMvc.perform(post(BASE_URL + "/" + testEvent.getId() + "/publish")
+                    .with(userAuth()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("event_has_no_ticket_types"))
+                .andExpect(jsonPath("$.message").value("Для публикации события необходимо добавить хотя бы один тип билета"));
         }
     }
 
@@ -290,6 +322,222 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.totalElements").value(0));
+        }
+    }
+
+    @Nested
+    @DisplayName("Access Control")
+    class AccessControl {
+
+        @Test
+        @DisplayName("пользователь без tenantId получает 403")
+        void create_UserWithoutTenant_Returns403() throws Exception {
+            CreateEventRequest request = new CreateEventRequest(
+                FAKER.book().title(),
+                null,
+                Instant.now().plus(14, ChronoUnit.DAYS),
+                null, null, null, null, null, null, null, null, null, null, null, null, null
+            );
+
+            // JWT без tenantId (null)
+            mockMvc.perform(post(BASE_URL)
+                    .with(jwt(jwtTokenProvider, userId, null, null, Set.of("USER")))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("админ с organizationId создаёт событие")
+        void create_AdminWithOrganizationId_ReturnsCreated() throws Exception {
+            UUID targetOrganizationId = UUID.randomUUID();
+            CreateEventRequest request = new CreateEventRequest(
+                FAKER.book().title(),
+                null,
+                Instant.now().plus(14, ChronoUnit.DAYS),
+                null, null, null, null, null, null, null, null, null, null, null,
+                targetOrganizationId, // organizationId для админа
+                null
+            );
+
+            mockMvc.perform(post(BASE_URL)
+                    .with(jwtAdmin(jwtTokenProvider, userId))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+        }
+
+        @Test
+        @DisplayName("админ без organizationId и без tenantId получает 403")
+        void create_AdminWithoutOrganization_Returns403() throws Exception {
+            CreateEventRequest request = new CreateEventRequest(
+                FAKER.book().title(),
+                null,
+                Instant.now().plus(14, ChronoUnit.DAYS),
+                null, null, null, null, null, null, null, null, null, null, null,
+                null, // без organizationId
+                null
+            );
+
+            // Админ без tenantId в JWT и без organizationId в request
+            mockMvc.perform(post(BASE_URL)
+                    .with(jwt(jwtTokenProvider, userId, null, null, Set.of("USER", "ADMIN")))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("запрос без аутентификации получает 401")
+        void create_Unauthenticated_Returns401() throws Exception {
+            CreateEventRequest request = new CreateEventRequest(
+                FAKER.book().title(),
+                null,
+                Instant.now().plus(14, ChronoUnit.DAYS),
+                null, null, null, null, null, null, null, null, null, null, null, null, null
+            );
+
+            mockMvc.perform(post(BASE_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("не-член организации получает 403")
+        void create_NotMember_Returns403() throws Exception {
+            // Мокаем что пользователь НЕ является членом организации
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.notMember(tenantId, userId));
+
+            CreateEventRequest request = new CreateEventRequest(
+                FAKER.book().title(),
+                null,
+                Instant.now().plus(14, ChronoUnit.DAYS),
+                null, null, null, null, null, null, null, null, null, null, null, null, null
+            );
+
+            mockMvc.perform(post(BASE_URL)
+                    .with(userAuth())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("обычный пользователь не может просматривать список событий")
+        void findAll_RegularUser_Returns403() throws Exception {
+            // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, null));
+
+            mockMvc.perform(get(BASE_URL)
+                    .with(userAuth()))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("обычный пользователь не может просматривать событие по ID")
+        void getById_RegularUser_Returns403() throws Exception {
+            // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, null));
+
+            mockMvc.perform(get(BASE_URL + "/" + testEvent.getId())
+                    .with(userAuth()))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("обычный пользователь не может обновлять событие")
+        void update_RegularUser_Returns403() throws Exception {
+            // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, null));
+
+            UpdateEventRequest request = new UpdateEventRequest(
+                "Новое название", null, null, null, null, null, null, null,
+                null, null, null, null, null, null
+            );
+
+            mockMvc.perform(put(BASE_URL + "/" + testEvent.getId())
+                    .with(userAuth())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("обычный пользователь не может удалять событие")
+        void delete_RegularUser_Returns403() throws Exception {
+            // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, null));
+
+            mockMvc.perform(delete(BASE_URL + "/" + testEvent.getId())
+                    .with(userAuth()))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("обычный пользователь не может публиковать событие")
+        void publish_RegularUser_Returns403() throws Exception {
+            // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, null));
+
+            mockMvc.perform(post(BASE_URL + "/" + testEvent.getId() + "/publish")
+                    .with(userAuth()))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("обычный пользователь не может отменять событие")
+        void cancel_RegularUser_Returns403() throws Exception {
+            // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, null));
+
+            mockMvc.perform(post(BASE_URL + "/" + testEvent.getId() + "/cancel")
+                    .with(userAuth()))
+                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("MODERATOR может обновлять событие")
+        void update_Moderator_Returns200() throws Exception {
+            // Мокаем что пользователь MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, OrganizationRole.MODERATOR));
+
+            UpdateEventRequest request = new UpdateEventRequest(
+                "Название от модератора", null, null, null, null, null, null, null,
+                null, null, null, null, null, null
+            );
+
+            mockMvc.perform(put(BASE_URL + "/" + testEvent.getId())
+                    .with(userAuth())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Название от модератора"));
+        }
+
+        @Test
+        @DisplayName("MODERATOR может публиковать событие")
+        void publish_Moderator_Returns200() throws Exception {
+            // Создаём тип билета для события
+            TicketType ticketType = TicketType.create(testEvent, FAKER.commerce().productName());
+            ticketTypeRepository.save(ticketType);
+
+            // Мокаем что пользователь MODERATOR
+            when(userClient.getMembershipRole(any(UUID.class), any(UUID.class)))
+                .thenReturn(OrganizationMembershipDto.member(tenantId, userId, OrganizationRole.MODERATOR));
+
+            mockMvc.perform(post(BASE_URL + "/" + testEvent.getId() + "/publish")
+                    .with(userAuth()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PUBLISHED"));
         }
     }
 }
