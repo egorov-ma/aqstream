@@ -6,6 +6,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -20,12 +26,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.user.api.dto.AuthResponse;
@@ -37,7 +43,8 @@ import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("TelegramAuthService")
 class TelegramAuthServiceTest {
 
@@ -100,10 +107,12 @@ class TelegramAuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("authenticate")
     class Authenticate {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно регистрирует нового пользователя через Telegram")
         void authenticate_NewUser_CreatesAndReturnsAuthResponse() {
             // Arrange
@@ -140,6 +149,7 @@ class TelegramAuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно авторизует существующего пользователя")
         void authenticate_ExistingUser_ReturnsAuthResponse() {
             // Arrange
@@ -166,6 +176,7 @@ class TelegramAuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("выбрасывает исключение при невалидном hash")
         void authenticate_InvalidHash_ThrowsException() {
             // Arrange
@@ -188,6 +199,7 @@ class TelegramAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение при слишком старом auth_date")
         void authenticate_ExpiredAuthDate_ThrowsException() {
             // Arrange - auth_date более 1 часа назад
@@ -214,6 +226,7 @@ class TelegramAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение при auth_date в будущем")
         void authenticate_FutureAuthDate_ThrowsException() {
             // Arrange - auth_date в будущем (через 1 час)
@@ -240,6 +253,7 @@ class TelegramAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если bot token не настроен")
         void authenticate_NoBotToken_ThrowsException() {
             // Arrange
@@ -255,10 +269,12 @@ class TelegramAuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("linkTelegram")
     class LinkTelegram {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно привязывает Telegram к существующему аккаунту")
         void linkTelegram_ValidRequest_LinksTelegram() {
             // Arrange
@@ -296,6 +312,7 @@ class TelegramAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если Telegram уже привязан к другому аккаунту")
         void linkTelegram_TelegramAlreadyLinked_ThrowsException() {
             // Arrange

@@ -8,6 +8,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.aqstream.common.test.SecurityTestUtils.jwt;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -35,6 +40,7 @@ import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.SharedServicesTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.web.GlobalExceptionHandler;
 import ru.aqstream.event.api.dto.CancelRegistrationRequest;
 import ru.aqstream.event.api.dto.RegistrationStatus;
@@ -51,6 +57,7 @@ import ru.aqstream.event.db.repository.TicketTypeRepository;
 @IntegrationTest
 @AutoConfigureMockMvc
 @Import(GlobalExceptionHandler.class)
+@Feature(AllureFeatures.Features.REGISTRATIONS)
 @DisplayName("RegistrationController Organizer Integration Tests")
 class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestContainer {
 
@@ -161,10 +168,12 @@ class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestC
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("GET /api/v1/events/{eventId}/registrations")
     class GetEventRegistrations {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает регистрации события для организатора")
         void getEventRegistrations_Organizer_ReturnsRegistrations() throws Exception {
             createTestRegistration();
@@ -177,6 +186,7 @@ class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestC
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 404 для несуществующего события")
         void getEventRegistrations_NotFound_ReturnsNotFound() throws Exception {
             mockMvc.perform(get("/api/v1/events/" + UUID.randomUUID() + "/registrations")
@@ -186,10 +196,12 @@ class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestC
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("DELETE /api/v1/events/{eventId}/registrations/{registrationId}")
     class CancelByOrganizer {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отменяет регистрацию организатором с причиной")
         void cancelByOrganizer_WithReason_ReturnsNoContent() throws Exception {
             Registration registration = createTestRegistration();
@@ -210,6 +222,7 @@ class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestC
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отменяет регистрацию организатором без причины")
         void cancelByOrganizer_NoReason_ReturnsNoContent() throws Exception {
             Registration registration = createTestRegistration();
@@ -227,10 +240,12 @@ class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestC
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("Organizer Role Requirement")
     class OrganizerRoleRequirement {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 403 для getEventRegistrations без роли организатора")
         void getEventRegistrations_NoOrganizerRole_ReturnsForbidden() throws Exception {
             mockMvc.perform(get("/api/v1/events/" + testEvent.getId() + "/registrations")
@@ -239,6 +254,7 @@ class RegistrationControllerOrganizerIntegrationTest extends SharedServicesTestC
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 403 для cancelByOrganizer без роли организатора")
         void cancelByOrganizer_NoOrganizerRole_ReturnsForbidden() throws Exception {
             Registration registration = createTestRegistration();

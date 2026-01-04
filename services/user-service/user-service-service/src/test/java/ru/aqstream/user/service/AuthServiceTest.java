@@ -7,7 +7,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+import static io.qameta.allure.SeverityLevel.NORMAL;
 
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,14 +22,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.UserPrincipal;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
+import ru.aqstream.common.test.allure.AllureSteps;
+import ru.aqstream.common.test.allure.TestLogger;
 import ru.aqstream.user.api.dto.AuthResponse;
 import ru.aqstream.user.api.dto.LoginRequest;
 import ru.aqstream.user.api.dto.RefreshTokenRequest;
@@ -37,7 +45,8 @@ import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("AuthService")
 class AuthServiceTest {
 
@@ -104,45 +113,60 @@ class AuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("register")
     class Register {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно регистрирует нового пользователя")
         void register_ValidRequest_ReturnsAuthResponse() {
             // Arrange
-            RegisterRequest request = new RegisterRequest(
-                testEmail, testPassword, testFirstName, testLastName
+            TestLogger.debug("Создание тестовых данных для регистрации: email={}", testEmail);
+
+            RegisterRequest request = AllureSteps.createTestUser(testEmail, () ->
+                new RegisterRequest(testEmail, testPassword, testFirstName, testLastName)
             );
 
             User savedUser = createTestUser();
             UserDto userDto = createTestUserDto(savedUser);
 
-            when(userRepository.existsByEmail(testEmail)).thenReturn(false);
-            when(passwordService.hash(testPassword)).thenReturn(TEST_PASSWORD_HASH);
-            when(userRepository.save(any(User.class))).thenReturn(savedUser);
-            when(jwtTokenProvider.generateAccessToken(any(UserPrincipal.class)))
-                .thenReturn(TEST_ACCESS_TOKEN);
-            when(jwtTokenProvider.generateRefreshToken(any(UUID.class)))
-                .thenReturn(TEST_REFRESH_TOKEN);
-            when(userMapper.toDto(savedUser)).thenReturn(userDto);
+            AllureSteps.setupMock("UserRepository и зависимости", () -> {
+                when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+                when(passwordService.hash(testPassword)).thenReturn(TEST_PASSWORD_HASH);
+                when(userRepository.save(any(User.class))).thenReturn(savedUser);
+                when(jwtTokenProvider.generateAccessToken(any(UserPrincipal.class)))
+                    .thenReturn(TEST_ACCESS_TOKEN);
+                when(jwtTokenProvider.generateRefreshToken(any(UUID.class)))
+                    .thenReturn(TEST_REFRESH_TOKEN);
+                when(userMapper.toDto(savedUser)).thenReturn(userDto);
+            });
 
             // Act
-            AuthResponse response = authService.register(request, TEST_USER_AGENT, TEST_IP);
+            AuthResponse response = AllureSteps.callService("AuthService", "register", () ->
+                authService.register(request, TEST_USER_AGENT, TEST_IP)
+            );
 
             // Assert
-            assertThat(response).isNotNull();
-            assertThat(response.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
-            assertThat(response.refreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
-            assertThat(response.tokenType()).isEqualTo("Bearer");
-            assertThat(response.user()).isEqualTo(userDto);
+            AllureSteps.verifyResponse(201, () -> {
+                assertThat(response).isNotNull();
+                assertThat(response.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
+                assertThat(response.refreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
+                assertThat(response.tokenType()).isEqualTo("Bearer");
+                assertThat(response.user()).isEqualTo(userDto);
+            });
 
             verify(passwordService).validate(testPassword);
             verify(userRepository).save(any(User.class));
             verify(refreshTokenRepository).save(any());
+
+            TestLogger.info("Пользователь зарегистрирован: userId={}, email={}", savedUser.getId(), testEmail);
+            TestLogger.attachJson("Register Request", request);
+            TestLogger.attachJson("Auth Response", response);
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение при дублировании email")
         void register_DuplicateEmail_ThrowsException() {
             // Arrange
@@ -160,6 +184,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("сохраняет email в нижнем регистре")
         void register_MixedCaseEmail_NormalizesToLowerCase() {
             // Arrange
@@ -191,10 +216,12 @@ class AuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("login")
     class Login {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешный вход с корректными данными")
         void login_ValidCredentials_ReturnsAuthResponse() {
             // Arrange
@@ -218,6 +245,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("выбрасывает исключение при несуществующем email")
         void login_NonExistentEmail_ThrowsException() {
             // Arrange
@@ -230,6 +258,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("выбрасывает исключение при неверном пароле")
         void login_WrongPassword_ThrowsException() {
             // Arrange
@@ -249,6 +278,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("блокирует аккаунт после 5 неудачных попыток")
         void login_FiveFailedAttempts_LocksAccount() {
             // Arrange
@@ -270,6 +300,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отклоняет вход для заблокированного аккаунта")
         void login_LockedAccount_ThrowsException() {
             // Arrange
@@ -293,10 +324,12 @@ class AuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("refresh")
     class Refresh {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно обновляет токены")
         void refresh_ValidToken_ReturnsNewAuthResponse() {
             // Arrange
@@ -330,6 +363,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если токен не найден в БД")
         void refresh_TokenNotFound_ThrowsException() {
             // Arrange
@@ -345,6 +379,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если токен отозван")
         void refresh_RevokedToken_ThrowsException() {
             // Arrange
@@ -364,6 +399,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если токен истёк")
         void refresh_ExpiredToken_ThrowsException() {
             // Arrange
@@ -382,6 +418,7 @@ class AuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("выбрасывает исключение если токен принадлежит другому пользователю")
         void refresh_TokenBelongsToAnotherUser_ThrowsException() {
             // Arrange

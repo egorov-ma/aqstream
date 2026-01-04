@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -15,11 +20,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.ChangePasswordRequest;
 import ru.aqstream.user.api.dto.UpdateProfileRequest;
 import ru.aqstream.user.api.dto.UserDto;
@@ -28,7 +33,8 @@ import ru.aqstream.user.api.exception.WrongPasswordException;
 import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("ProfileService")
 class ProfileServiceTest {
 
@@ -66,10 +72,12 @@ class ProfileServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("updateProfile")
     class UpdateProfile {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно обновляет профиль")
         void updateProfile_ValidRequest_ReturnsUpdatedUser() {
             // Arrange
@@ -109,6 +117,7 @@ class ProfileServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает UserNotFoundException если пользователь не найден")
         void updateProfile_UserNotFound_ThrowsException() {
             // Arrange
@@ -123,6 +132,7 @@ class ProfileServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("обновляет только firstName если lastName null")
         void updateProfile_NullLastName_UpdatesOnlyFirstName() {
             // Arrange
@@ -160,10 +170,12 @@ class ProfileServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("changePassword")
     class ChangePassword {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно меняет пароль")
         void changePassword_ValidRequest_ChangesPassword() {
             // Arrange
@@ -192,6 +204,7 @@ class ProfileServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает WrongPasswordException если текущий пароль неверный")
         void changePassword_WrongCurrentPassword_ThrowsException() {
             // Arrange
@@ -212,6 +225,7 @@ class ProfileServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает UserNotFoundException если пользователь не найден")
         void changePassword_UserNotFound_ThrowsException() {
             // Arrange

@@ -5,6 +5,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.api.dto.TelegramAuthRequest;
 import ru.aqstream.user.db.entity.User;
@@ -39,6 +47,7 @@ import ru.aqstream.user.util.CookieUtils;
  */
 @IntegrationTest
 @AutoConfigureMockMvc
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("Telegram Auth Integration Tests")
 class TelegramAuthIntegrationTest extends PostgresTestContainer {
 
@@ -61,10 +70,12 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
     private static final String REGISTER_URL = "/api/v1/auth/register";
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("POST /api/v1/auth/telegram")
     class TelegramAuth {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно регистрирует нового пользователя через Telegram")
         void telegramAuth_NewUser_ReturnsOkAndCreatesUser() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -101,6 +112,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно авторизует существующего пользователя")
         void telegramAuth_ExistingUser_ReturnsOkAndAuthenticates() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -144,6 +156,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("возвращает 401 при невалидном hash")
         void telegramAuth_InvalidHash_ReturnsUnauthorized() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -168,6 +181,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 401 при устаревшем auth_date")
         void telegramAuth_ExpiredAuthDate_ReturnsUnauthorized() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -188,6 +202,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 401 при auth_date в будущем")
         void telegramAuth_FutureAuthDate_ReturnsUnauthorized() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -208,6 +223,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("сохраняет фото профиля из Telegram")
         void telegramAuth_WithPhotoUrl_SavesAvatarUrl() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -228,6 +244,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("обновляет фото при повторном входе")
         void telegramAuth_PhotoUrlChanged_UpdatesAvatar() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -262,10 +279,12 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("POST /api/v1/auth/telegram/link")
     class TelegramLink {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно привязывает Telegram к email-аккаунту")
         void linkTelegram_ValidRequest_LinksTelegramToAccount() throws Exception {
             // Сначала регистрируем пользователя по email
@@ -303,6 +322,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 409 если Telegram уже привязан к другому аккаунту")
         void linkTelegram_TelegramAlreadyLinked_ReturnsConflict() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);
@@ -345,6 +365,7 @@ class TelegramAuthIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("возвращает 401 без авторизации")
         void linkTelegram_NoAuth_ReturnsUnauthorized() throws Exception {
             Long telegramId = FAKER.number().randomNumber(9, true);

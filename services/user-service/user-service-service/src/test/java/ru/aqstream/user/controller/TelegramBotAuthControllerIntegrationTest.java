@@ -5,6 +5,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -23,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.TelegramAuthInitResponse;
 import ru.aqstream.user.db.entity.AuthTokenStatus;
 import ru.aqstream.user.db.entity.TelegramAuthToken;
@@ -38,6 +45,7 @@ import ru.aqstream.user.websocket.TelegramAuthWebSocketHandler;
  */
 @IntegrationTest
 @AutoConfigureMockMvc
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("Telegram Bot Auth Integration Tests")
 class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
 
@@ -68,10 +76,12 @@ class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("POST /api/v1/auth/telegram/init")
     class InitAuth {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("возвращает токен и deeplink")
         void initAuth_ReturnsTokenAndDeeplink() throws Exception {
             MvcResult result = mockMvc.perform(post(INIT_URL))
@@ -92,6 +102,7 @@ class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("сохраняет токен в БД со статусом PENDING")
         void initAuth_TokenSavedInDatabase() throws Exception {
             MvcResult result = mockMvc.perform(post(INIT_URL))
@@ -113,6 +124,7 @@ class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("генерирует уникальные токены")
         void initAuth_GeneratesUniqueTokens() throws Exception {
             // Первый запрос
@@ -135,10 +147,12 @@ class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("GET /api/v1/auth/telegram/status/{token}")
     class CheckStatus {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("PENDING токен — возвращает статус PENDING")
         void checkStatus_PendingToken_ReturnsPending() throws Exception {
             // Создаём токен через init
@@ -158,6 +172,7 @@ class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("истёкший токен — возвращает статус EXPIRED")
         void checkStatus_ExpiredToken_ReturnsExpired() throws Exception {
             // Создаём токен напрямую в БД с истёкшим временем
@@ -174,6 +189,7 @@ class TelegramBotAuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("несуществующий токен — возвращает 404")
         void checkStatus_TokenNotFound_Returns404() throws Exception {
             String nonExistentToken = "non-existent-token-12345";

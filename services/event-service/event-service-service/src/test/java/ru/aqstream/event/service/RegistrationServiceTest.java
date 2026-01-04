@@ -7,6 +7,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -20,9 +25,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CreateRegistrationRequest;
@@ -44,7 +49,8 @@ import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RegistrationRepository;
 import ru.aqstream.event.db.repository.TicketTypeRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.REGISTRATIONS)
 @DisplayName("RegistrationService")
 class RegistrationServiceTest {
 
@@ -199,10 +205,12 @@ class RegistrationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("create()")
     class Create {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Создаёт регистрацию на событие")
         void create_ValidRequest_ReturnsRegistration() {
             // given
@@ -234,6 +242,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Увеличивает soldCount при создании регистрации")
         void create_ValidRequest_IncrementsSoldCount() {
             // given
@@ -259,6 +268,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает EventNotFoundException если событие не найдено")
         void create_EventNotFound_ThrowsException() {
             // given
@@ -274,6 +284,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает EventRegistrationClosedException если событие не опубликовано")
         void create_EventNotPublished_ThrowsException() {
             // given
@@ -294,6 +305,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает RegistrationAlreadyExistsException если пользователь уже зарегистрирован")
         void create_AlreadyRegistered_ThrowsException() {
             // given
@@ -313,6 +325,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает TicketTypeNotFoundException если тип билета не найден")
         void create_TicketTypeNotFound_ThrowsException() {
             // given
@@ -331,6 +344,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает TicketTypeSoldOutException если билеты распроданы")
         void create_SoldOut_ThrowsException() {
             // given
@@ -352,6 +366,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает TicketTypeSalesNotOpenException если продажи закрыты")
         void create_SalesNotOpen_ThrowsException() {
             // given
@@ -376,10 +391,12 @@ class RegistrationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("Автозаполнение данных из профиля")
     class AutofillFromProfile {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("createForPublicEvent: без личных данных - получает из UserService")
         void createForPublicEvent_NoPersonalInfo_FetchesFromUserService() {
             // given
@@ -411,6 +428,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("createForPublicEvent: с личными данными - использует данные из request")
         void createForPublicEvent_WithPersonalInfo_UsesRequestData() {
             // given
@@ -436,6 +454,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("createForPublicEvent: пользователь не найден - выбрасывает UserNotFoundException")
         void createForPublicEvent_UserNotFound_ThrowsUserNotFoundException() {
             // given
@@ -452,6 +471,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("create: без личных данных - получает из UserService")
         void create_NoPersonalInfo_FetchesFromUserService() {
             // given
@@ -483,6 +503,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("create: с личными данными - использует данные из request")
         void create_WithPersonalInfo_UsesRequestData() {
             // given
@@ -509,10 +530,12 @@ class RegistrationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("getById()")
     class GetById {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает регистрацию по ID для владельца")
         void getById_Owner_ReturnsRegistration() {
             // given
@@ -529,6 +552,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает RegistrationNotFoundException если регистрация не найдена")
         void getById_NotFound_ThrowsException() {
             // given
@@ -541,6 +565,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает регистрацию организатору из своего tenant")
         void getById_Organizer_ReturnsRegistration() {
             // given
@@ -566,6 +591,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает RegistrationNotFoundException для не-владельца и не-организатора")
         void getById_NotOwnerNotOrganizer_ThrowsException() {
             // given
@@ -582,10 +608,12 @@ class RegistrationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("cancel()")
     class Cancel {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Отменяет регистрацию и уменьшает soldCount")
         void cancel_ValidRequest_CancelsAndDecrementsCount() {
             // given
@@ -610,6 +638,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает RegistrationNotFoundException для чужой регистрации")
         void cancel_NotOwner_ThrowsException() {
             // given
@@ -629,6 +658,7 @@ class RegistrationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает RegistrationNotCancellableException для уже отменённой регистрации")
         void cancel_AlreadyCancelled_ThrowsException() {
             // given

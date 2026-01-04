@@ -11,6 +11,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.aqstream.common.test.SecurityTestUtils.jwt;
 import static ru.aqstream.common.test.SecurityTestUtils.jwtAdmin;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -38,6 +45,9 @@ import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.SharedServicesTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
+import ru.aqstream.common.test.allure.AllureSteps;
+import ru.aqstream.common.test.allure.TestLogger;
 import ru.aqstream.common.web.GlobalExceptionHandler;
 import ru.aqstream.event.api.dto.CreateEventRequest;
 import ru.aqstream.event.api.dto.EventStatus;
@@ -52,6 +62,7 @@ import ru.aqstream.event.db.repository.TicketTypeRepository;
 @IntegrationTest
 @AutoConfigureMockMvc
 @Import(GlobalExceptionHandler.class)
+@Feature(AllureFeatures.Features.EVENT_MANAGEMENT)
 @DisplayName("EventController Integration Tests")
 class EventControllerIntegrationTest extends SharedServicesTestContainer {
 
@@ -123,10 +134,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("POST /api/v1/events")
     class Create {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("создаёт событие с валидными данными")
         void create_ValidRequest_ReturnsCreated() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
@@ -159,6 +172,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает 400 для события без обязательных полей")
         void create_MissingRequiredFields_ReturnsBadRequest() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
@@ -175,10 +189,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("GET /api/v1/events/{id}")
     class GetById {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("возвращает событие по ID")
         void getById_ExistingEvent_ReturnsEvent() throws Exception {
             mockMvc.perform(get(BASE_URL + "/" + testEvent.getId())
@@ -189,6 +205,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает 404 для несуществующего события")
         void getById_NonExistingEvent_ReturnsNotFound() throws Exception {
             UUID nonExistingId = UUID.randomUUID();
@@ -200,10 +217,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("PUT /api/v1/events/{id}")
     class Update {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обновляет название события")
         void update_ValidRequest_ReturnsUpdatedEvent() throws Exception {
             String newTitle = "Обновлённое название";
@@ -226,10 +245,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("DELETE /api/v1/events/{id}")
     class Delete {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("удаляет событие (soft delete)")
         void delete_ExistingEvent_ReturnsNoContent() throws Exception {
             mockMvc.perform(delete(BASE_URL + "/" + testEvent.getId())
@@ -243,10 +264,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_LIFECYCLE)
     @DisplayName("POST /api/v1/events/{id}/publish")
     class Publish {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("публикует событие с типами билетов")
         void publish_EventWithTicketTypes_ReturnsPublishedEvent() throws Exception {
             // Создаём тип билета для события
@@ -263,6 +286,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает 400 при попытке опубликовать событие без типов билетов")
         void publish_EventWithoutTicketTypes_ReturnsBadRequest() throws Exception {
             // Событие создано в setUp без типов билетов
@@ -276,10 +300,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_LIFECYCLE)
     @DisplayName("POST /api/v1/events/{id}/cancel")
     class Cancel {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отменяет событие")
         void cancel_ExistingEvent_ReturnsCancelledEvent() throws Exception {
             mockMvc.perform(post(BASE_URL + "/" + testEvent.getId() + "/cancel")
@@ -297,6 +323,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     class RlsIsolation {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("события другого tenant не видны")
         void getById_DifferentTenant_ReturnsNotFound() throws Exception {
             // given: создаём событие для первого tenant
@@ -310,6 +337,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("список событий фильтруется по tenant")
         void findAll_DifferentTenant_ReturnsEmptyList() throws Exception {
             // given: событие существует для tenantId
@@ -326,10 +354,12 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_PERMISSIONS)
     @DisplayName("Access Control")
     class AccessControl {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("пользователь без tenantId получает 403")
         void create_UserWithoutTenant_Returns403() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
@@ -348,6 +378,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("админ с organizationId создаёт событие")
         void create_AdminWithOrganizationId_ReturnsCreated() throws Exception {
             UUID targetOrganizationId = UUID.randomUUID();
@@ -368,6 +399,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("админ без organizationId и без tenantId получает 403")
         void create_AdminWithoutOrganization_Returns403() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
@@ -388,6 +420,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("запрос без аутентификации получает 401")
         void create_Unauthenticated_Returns401() throws Exception {
             CreateEventRequest request = new CreateEventRequest(
@@ -404,6 +437,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("не-член организации получает 403")
         void create_NotMember_Returns403() throws Exception {
             // Мокаем что пользователь НЕ является членом организации
@@ -425,6 +459,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обычный пользователь не может просматривать список событий")
         void findAll_RegularUser_Returns403() throws Exception {
             // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
@@ -437,6 +472,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обычный пользователь не может просматривать событие по ID")
         void getById_RegularUser_Returns403() throws Exception {
             // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
@@ -449,6 +485,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обычный пользователь не может обновлять событие")
         void update_RegularUser_Returns403() throws Exception {
             // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
@@ -468,6 +505,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обычный пользователь не может удалять событие")
         void delete_RegularUser_Returns403() throws Exception {
             // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
@@ -480,6 +518,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обычный пользователь не может публиковать событие")
         void publish_RegularUser_Returns403() throws Exception {
             // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
@@ -492,6 +531,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("обычный пользователь не может отменять событие")
         void cancel_RegularUser_Returns403() throws Exception {
             // Мокаем что пользователь член организации, но без роли OWNER/MODERATOR
@@ -504,6 +544,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("MODERATOR может обновлять событие")
         void update_Moderator_Returns200() throws Exception {
             // Мокаем что пользователь MODERATOR
@@ -524,6 +565,7 @@ class EventControllerIntegrationTest extends SharedServicesTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("MODERATOR может публиковать событие")
         void publish_Moderator_Returns200() throws Exception {
             // Создаём тип билета для события

@@ -7,6 +7,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -16,12 +22,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.JwtTokenProvider;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.exception.InvalidCredentialsException;
 import ru.aqstream.user.db.entity.RefreshToken;
 import ru.aqstream.user.db.entity.User;
@@ -31,7 +37,8 @@ import ru.aqstream.user.db.repository.UserRepository;
 /**
  * Тесты для операций с токенами AuthService.
  */
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("AuthService Token Operations")
 class AuthServiceTokenTest {
 
@@ -105,10 +112,12 @@ class AuthServiceTokenTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("logout")
     class Logout {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отзывает все токены пользователя")
         void logout_ValidUser_RevokesAllTokens() {
             UUID userId = UUID.randomUUID();
@@ -122,10 +131,12 @@ class AuthServiceTokenTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("revokeToken")
     class RevokeToken {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно отзывает токен")
         void revokeToken_ValidToken_RevokesToken() {
             String refreshTokenValue = "token.to.revoke";
@@ -141,6 +152,7 @@ class AuthServiceTokenTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("игнорирует несуществующий токен")
         void revokeToken_NonExistentToken_DoesNothing() {
             String refreshTokenValue = "non.existent.token";
@@ -154,10 +166,12 @@ class AuthServiceTokenTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("logoutAll")
     class LogoutAll {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("отзывает все токены пользователя по refresh token")
         void logoutAll_ValidToken_RevokesAllUserTokens() {
             String refreshTokenValue = "valid.refresh.token";
@@ -174,6 +188,7 @@ class AuthServiceTokenTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("выбрасывает исключение если токен невалиден")
         void logoutAll_InvalidToken_ThrowsException() {
             String refreshTokenValue = "invalid.refresh.token";

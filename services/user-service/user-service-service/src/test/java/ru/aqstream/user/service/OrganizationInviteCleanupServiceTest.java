@@ -3,16 +3,23 @@ package ru.aqstream.user.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.db.repository.OrganizationInviteRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
+@Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
 @DisplayName("OrganizationInviteCleanupService")
 class OrganizationInviteCleanupServiceTest {
 
@@ -23,6 +30,7 @@ class OrganizationInviteCleanupServiceTest {
     private OrganizationInviteCleanupService cleanupService;
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("удаляет истёкшие приглашения")
     void cleanupExpiredInvites_HasExpired_DeletesThem() {
         // Given
@@ -36,6 +44,7 @@ class OrganizationInviteCleanupServiceTest {
     }
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("не выбрасывает исключение если нет приглашений для удаления")
     void cleanupExpiredInvites_NoExpired_CompletesNormally() {
         // Given

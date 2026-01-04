@@ -7,6 +7,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,12 +24,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.user.api.dto.AuthResponse;
@@ -40,7 +47,8 @@ import ru.aqstream.user.db.repository.TelegramAuthTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.websocket.TelegramAuthWebSocketHandler;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("TelegramBotAuthService")
 class TelegramBotAuthServiceTest {
 
@@ -93,10 +101,12 @@ class TelegramBotAuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("initAuth")
     class InitAuth {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("создаёт токен авторизации и возвращает deeplink")
         void initAuth_CreatesTokenAndReturnsDeeplink() {
             // Arrange
@@ -122,6 +132,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("генерирует уникальные токены")
         void initAuth_GeneratesUniqueTokens() {
             // Arrange
@@ -138,10 +149,12 @@ class TelegramBotAuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("checkStatus")
     class CheckStatus {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает PENDING для ожидающего токена")
         void checkStatus_PendingToken_ReturnsPending() {
             // Arrange
@@ -160,6 +173,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает EXPIRED для истёкшего токена")
         void checkStatus_ExpiredToken_ReturnsExpired() {
             // Arrange
@@ -178,6 +192,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если токен не найден")
         void checkStatus_TokenNotFound_ThrowsException() {
             // Arrange
@@ -191,6 +206,7 @@ class TelegramBotAuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("confirmAuth")
     class ConfirmAuth {
 
@@ -210,6 +226,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно подтверждает авторизацию для нового пользователя")
         void confirmAuth_NewUser_CreatesUserAndReturnsTokens() {
             // Arrange
@@ -272,6 +289,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно подтверждает авторизацию для существующего пользователя")
         void confirmAuth_ExistingUser_ReturnsTokensWithoutRegistration() {
             // Arrange
@@ -323,6 +341,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("выбрасывает исключение если токен не найден или истёк")
         void confirmAuth_TokenNotFound_ThrowsException() {
             // Arrange
@@ -349,10 +368,12 @@ class TelegramBotAuthServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.TELEGRAM_AUTH)
     @DisplayName("TelegramUtils.maskToken")
     class MaskTokenTests {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("маскирует токен корректно")
         void maskToken_ValidToken_ReturnsMasked() {
             String token = "abcdefghijklmnopqrstuvwxyz";
@@ -362,6 +383,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает *** для null токена")
         void maskToken_NullToken_ReturnsStars() {
             String masked = ru.aqstream.user.api.util.TelegramUtils.maskToken(null);
@@ -370,6 +392,7 @@ class TelegramBotAuthServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает *** для короткого токена")
         void maskToken_ShortToken_ReturnsStars() {
             String masked = ru.aqstream.user.api.util.TelegramUtils.maskToken("short");

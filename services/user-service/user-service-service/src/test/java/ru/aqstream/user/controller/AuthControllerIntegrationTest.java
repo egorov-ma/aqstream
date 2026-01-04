@@ -5,6 +5,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -20,6 +27,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
+import ru.aqstream.common.test.allure.AllureSteps;
+import ru.aqstream.common.test.allure.TestLogger;
 import ru.aqstream.user.api.dto.LoginRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
 import ru.aqstream.user.db.entity.User;
@@ -30,6 +40,7 @@ import ru.aqstream.user.util.CookieUtils;
 
 @IntegrationTest
 @AutoConfigureMockMvc
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("AuthController Integration Tests")
 class AuthControllerIntegrationTest extends PostgresTestContainer {
 
@@ -80,10 +91,12 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("POST /api/v1/auth/register")
     class Register {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно регистрирует нового пользователя")
         void register_ValidRequest_ReturnsCreated() throws Exception {
             String email = fakeEmail();
@@ -112,6 +125,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает 400 при невалидном email")
         void register_InvalidEmail_ReturnsBadRequest() throws Exception {
             RegisterRequest request = new RegisterRequest(
@@ -129,6 +143,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает 400 при слабом пароле")
         void register_WeakPassword_ReturnsBadRequest() throws Exception {
             RegisterRequest request = new RegisterRequest(
@@ -145,6 +160,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 409 при дублировании email")
         void register_DuplicateEmail_ReturnsConflict() throws Exception {
             String duplicateEmail = fakeEmail();
@@ -173,10 +189,12 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("POST /api/v1/auth/login")
     class Login {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешный вход с корректными данными")
         void login_ValidCredentials_ReturnsOk() throws Exception {
             String email = fakeEmail();
@@ -208,6 +226,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("возвращает 401 при неверном пароле")
         void login_WrongPassword_ReturnsUnauthorized() throws Exception {
             String email = fakeEmail();
@@ -231,6 +250,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("возвращает 401 при несуществующем email")
         void login_NonExistentEmail_ReturnsUnauthorized() throws Exception {
             LoginRequest loginRequest = new LoginRequest(fakeEmail(), "Password123");
@@ -243,6 +263,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("блокирует аккаунт после 5 неудачных попыток")
         void login_FiveFailedAttempts_ReturnsLockedAccount() throws Exception {
             String email = fakeEmail();
@@ -275,10 +296,12 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("POST /api/v1/auth/refresh")
     class Refresh {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно обновляет токены")
         void refresh_ValidToken_ReturnsNewTokens() throws Exception {
             // Регистрируемся и получаем токены
@@ -309,6 +332,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отклоняет невалидный refresh token")
         void refresh_InvalidToken_ReturnsUnauthorized() throws Exception {
             mockMvc.perform(post(REFRESH_URL)
@@ -317,6 +341,7 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет запрос без refresh token")
         void refresh_MissingToken_ReturnsUnauthorized() throws Exception {
             mockMvc.perform(post(REFRESH_URL))
@@ -325,10 +350,12 @@ class AuthControllerIntegrationTest extends PostgresTestContainer {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.AUTHENTICATION)
     @DisplayName("POST /api/v1/auth/logout")
     class Logout {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешный выход")
         void logout_ValidToken_ReturnsNoContent() throws Exception {
             // Регистрируемся

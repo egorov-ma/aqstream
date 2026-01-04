@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -17,10 +22,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.event.api.dto.EventDto;
 import ru.aqstream.event.api.dto.EventStatus;
@@ -33,7 +38,8 @@ import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RecurrenceRuleRepository;
 import ru.aqstream.event.db.repository.TicketTypeRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.EVENT_MANAGEMENT)
 @DisplayName("EventLifecycleService")
 class EventLifecycleServiceTest {
 
@@ -146,10 +152,12 @@ class EventLifecycleServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_LIFECYCLE)
     @DisplayName("publish()")
     class Publish {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает EventHasNoTicketTypesException если нет типов билетов")
         void publish_NoTicketTypes_ThrowsException() {
             // given
@@ -165,6 +173,7 @@ class EventLifecycleServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Публикует событие с типами билетов")
         void publish_WithTicketTypes_PublishesSuccessfully() {
             // given
@@ -187,6 +196,7 @@ class EventLifecycleServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает EventNotFoundException если событие не найдено")
         void publish_EventNotFound_ThrowsException() {
             // given
@@ -200,10 +210,12 @@ class EventLifecycleServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_LIFECYCLE)
     @DisplayName("unpublish()")
     class Unpublish {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Снимает с публикации опубликованное событие")
         void unpublish_PublishedEvent_ReturnsEventInDraft() {
             // given
@@ -226,10 +238,12 @@ class EventLifecycleServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_LIFECYCLE)
     @DisplayName("cancel()")
     class Cancel {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Отменяет событие с причиной")
         void cancel_WithReason_CancelsSuccessfully() {
             // given
@@ -253,10 +267,12 @@ class EventLifecycleServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_LIFECYCLE)
     @DisplayName("complete()")
     class Complete {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Завершает опубликованное событие")
         void complete_PublishedEvent_CompletesSuccessfully() {
             // given

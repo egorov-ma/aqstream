@@ -5,6 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.util.List;
@@ -15,13 +20,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.InviteMemberRequest;
 import ru.aqstream.user.api.dto.OrganizationInviteDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
@@ -40,7 +45,8 @@ import ru.aqstream.user.db.repository.OrganizationMemberRepository;
 import ru.aqstream.user.db.repository.OrganizationRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
 @DisplayName("OrganizationInviteService")
 class OrganizationInviteServiceTest {
 
@@ -107,6 +113,7 @@ class OrganizationInviteServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("createInvite")
     class CreateInvite {
 
@@ -118,6 +125,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("создаёт приглашение при роли OWNER")
         void createInvite_OwnerRole_CreatesInvite() {
             // Given
@@ -140,6 +148,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("создаёт приглашение при роли MODERATOR")
         void createInvite_ModeratorRole_CreatesInvite() {
             // Given
@@ -159,6 +168,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если не член организации")
         void createInvite_NotMember_ThrowsException() {
             // Given
@@ -173,10 +183,12 @@ class OrganizationInviteServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("getActiveInvites")
     class GetActiveInvites {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает активные приглашения")
         void getActiveInvites_HasInvites_ReturnsList() {
             // Given
@@ -196,6 +208,7 @@ class OrganizationInviteServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("acceptInvite")
     class AcceptInvite {
 
@@ -207,6 +220,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("принимает приглашение успешно")
         void acceptInvite_ValidInvite_JoinsOrganization() {
             // Given
@@ -230,6 +244,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если приглашение не найдено")
         void acceptInvite_NotFound_ThrowsException() {
             // Given
@@ -241,6 +256,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если приглашение истекло")
         void acceptInvite_Expired_ThrowsException() {
             // Given
@@ -254,6 +270,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если приглашение использовано")
         void acceptInvite_AlreadyUsed_ThrowsException() {
             // Given
@@ -267,6 +284,7 @@ class OrganizationInviteServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если уже член организации")
         void acceptInvite_AlreadyMember_ThrowsException() {
             // Given

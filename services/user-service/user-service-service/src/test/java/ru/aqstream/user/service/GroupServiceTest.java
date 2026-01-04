@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -15,11 +20,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.CreateGroupRequest;
 import ru.aqstream.user.api.dto.GroupDto;
 import ru.aqstream.user.api.dto.JoinGroupResponse;
@@ -43,7 +48,8 @@ import ru.aqstream.user.db.repository.OrganizationMemberRepository;
 import ru.aqstream.user.db.repository.OrganizationRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
 @DisplayName("GroupService")
 class GroupServiceTest {
 
@@ -108,10 +114,12 @@ class GroupServiceTest {
     // ==================== Create ====================
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("create")
     class Create {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("OWNER может создать группу")
         void create_Owner_CreatesGroup() {
             // Arrange
@@ -147,6 +155,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("MODERATOR может создать группу")
         void create_Moderator_CreatesGroup() {
             // Arrange
@@ -179,6 +188,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Обычный участник не может создать группу")
         void create_RegularMember_ThrowsException() {
             // Arrange
@@ -202,10 +212,12 @@ class GroupServiceTest {
     // ==================== Delete ====================
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("delete")
     class Delete {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("OWNER может удалить группу")
         void delete_Owner_DeletesGroup() {
             // Arrange
@@ -225,6 +237,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("MODERATOR не может удалить группу")
         void delete_Moderator_ThrowsException() {
             // Arrange
@@ -245,10 +258,12 @@ class GroupServiceTest {
     // ==================== JoinByInviteCode ====================
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("joinByInviteCode")
     class JoinByInviteCode {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Член организации может присоединиться к группе")
         void join_OrgMember_Joins() {
             // Arrange
@@ -275,6 +290,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Нельзя присоединиться дважды")
         void join_AlreadyMember_ThrowsException() {
             // Arrange
@@ -295,6 +311,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Неверный инвайт-код выбрасывает исключение")
         void join_InvalidCode_ThrowsException() {
             // Arrange
@@ -310,10 +327,12 @@ class GroupServiceTest {
     // ==================== RemoveMember ====================
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("removeMember")
     class RemoveMember {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Можно удалить обычного участника")
         void removeMember_RegularMember_Success() {
             // Arrange
@@ -337,6 +356,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Нельзя удалить создателя группы")
         void removeMember_Creator_ThrowsException() {
             // Arrange
@@ -360,10 +380,12 @@ class GroupServiceTest {
     // ==================== Leave ====================
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("leave")
     class Leave {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Участник может выйти из группы")
         void leave_RegularMember_Leaves() {
             // Arrange
@@ -387,6 +409,7 @@ class GroupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Создатель не может выйти из группы")
         void leave_Creator_ThrowsException() {
             // Arrange

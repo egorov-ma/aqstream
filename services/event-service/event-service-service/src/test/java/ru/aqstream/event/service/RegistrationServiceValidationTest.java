@@ -4,6 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -17,9 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CreateRegistrationRequest;
@@ -35,7 +40,8 @@ import ru.aqstream.event.db.repository.TicketTypeRepository;
 /**
  * Тесты для валидации, бизнес-логики и генерации кодов RegistrationService.
  */
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.REGISTRATIONS)
 @DisplayName("RegistrationService Validation & Business Logic")
 class RegistrationServiceValidationTest {
 
@@ -187,10 +193,12 @@ class RegistrationServiceValidationTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_VALIDATION)
     @DisplayName("cancelByOrganizer()")
     class CancelByOrganizer {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Отменяет регистрацию с указанием причины")
         void cancelByOrganizer_WithReason_CancelsWithReason() {
             // given
@@ -217,16 +225,19 @@ class RegistrationServiceValidationTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_VALIDATION)
     @DisplayName("Registration entity бизнес-логика")
     class RegistrationBusinessLogic {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("isCancellable возвращает true для CONFIRMED")
         void isCancellable_Confirmed_ReturnsTrue() {
             assertThat(testRegistration.isCancellable()).isTrue();
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("isCancellable возвращает false для CANCELLED")
         void isCancellable_Cancelled_ReturnsFalse() {
             testRegistration.cancel();
@@ -235,12 +246,14 @@ class RegistrationServiceValidationTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("isConfirmed возвращает true для CONFIRMED")
         void isConfirmed_Confirmed_ReturnsTrue() {
             assertThat(testRegistration.isConfirmed()).isTrue();
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("cancel устанавливает cancelledAt")
         void cancel_SetsTimestamp() {
             assertThat(testRegistration.getCancelledAt()).isNull();
@@ -251,6 +264,7 @@ class RegistrationServiceValidationTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("cancelByOrganizer устанавливает причину")
         void cancelByOrganizer_SetsReason() {
             String reason = "Тестовая причина";
@@ -263,10 +277,12 @@ class RegistrationServiceValidationTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_VALIDATION)
     @DisplayName("Confirmation code генерация")
     class ConfirmationCodeGeneration {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Генерирует уникальный код при создании")
         void create_GeneratesUniqueCode() {
             // given

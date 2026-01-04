@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -15,12 +20,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.aqstream.common.messaging.EventPublisher;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.user.api.dto.CreateOrganizationRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
@@ -43,7 +48,8 @@ import ru.aqstream.user.db.repository.OrganizationRequestRepository;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
 @DisplayName("OrganizationService")
 class OrganizationServiceTest {
 
@@ -146,10 +152,12 @@ class OrganizationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("Create")
     class Create {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Создаёт организацию при наличии одобренного запроса")
         void create_ValidRequest_CreatesOrganization() {
             // Given
@@ -194,6 +202,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение без одобренного запроса")
         void create_NoApprovedRequest_ThrowsException() {
             // Given
@@ -210,6 +219,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при занятом slug")
         void create_SlugTaken_ThrowsException() {
             // Given
@@ -232,10 +242,12 @@ class OrganizationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("GetById")
     class GetById {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает организацию члену")
         void getById_Member_ReturnsOrganization() {
             // Given
@@ -257,6 +269,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение если организация не найдена")
         void getById_NotFound_ThrowsException() {
             // Given
@@ -268,6 +281,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение если пользователь не член")
         void getById_NotMember_ThrowsException() {
             // Given
@@ -282,10 +296,12 @@ class OrganizationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("Update")
     class Update {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("OWNER может обновить организацию")
         void update_Owner_UpdatesOrganization() {
             // Given
@@ -311,6 +327,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("MODERATOR может обновить организацию")
         void update_Moderator_UpdatesOrganization() {
             // Given
@@ -337,10 +354,12 @@ class OrganizationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("Delete")
     class Delete {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("OWNER может удалить организацию")
         void delete_Owner_DeletesOrganization() {
             // Given
@@ -361,6 +380,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("MODERATOR не может удалить организацию")
         void delete_Moderator_ThrowsException() {
             // Given
@@ -379,10 +399,12 @@ class OrganizationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("CreateFromApprovedRequest")
     class CreateFromApprovedRequest {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Создаёт организацию из одобренного запроса")
         void createFromApprovedRequest_ValidRequest_CreatesOrganization() {
             // Given
@@ -435,6 +457,7 @@ class OrganizationServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение если slug уже занят")
         void createFromApprovedRequest_SlugExists_ThrowsException() {
             // Given

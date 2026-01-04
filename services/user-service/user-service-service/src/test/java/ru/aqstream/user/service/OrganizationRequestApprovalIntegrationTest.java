@@ -1,6 +1,11 @@
 package ru.aqstream.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.util.List;
 import net.datafaker.Faker;
@@ -13,6 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.CreateOrganizationRequestRequest;
 import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationRequestDto;
@@ -25,6 +31,8 @@ import ru.aqstream.user.db.repository.UserRepository;
 @IntegrationTest
 @SpringBootTest
 @ActiveProfiles("test")
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
+@Story(AllureFeatures.Stories.ORGANIZATION_REQUESTS)
 @DisplayName("OrganizationRequest Approval Integration Test")
 class OrganizationRequestApprovalIntegrationTest extends PostgresTestContainer {
 
@@ -70,6 +78,7 @@ class OrganizationRequestApprovalIntegrationTest extends PostgresTestContainer {
     }
 
     @Test
+    @Severity(CRITICAL)
     @Transactional
     @DisplayName("При одобрении заявки автоматически создаётся организация и membership")
     void approve_CreatesOrganizationAutomatically() {

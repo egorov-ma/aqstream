@@ -1,5 +1,6 @@
 package ru.aqstream.common.test;
 
+import io.qameta.allure.Epic;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import ru.aqstream.common.test.allure.AllureFeatures;
 
 /**
  * Композитная аннотация для интеграционных тестов.
@@ -21,11 +23,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *   <li>{@code @Testcontainers} — автозапуск контейнеров</li>
  *   <li>{@code @AutoConfigureTestDatabase(replace = NONE)} — не заменять на H2</li>
  *   <li>{@code @ActiveProfiles("test")} — использовать application-test.yml</li>
+ *   <li>{@code @Epic("Integration Tests")} — группировка в Allure отчётах</li>
  * </ul>
  *
  * <p>Использование:</p>
  * <pre>
  * {@code @IntegrationTest}
+ * {@code @Feature(AllureFeatures.Features.EVENT_MANAGEMENT)}
  * class EventServiceIntegrationTest extends PostgresTestContainer {
  *
  *     @Autowired
@@ -54,5 +58,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
+@Epic(AllureFeatures.Epics.INTEGRATION_TESTS)
 public @interface IntegrationTest {
 }

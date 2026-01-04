@@ -1,5 +1,6 @@
 package ru.aqstream.common.test;
 
+import io.qameta.allure.Step;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
@@ -137,6 +138,7 @@ public final class SecurityTestUtils {
      * @param userId           идентификатор пользователя
      * @return RequestPostProcessor
      */
+    @Step("Создать JWT токен для пользователя: userId={userId}")
     public static RequestPostProcessor jwt(JwtTokenProvider jwtTokenProvider, UUID userId) {
         return jwt(jwtTokenProvider, userId, Set.of("USER"));
     }
@@ -149,6 +151,7 @@ public final class SecurityTestUtils {
      * @param roles            роли пользователя
      * @return RequestPostProcessor
      */
+    @Step("Создать JWT токен для пользователя: userId={userId}, roles={roles}")
     public static RequestPostProcessor jwt(JwtTokenProvider jwtTokenProvider, UUID userId, Set<String> roles) {
         return jwt(jwtTokenProvider, userId, null, SYSTEM_TENANT_ID, roles);
     }
@@ -160,6 +163,7 @@ public final class SecurityTestUtils {
      * @param userId           идентификатор администратора
      * @return RequestPostProcessor
      */
+    @Step("Создать JWT токен для администратора: userId={userId}")
     public static RequestPostProcessor jwtAdmin(JwtTokenProvider jwtTokenProvider, UUID userId) {
         return jwt(jwtTokenProvider, userId, Set.of("USER", "ADMIN"));
     }

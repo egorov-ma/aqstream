@@ -4,6 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.qameta.allure.SeverityLevel.BLOCKER;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -18,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.PostgresTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.ForgotPasswordRequest;
 import ru.aqstream.user.api.dto.LoginRequest;
 import ru.aqstream.user.api.dto.RegisterRequest;
@@ -37,6 +45,7 @@ import ru.aqstream.user.util.CookieUtils;
  */
 @IntegrationTest
 @AutoConfigureMockMvc
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("AuthController Password Recovery Integration Tests")
 class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContainer {
 
@@ -70,10 +79,12 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("POST /api/v1/auth/verify-email")
     class VerifyEmail {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно подтверждает email по валидному токену")
         void verifyEmail_ValidToken_ReturnsNoContent() throws Exception {
             String email = fakeEmail();
@@ -101,6 +112,7 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 400 при невалидном токене")
         void verifyEmail_InvalidToken_ReturnsBadRequest() throws Exception {
             VerifyEmailRequest verifyRequest = new VerifyEmailRequest(
@@ -116,10 +128,12 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("POST /api/v1/auth/resend-verification")
     class ResendVerification {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно отправляет повторное письмо")
         void resendVerification_ValidEmail_ReturnsNoContent() throws Exception {
             String email = fakeEmail();
@@ -139,6 +153,7 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("не раскрывает существование email")
         void resendVerification_NonExistentEmail_ReturnsNoContent() throws Exception {
             ResendVerificationRequest resendRequest = new ResendVerificationRequest(fakeEmail());
@@ -151,10 +166,12 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("POST /api/v1/auth/forgot-password")
     class ForgotPassword {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("успешно создаёт токен сброса пароля")
         void forgotPassword_ValidEmail_ReturnsNoContent() throws Exception {
             String email = fakeEmail();
@@ -179,6 +196,7 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("не раскрывает существование email")
         void forgotPassword_NonExistentEmail_ReturnsNoContent() throws Exception {
             ForgotPasswordRequest forgotRequest = new ForgotPasswordRequest(fakeEmail());
@@ -191,10 +209,12 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("POST /api/v1/auth/reset-password")
     class ResetPassword {
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("успешно сбрасывает пароль по валидному токену")
         void resetPassword_ValidToken_ReturnsNoContent() throws Exception {
             String email = fakeEmail();
@@ -239,6 +259,7 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 400 при невалидном токене")
         void resetPassword_InvalidToken_ReturnsBadRequest() throws Exception {
             ResetPasswordRequest resetRequest = new ResetPasswordRequest(
@@ -254,6 +275,7 @@ class AuthControllerPasswordRecoveryIntegrationTest extends PostgresTestContaine
         }
 
         @Test
+        @Severity(BLOCKER)
         @DisplayName("отзывает все refresh токены после сброса пароля")
         void resetPassword_ValidToken_RevokesAllRefreshTokens() throws Exception {
             String email = fakeEmail();

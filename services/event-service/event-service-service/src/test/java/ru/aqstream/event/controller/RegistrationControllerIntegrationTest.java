@@ -7,6 +7,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.aqstream.common.test.SecurityTestUtils.jwt;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -32,6 +37,7 @@ import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.SharedServicesTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.web.GlobalExceptionHandler;
 import ru.aqstream.event.api.dto.CreateRegistrationRequest;
 import ru.aqstream.event.api.dto.RegistrationStatus;
@@ -45,6 +51,7 @@ import ru.aqstream.event.db.repository.TicketTypeRepository;
 @IntegrationTest
 @AutoConfigureMockMvc
 @Import(GlobalExceptionHandler.class)
+@Feature(AllureFeatures.Features.REGISTRATIONS)
 @DisplayName("RegistrationController Integration Tests")
 class RegistrationControllerIntegrationTest extends SharedServicesTestContainer {
 
@@ -160,10 +167,12 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("POST /api/v1/events/{eventId}/registrations")
     class Create {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("создаёт регистрацию с валидными данными")
         void create_ValidRequest_ReturnsCreated() throws Exception {
             CreateRegistrationRequest request = new CreateRegistrationRequest(
@@ -189,6 +198,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("увеличивает soldCount при создании регистрации")
         void create_ValidRequest_IncrementsSoldCount() throws Exception {
             int initialSoldCount = testTicketType.getSoldCount();
@@ -212,6 +222,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 409 при повторной регистрации")
         void create_AlreadyRegistered_ReturnsConflict() throws Exception {
             // Создаём первую регистрацию
@@ -234,6 +245,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 404 для несуществующего события")
         void create_NonExistingEvent_ReturnsNotFound() throws Exception {
             CreateRegistrationRequest request = new CreateRegistrationRequest(
@@ -252,6 +264,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 409 для неопубликованного события")
         void create_DraftEvent_ReturnsConflict() throws Exception {
             // Создаём событие в статусе DRAFT
@@ -283,6 +296,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 409 при распроданных билетах")
         void create_SoldOut_ReturnsConflict() throws Exception {
             // Распродаём все билеты
@@ -307,6 +321,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 400 без обязательного ticketTypeId")
         void create_MissingTicketTypeId_ReturnsBadRequest() throws Exception {
             CreateRegistrationRequest request = new CreateRegistrationRequest(
@@ -325,6 +340,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 401 без авторизации")
         void create_NoAuth_ReturnsUnauthorized() throws Exception {
             CreateRegistrationRequest request = new CreateRegistrationRequest(
@@ -342,6 +358,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("автозаполняет данные из профиля когда они не переданы")
         void create_NoPersonalInfo_FetchesFromUserService() throws Exception {
             // Подготовка: мокируем UserClient
@@ -372,10 +389,12 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("GET /api/v1/registrations/my")
     class GetMyRegistrations {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает регистрации текущего пользователя")
         void getMyRegistrations_HasRegistrations_ReturnsRegistrations() throws Exception {
             createTestRegistration();
@@ -389,6 +408,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает пустой список если нет регистраций")
         void getMyRegistrations_NoRegistrations_ReturnsEmptyList() throws Exception {
             mockMvc.perform(get("/api/v1/registrations/my")
@@ -399,6 +419,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("не возвращает отменённые регистрации")
         void getMyRegistrations_CancelledRegistration_NotReturned() throws Exception {
             Registration registration = createTestRegistration();
@@ -414,10 +435,12 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("GET /api/v1/registrations/{id}")
     class GetById {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает регистрацию по ID для владельца")
         void getById_Owner_ReturnsRegistration() throws Exception {
             Registration registration = createTestRegistration();
@@ -430,6 +453,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 404 для несуществующей регистрации")
         void getById_NotFound_ReturnsNotFound() throws Exception {
             mockMvc.perform(get("/api/v1/registrations/" + UUID.randomUUID())
@@ -438,6 +462,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 404 для чужой регистрации (не раскрывает существование)")
         void getById_NotOwner_ReturnsNotFound() throws Exception {
             Registration registration = createTestRegistration();
@@ -449,10 +474,12 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("DELETE /api/v1/registrations/{id}")
     class Cancel {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("отменяет регистрацию участником")
         void cancel_Owner_ReturnsNoContent() throws Exception {
             Registration registration = createTestRegistration();
@@ -476,6 +503,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 404 для чужой регистрации (не раскрывает существование)")
         void cancel_NotOwner_ReturnsNotFound() throws Exception {
             Registration registration = createTestRegistration();
@@ -490,6 +518,7 @@ class RegistrationControllerIntegrationTest extends SharedServicesTestContainer 
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("возвращает 409 для уже отменённой регистрации")
         void cancel_AlreadyCancelled_ReturnsConflict() throws Exception {
             Registration registration = createTestRegistration();

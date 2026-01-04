@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -14,13 +19,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.LinkTelegramByTokenRequest;
 import ru.aqstream.user.api.exception.TelegramIdAlreadyExistsException;
 import ru.aqstream.user.api.exception.TelegramLinkTokenNotFoundException;
@@ -29,7 +34,8 @@ import ru.aqstream.user.db.entity.User;
 import ru.aqstream.user.db.repository.TelegramLinkTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("TelegramLinkService")
 class TelegramLinkServiceTest {
 
@@ -58,10 +64,12 @@ class TelegramLinkServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("createLinkToken")
     class CreateLinkToken {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("создаёт токен привязки для пользователя")
         void createLinkToken_ValidUser_CreatesToken() {
             // Given
@@ -81,6 +89,7 @@ class TelegramLinkServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("инвалидирует предыдущие токены")
         void createLinkToken_HasPreviousTokens_InvalidatesThem() {
             // Given
@@ -95,6 +104,7 @@ class TelegramLinkServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если пользователь не найден")
         void createLinkToken_UserNotFound_ThrowsException() {
             // Given
@@ -108,6 +118,7 @@ class TelegramLinkServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("linkTelegramByToken")
     class LinkTelegramByToken {
 
@@ -125,6 +136,7 @@ class TelegramLinkServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("привязывает Telegram при валидном токене")
         void linkTelegramByToken_ValidToken_LinksTelegram() {
             // Given
@@ -144,6 +156,7 @@ class TelegramLinkServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен не найден")
         void linkTelegramByToken_TokenNotFound_ThrowsException() {
             // Given
@@ -156,6 +169,7 @@ class TelegramLinkServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен уже использован")
         void linkTelegramByToken_TokenUsed_ThrowsException() {
             // Given
@@ -169,6 +183,7 @@ class TelegramLinkServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если Telegram ID уже привязан")
         void linkTelegramByToken_TelegramIdExists_ThrowsException() {
             // Given

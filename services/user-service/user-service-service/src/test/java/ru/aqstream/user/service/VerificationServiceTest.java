@@ -7,6 +7,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -16,11 +21,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.exception.EmailAlreadyVerifiedException;
 import ru.aqstream.user.api.exception.InvalidVerificationTokenException;
 import ru.aqstream.user.api.exception.TooManyVerificationRequestsException;
@@ -32,7 +37,8 @@ import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 import ru.aqstream.user.db.repository.VerificationTokenRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("VerificationService")
 class VerificationServiceTest {
 
@@ -78,10 +84,12 @@ class VerificationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("createEmailVerificationToken")
     class CreateEmailVerificationToken {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("создаёт токен верификации для пользователя")
         void createEmailVerificationToken_ValidUser_CreatesToken() {
             // Arrange
@@ -105,6 +113,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("инвалидирует старые токены при создании нового")
         void createEmailVerificationToken_ExistingTokens_InvalidatesOld() {
             // Arrange
@@ -123,10 +132,12 @@ class VerificationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("verifyEmail")
     class VerifyEmail {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно подтверждает email по валидному токену")
         void verifyEmail_ValidToken_VerifiesEmail() {
             // Arrange
@@ -148,6 +159,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен не найден")
         void verifyEmail_TokenNotFound_ThrowsException() {
             // Arrange
@@ -162,6 +174,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен уже использован")
         void verifyEmail_UsedToken_ThrowsException() {
             // Arrange
@@ -178,6 +191,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен истёк")
         void verifyEmail_ExpiredToken_ThrowsException() {
             // Arrange
@@ -193,6 +207,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если тип токена неверный")
         void verifyEmail_WrongTokenType_ThrowsException() {
             // Arrange
@@ -209,10 +224,12 @@ class VerificationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("resendVerificationEmail")
     class ResendVerificationEmail {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("не выбрасывает исключение для несуществующего email")
         void resendVerificationEmail_NonExistentEmail_SilentlySucceeds() {
             // Arrange
@@ -226,6 +243,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если email уже подтверждён")
         void resendVerificationEmail_AlreadyVerified_ThrowsException() {
             // Arrange
@@ -240,6 +258,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение при превышении rate limit")
         void resendVerificationEmail_RateLimitExceeded_ThrowsException() {
             // Arrange
@@ -259,10 +278,12 @@ class VerificationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("requestPasswordReset")
     class RequestPasswordReset {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("создаёт токен сброса пароля для существующего пользователя")
         void requestPasswordReset_ExistingUser_CreatesToken() {
             // Arrange
@@ -285,6 +306,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("не выбрасывает исключение для несуществующего email")
         void requestPasswordReset_NonExistentEmail_SilentlySucceeds() {
             // Arrange
@@ -298,6 +320,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение при превышении rate limit")
         void requestPasswordReset_RateLimitExceeded_ThrowsException() {
             // Arrange
@@ -317,10 +340,12 @@ class VerificationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("resetPassword")
     class ResetPassword {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно сбрасывает пароль по валидному токену")
         void resetPassword_ValidToken_ResetsPassword() {
             // Arrange
@@ -346,6 +371,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен не найден")
         void resetPassword_TokenNotFound_ThrowsException() {
             // Arrange
@@ -361,6 +387,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если токен уже использован")
         void resetPassword_UsedToken_ThrowsException() {
             // Arrange
@@ -378,6 +405,7 @@ class VerificationServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если тип токена неверный")
         void resetPassword_WrongTokenType_ThrowsException() {
             // Arrange
@@ -395,10 +423,12 @@ class VerificationServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PASSWORD_RECOVERY)
     @DisplayName("cleanupExpiredTokens")
     class CleanupExpiredTokens {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("удаляет истёкшие и использованные токены")
         void cleanupExpiredTokens_ExpiredAndUsedTokens_DeletesBoth() {
             // Arrange

@@ -12,6 +12,7 @@ dependencyManagement {
 
 val testcontainersVersion: String by project
 val datafakerVersion: String by project
+val allureVersion: String by project
 
 dependencies {
     api(project(":common:common-api"))
@@ -21,6 +22,13 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-security")
     api("org.springframework.boot:spring-boot-starter-web")
     api("org.springframework.security:spring-security-test")
+
+    // Allure - api чтобы был доступен в тестах сервисов
+    api("io.qameta.allure:allure-junit5:$allureVersion")
+
+    // Jackson - для TestLogger.attachJson()
+    api("com.fasterxml.jackson.core:jackson-databind")
+    api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     // Testcontainers
     api("org.testcontainers:junit-jupiter:$testcontainersVersion")

@@ -3,18 +3,24 @@ package ru.aqstream.user.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.db.repository.RefreshTokenRepository;
 import ru.aqstream.user.db.repository.VerificationTokenRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("TokenCleanupService")
 class TokenCleanupServiceTest {
 
@@ -28,10 +34,12 @@ class TokenCleanupServiceTest {
     private TokenCleanupService tokenCleanupService;
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("cleanupTokens")
     class CleanupTokens {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("очищает истёкшие refresh токены")
         void cleanupTokens_HasExpiredRefresh_DeletesThem() {
             // Given
@@ -49,6 +57,7 @@ class TokenCleanupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("очищает отозванные refresh токены старше 30 дней")
         void cleanupTokens_HasOldRevoked_DeletesThem() {
             // Given
@@ -65,6 +74,7 @@ class TokenCleanupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("очищает истёкшие токены верификации")
         void cleanupTokens_HasExpiredVerification_DeletesThem() {
             // Given
@@ -81,6 +91,7 @@ class TokenCleanupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("очищает использованные токены верификации старше 7 дней")
         void cleanupTokens_HasOldUsedVerification_DeletesThem() {
             // Given
@@ -97,6 +108,7 @@ class TokenCleanupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно завершается если нет токенов для очистки")
         void cleanupTokens_NoTokensToClean_CompletesNormally() {
             // Given
@@ -116,6 +128,7 @@ class TokenCleanupServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("очищает все типы токенов за один вызов")
         void cleanupTokens_AllTypes_CleansAllTypes() {
             // Given

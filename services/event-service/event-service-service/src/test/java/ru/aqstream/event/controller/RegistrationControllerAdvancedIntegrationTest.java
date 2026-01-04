@@ -8,6 +8,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.aqstream.common.test.SecurityTestUtils.jwt;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -44,6 +49,7 @@ import ru.aqstream.common.security.JwtTokenProvider;
 import ru.aqstream.common.security.TenantContext;
 import ru.aqstream.common.test.IntegrationTest;
 import ru.aqstream.common.test.SharedServicesTestContainer;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.common.web.GlobalExceptionHandler;
 import ru.aqstream.event.api.dto.CreateRegistrationRequest;
 import ru.aqstream.event.db.entity.Event;
@@ -59,6 +65,7 @@ import ru.aqstream.event.db.repository.TicketTypeRepository;
 @IntegrationTest
 @AutoConfigureMockMvc
 @Import(GlobalExceptionHandler.class)
+@Feature(AllureFeatures.Features.REGISTRATIONS)
 @DisplayName("RegistrationController Advanced Integration Tests")
 class RegistrationControllerAdvancedIntegrationTest extends SharedServicesTestContainer {
 
@@ -143,10 +150,12 @@ class RegistrationControllerAdvancedIntegrationTest extends SharedServicesTestCo
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("RLS Isolation")
     class RlsIsolation {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("регистрации другого tenant не видны")
         void getEventRegistrations_DifferentTenant_ReturnsNotFound() throws Exception {
             UUID otherTenantId = UUID.randomUUID();
@@ -159,10 +168,12 @@ class RegistrationControllerAdvancedIntegrationTest extends SharedServicesTestCo
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("Confirmation Code")
     class ConfirmationCode {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("генерирует уникальный 8-символьный код")
         void create_GeneratesUniqueCode() throws Exception {
             CreateRegistrationRequest request = new CreateRegistrationRequest(
@@ -186,10 +197,12 @@ class RegistrationControllerAdvancedIntegrationTest extends SharedServicesTestCo
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.REGISTRATION_FLOW)
     @DisplayName("Concurrent Registration (Overselling Prevention)")
     class ConcurrentRegistration {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("предотвращает overselling при параллельных регистрациях")
         void create_ConcurrentRequests_PreventsOverselling() throws Exception {
             // given: только 2 билета доступно

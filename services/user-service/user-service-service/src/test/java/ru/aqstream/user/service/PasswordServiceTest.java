@@ -2,6 +2,11 @@ package ru.aqstream.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,7 +14,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import ru.aqstream.common.api.exception.ValidationException;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 
+@UnitTest
+@Feature(AllureFeatures.Features.USER_MANAGEMENT)
 @DisplayName("PasswordService")
 class PasswordServiceTest {
 
@@ -23,10 +32,12 @@ class PasswordServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("validate")
     class Validate {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("принимает корректный пароль")
         void validate_ValidPassword_NoException() {
             // Генерируем валидные пароли с буквами и цифрами
@@ -40,6 +51,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет null пароль")
         void validate_NullPassword_ThrowsException() {
             assertThatThrownBy(() -> passwordService.validate(null))
@@ -48,6 +60,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет пустой пароль")
         void validate_EmptyPassword_ThrowsException() {
             assertThatThrownBy(() -> passwordService.validate(""))
@@ -56,6 +69,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет короткий пароль")
         void validate_ShortPassword_ThrowsException() {
             assertThatThrownBy(() -> passwordService.validate("Pass1"))
@@ -64,6 +78,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет пароль без цифр")
         void validate_NoDigits_ThrowsException() {
             assertThatThrownBy(() -> passwordService.validate("PasswordWithoutDigits"))
@@ -72,6 +87,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет пароль без букв")
         void validate_NoLetters_ThrowsException() {
             assertThatThrownBy(() -> passwordService.validate("123456789"))
@@ -80,6 +96,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("отклоняет слишком длинный пароль")
         void validate_TooLongPassword_ThrowsException() {
             String longPassword = "a".repeat(101) + "1";
@@ -90,10 +107,12 @@ class PasswordServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.PROFILE)
     @DisplayName("hash и matches")
     class HashAndMatches {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("хеширует пароль и успешно проверяет его")
         void hash_AndMatches_Success() {
             String rawPassword = FAKER.internet().password(8, 20, true, false, true);
@@ -105,6 +124,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("разные хеши для одного пароля")
         void hash_SamePassword_DifferentHashes() {
             String rawPassword = FAKER.internet().password(8, 20, true, false, true);
@@ -119,6 +139,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("не совпадает с неверным паролем")
         void matches_WrongPassword_ReturnsFalse() {
             String rawPassword = FAKER.internet().password(8, 20, true, false, true);
@@ -129,6 +150,7 @@ class PasswordServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает false для null значений")
         void matches_NullValues_ReturnsFalse() {
             String password = FAKER.internet().password(8, 20, true, false, true);

@@ -1,13 +1,21 @@
 package ru.aqstream.user.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.util.InviteCodeGenerator;
 
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
+@Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
 @DisplayName("InviteCodeGenerator")
 class InviteCodeGeneratorTest {
 
@@ -15,6 +23,7 @@ class InviteCodeGeneratorTest {
     private static final String FORBIDDEN_CHARS = "0OIL1";
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("Генерирует код длиной 8 символов")
     void generate_ReturnsCorrectLength() {
         String code = InviteCodeGenerator.generate();
@@ -22,6 +31,7 @@ class InviteCodeGeneratorTest {
     }
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("Использует только допустимые символы")
     void generate_UsesOnlyAllowedChars() {
         // Генерируем много кодов для статистической значимости
@@ -34,6 +44,7 @@ class InviteCodeGeneratorTest {
     }
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("Не содержит запрещённых символов (0, O, I, L, 1)")
     void generate_ExcludesForbiddenChars() {
         // Генерируем много кодов для статистической значимости
@@ -46,6 +57,7 @@ class InviteCodeGeneratorTest {
     }
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("Генерирует уникальные коды")
     void generate_ProducesUniqueCodes() {
         Set<String> codes = new HashSet<>();
@@ -60,6 +72,7 @@ class InviteCodeGeneratorTest {
     }
 
     @Test
+    @Severity(NORMAL)
     @DisplayName("Генерирует коды в верхнем регистре")
     void generate_ProducesUppercaseCodes() {
         for (int i = 0; i < 50; i++) {

@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,10 +20,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.CreateOrganizationRequestRequest;
 import ru.aqstream.user.api.dto.OrganizationRequestDto;
 import ru.aqstream.user.api.dto.OrganizationRequestStatus;
@@ -40,7 +45,8 @@ import ru.aqstream.user.db.repository.OrganizationRepository;
 import ru.aqstream.user.db.repository.OrganizationRequestRepository;
 import ru.aqstream.user.db.repository.UserRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
 @DisplayName("OrganizationRequestService")
 class OrganizationRequestServiceTest {
 
@@ -113,10 +119,12 @@ class OrganizationRequestServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_REQUESTS)
     @DisplayName("Create")
     class Create {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Создаёт запрос при валидных данных")
         void create_ValidRequest_CreatesRequest() {
             // Given
@@ -169,6 +177,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при наличии активного запроса")
         void create_PendingRequestExists_ThrowsException() {
             // Given
@@ -186,6 +195,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при занятом slug")
         void create_SlugTaken_ThrowsException() {
             // Given
@@ -205,10 +215,12 @@ class OrganizationRequestServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_REQUESTS)
     @DisplayName("GetById")
     class GetById {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает запрос владельцу")
         void getById_Owner_ReturnsRequest() {
             // Given
@@ -228,6 +240,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает любой запрос админу")
         void getById_Admin_ReturnsAnyRequest() {
             // Given
@@ -246,6 +259,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при доступе к чужому запросу")
         void getById_OtherUser_ThrowsAccessDenied() {
             // Given
@@ -261,6 +275,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение если запрос не найден")
         void getById_NotFound_ThrowsException() {
             // Given
@@ -273,10 +288,12 @@ class OrganizationRequestServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_REQUESTS)
     @DisplayName("Approve")
     class Approve {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Одобряет pending запрос и автоматически создаёт организацию")
         void approve_PendingRequest_ApprovesAndCreatesOrganization() {
             // Given
@@ -324,6 +341,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при одобрении уже рассмотренного запроса")
         void approve_AlreadyReviewed_ThrowsException() {
             // Given
@@ -339,6 +357,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Одобряет запрос, но не откатывает если slug уже занят")
         void approve_SlugAlreadyExists_ApprovesButLogsWarning() {
             // Given
@@ -370,10 +389,12 @@ class OrganizationRequestServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_REQUESTS)
     @DisplayName("Reject")
     class Reject {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Отклоняет pending запрос с причиной")
         void reject_PendingRequest_RejectsSuccessfully() {
             // Given
@@ -414,6 +435,7 @@ class OrganizationRequestServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при отклонении уже рассмотренного запроса")
         void reject_AlreadyReviewed_ThrowsException() {
             // Given
@@ -431,10 +453,12 @@ class OrganizationRequestServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_REQUESTS)
     @DisplayName("GetByUser")
     class GetByUser {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает все запросы пользователя")
         void getByUser_ReturnsUserRequests() {
             // Given

@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -16,9 +21,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.event.api.dto.CheckInInfoDto;
 import ru.aqstream.event.api.dto.CheckInResultDto;
 import ru.aqstream.event.api.dto.RegistrationStatus;
@@ -30,7 +35,8 @@ import ru.aqstream.event.db.entity.Registration;
 import ru.aqstream.event.db.entity.TicketType;
 import ru.aqstream.event.db.repository.RegistrationRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.CHECK_IN)
 @DisplayName("CheckInService")
 class CheckInServiceTest {
 
@@ -70,10 +76,12 @@ class CheckInServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.CHECK_IN_PROCESS)
     @DisplayName("getCheckInInfo")
     class GetCheckInInfo {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает информацию о регистрации")
         void getCheckInInfo_ValidCode_ReturnsInfo() {
             // Given
@@ -99,6 +107,7 @@ class CheckInServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает информацию с отметкой о check-in")
         void getCheckInInfo_AlreadyCheckedIn_ReturnsInfoWithCheckedInAt() {
             // Given
@@ -115,6 +124,7 @@ class CheckInServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если регистрация не найдена")
         void getCheckInInfo_NotFound_ThrowsException() {
             // Given
@@ -128,10 +138,12 @@ class CheckInServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.CHECK_IN_PROCESS)
     @DisplayName("checkIn")
     class CheckIn {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("успешно выполняет check-in для подтверждённой регистрации")
         void checkIn_ConfirmedRegistration_Success() {
             // Given
@@ -160,6 +172,7 @@ class CheckInServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если участник уже прошёл check-in")
         void checkIn_AlreadyCheckedIn_ThrowsException() {
             // Given
@@ -176,6 +189,7 @@ class CheckInServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение для отменённой регистрации")
         void checkIn_CancelledRegistration_ThrowsException() {
             // Given
@@ -191,6 +205,7 @@ class CheckInServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("выбрасывает исключение если регистрация не найдена")
         void checkIn_NotFound_ThrowsException() {
             // Given
@@ -206,10 +221,12 @@ class CheckInServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.CHECK_IN_PROCESS)
     @DisplayName("isCheckedIn")
     class IsCheckedIn {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает false для не прошедшего check-in")
         void isCheckedIn_NotCheckedIn_ReturnsFalse() {
             // Given
@@ -225,6 +242,7 @@ class CheckInServiceTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("возвращает true для прошедшего check-in")
         void isCheckedIn_CheckedIn_ReturnsTrue() {
             // Given

@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.NORMAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Duration;
 import java.util.List;
@@ -16,11 +21,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.aqstream.common.security.JwtTokenProvider;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.user.api.dto.OrganizationDto;
 import ru.aqstream.user.api.dto.OrganizationMemberDto;
 import ru.aqstream.user.api.dto.OrganizationRole;
@@ -37,7 +42,8 @@ import ru.aqstream.user.db.repository.UserRepository;
 /**
  * Тесты для управления членами OrganizationService.
  */
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.ORGANIZATIONS)
 @DisplayName("OrganizationService Members")
 class OrganizationServiceMembersTest {
 
@@ -140,10 +146,12 @@ class OrganizationServiceMembersTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("RemoveMember")
     class RemoveMember {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("OWNER может удалить MODERATOR")
         void removeMember_OwnerRemovesModerator_Success() {
             UUID moderatorId = UUID.randomUUID();
@@ -163,6 +171,7 @@ class OrganizationServiceMembersTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Нельзя удалить OWNER")
         void removeMember_CannotRemoveOwner_ThrowsException() {
             UUID anotherUserId = UUID.randomUUID();
@@ -184,10 +193,12 @@ class OrganizationServiceMembersTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("GetMembers")
     class GetMembers {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Возвращает список членов организации")
         void getMembers_ValidRequest_ReturnsMembers() {
             OrganizationMember ownerMember = createTestMember(testOrg, testUser, OrganizationRole.OWNER);
@@ -211,10 +222,12 @@ class OrganizationServiceMembersTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.ORGANIZATION_MEMBERS)
     @DisplayName("GetMyOrganizations")
     class GetMyOrganizations {
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Возвращает список организаций пользователя")
         void getMyOrganizations_ReturnsUserOrganizations() {
             OrganizationMember member = createTestMember(testOrg, testUser, OrganizationRole.OWNER);
@@ -231,6 +244,7 @@ class OrganizationServiceMembersTest {
         }
 
         @Test
+        @Severity(NORMAL)
         @DisplayName("Возвращает пустой список если нет организаций")
         void getMyOrganizations_NoOrganizations_ReturnsEmptyList() {
             when(memberRepository.findByUserId(testUserId)).thenReturn(List.of());
