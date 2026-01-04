@@ -8,6 +8,7 @@ import {
   EventStateMessage,
   ParticipantsPlaceholder,
   RegistrationForm,
+  RegistrationTicketCard,
 } from '@/components/features/public-event';
 import type { Event, TicketType } from '@/lib/api/types';
 
@@ -17,8 +18,8 @@ interface EventPageProps {
   }>;
 }
 
-// ISR: revalidate every 60 seconds
-export const revalidate = 60;
+// Dynamic rendering для персонализации (userRegistration зависит от авторизации)
+export const dynamic = 'force-dynamic';
 
 /**
  * Получает событие по slug на сервере.
@@ -181,14 +182,21 @@ export default async function EventPage({ params }: EventPageProps) {
               )}
             </div>
 
-            {/* Right Column - Registration (1/3 width) */}
+            {/* Right Column - Registration or Ticket (1/3 width) */}
             <div className="lg:col-span-1">
               <div className="sticky top-8">
-                <RegistrationForm
-                  event={event}
-                  ticketTypes={ticketTypes}
-                  disabled={!canRegister}
-                />
+                {event.userRegistration ? (
+                  <RegistrationTicketCard
+                    registration={event.userRegistration}
+                    event={event}
+                  />
+                ) : (
+                  <RegistrationForm
+                    event={event}
+                    ticketTypes={ticketTypes}
+                    disabled={!canRegister}
+                  />
+                )}
               </div>
             </div>
           </div>

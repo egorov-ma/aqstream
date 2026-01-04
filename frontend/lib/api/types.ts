@@ -238,6 +238,8 @@ export interface Event {
   instanceDate?: string;
   createdAt: string;
   updatedAt: string;
+  // User-specific data
+  userRegistration?: Registration; // Регистрация текущего пользователя (если есть)
   // Обратная совместимость: location используется в старом коде
   location?: string;
 }

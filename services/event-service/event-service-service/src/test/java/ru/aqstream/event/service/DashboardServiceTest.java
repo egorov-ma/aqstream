@@ -194,7 +194,8 @@ class DashboardServiceTest {
             null, // parentEventId
             null, // instanceDate
             Instant.now(),
-            Instant.now()
+            Instant.now(),
+            null  // userRegistration
         );
     }
 }

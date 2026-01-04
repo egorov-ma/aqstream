@@ -73,7 +73,9 @@ public class PublicEventController {
 
     @Operation(
         summary = "Получить публичное событие по slug",
-        description = "Возвращает публичное опубликованное событие. Не требует авторизации."
+        description = "Возвращает публичное опубликованное событие. "
+            + "Если пользователь авторизован и зарегистрирован на событие, "
+            + "поле userRegistration содержит информацию о билете. Не требует авторизации."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Событие найдено"),
@@ -82,9 +84,10 @@ public class PublicEventController {
     @GetMapping("/{slug}")
     public ResponseEntity<EventDto> getBySlug(
         @Parameter(description = "URL-slug события")
-        @PathVariable String slug
+        @PathVariable String slug,
+        @AuthenticationPrincipal UserPrincipal principal
     ) {
-        EventDto event = eventService.getPublicBySlug(slug);
+        EventDto event = eventService.getPublicBySlug(slug, principal);
         return ResponseEntity.ok(event);
     }
 

@@ -1,22 +1,26 @@
 package ru.aqstream.event.service;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aqstream.common.api.PageResponse;
 import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.common.security.TenantContext;
+import ru.aqstream.common.security.UserPrincipal;
 import ru.aqstream.event.api.dto.CreateEventRequest;
 import ru.aqstream.event.api.dto.CreateRecurrenceRuleRequest;
 import ru.aqstream.event.api.dto.EventDto;
 import ru.aqstream.event.api.dto.EventStatus;
 import ru.aqstream.event.api.dto.PublicEventSummaryDto;
 import ru.aqstream.event.api.dto.RecurrenceRuleDto;
+import ru.aqstream.event.api.dto.RegistrationDto;
 import ru.aqstream.event.api.dto.UpdateEventRequest;
 import ru.aqstream.event.api.event.EventCreatedEvent;
 import ru.aqstream.event.api.event.EventUpdatedEvent;
@@ -26,8 +30,10 @@ import ru.aqstream.event.api.exception.EventSlugAlreadyExistsException;
 import ru.aqstream.event.api.util.SlugGenerator;
 import ru.aqstream.event.db.entity.Event;
 import ru.aqstream.event.db.entity.RecurrenceRule;
+import ru.aqstream.event.db.entity.Registration;
 import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RecurrenceRuleRepository;
+import ru.aqstream.event.db.repository.RegistrationRepository;
 
 /**
  * Сервис управления событиями.
@@ -42,8 +48,10 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final RecurrenceRuleRepository recurrenceRuleRepository;
+    private final RegistrationRepository registrationRepository;
     private final EventMapper eventMapper;
     private final RecurrenceRuleMapper recurrenceRuleMapper;
+    private final RegistrationMapper registrationMapper;
     private final EventPublisher eventPublisher;
     private final EventAuditService eventAuditService;
     private final EventLifecycleService eventLifecycleService;
@@ -423,6 +431,19 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public EventDto getPublicBySlug(String slug) {
+        return getPublicBySlug(slug, null);
+    }
+
+    /**
+     * Возвращает публичное событие по slug с информацией о регистрации пользователя.
+     * Поддерживает как авторизованных пользователей, так и анонимных.
+     *
+     * @param slug      URL-slug события
+     * @param principal авторизованный пользователь (может быть null для анонимных)
+     * @return событие с названием организатора и userRegistration (если пользователь зарегистрирован)
+     */
+    @Transactional(readOnly = true)
+    public EventDto getPublicBySlug(String slug, @Nullable UserPrincipal principal) {
         Event event = eventRepository.findPublicBySlug(slug)
             .orElseThrow(() -> new EventNotFoundException(slug));
 
@@ -434,6 +455,20 @@ public class EventService {
             ruleDto = recurrenceRuleRepository.findById(event.getRecurrenceRuleId())
                 .map(recurrenceRuleMapper::toDto)
                 .orElse(null);
+        }
+
+        // Если пользователь авторизован — проверяем его регистрацию
+        if (principal != null) {
+            UUID userId = principal.userId();
+            Optional<Registration> registration =
+                registrationRepository.findActiveByEventIdAndUserId(event.getId(), userId);
+
+            if (registration.isPresent()) {
+                log.debug("Пользователь уже зарегистрирован на событие: eventId={}, userId={}",
+                    event.getId(), userId);
+                RegistrationDto regDto = registrationMapper.toDto(registration.get());
+                return eventMapper.toDtoWithRegistration(event, organizerName, ruleDto, regDto);
+            }
         }
 
         return eventMapper.toDto(event, organizerName, ruleDto);

@@ -34,6 +34,7 @@ import java.util.UUID;
  * @param instanceDate             дата экземпляра серии
  * @param createdAt                дата создания
  * @param updatedAt                дата обновления
+ * @param userRegistration         регистрация текущего пользователя (если есть, опционально)
  */
 public record EventDto(
     UUID id,
@@ -62,7 +63,8 @@ public record EventDto(
     UUID parentEventId,
     LocalDate instanceDate,
     Instant createdAt,
-    Instant updatedAt
+    Instant updatedAt,
+    RegistrationDto userRegistration
 ) {
 
     /**

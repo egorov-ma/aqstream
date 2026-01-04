@@ -185,7 +185,7 @@ test.describe('Event Registration (J2)', () => {
     });
   });
 
-  test('user cannot register twice for same event', async ({ page }) => {
+  test('registered user sees ticket card instead of form', async ({ page }) => {
     // Создаём событие и регистрацию через API
     let freshEvent: EventResponse;
 
@@ -199,14 +199,13 @@ test.describe('Event Registration (J2)', () => {
       );
       const ownerHelper = new TestDataHelper(context.request, ownerToken);
 
-      freshEvent = await ownerHelper.createEvent(`E2E Double Reg ${Date.now()}`);
+      freshEvent = await ownerHelper.createEvent(`E2E Ticket Card ${Date.now()}`);
       await ownerHelper.addTicketType(freshEvent.id, 'Standard', 50);
       await ownerHelper.publishEvent(freshEvent.id);
     });
 
-    await test.step('Создать первую регистрацию от имени user', async () => {
+    await test.step('Создать регистрацию от имени user', async () => {
       const context = page.context();
-      // Важно: регистрация создаётся с токеном user, а не owner
       const userToken = await TestDataHelper.getAuthToken(
         context.request,
         testUsers.user.email,
@@ -220,7 +219,7 @@ test.describe('Event Registration (J2)', () => {
       );
       const ticketTypes = await ticketTypesResponse.json();
 
-      // Создаём регистрацию без передачи личных данных (автозаполнение на backend)
+      // Создаём регистрацию
       await userHelper.createRegistration(freshEvent.slug, ticketTypes[0].id, {});
     });
 
@@ -230,40 +229,89 @@ test.describe('Event Registration (J2)', () => {
 
     await test.step('Открыть страницу события', async () => {
       await page.goto(`/events/${freshEvent!.slug}`);
-      // Ждём загрузки страницы
       await page.waitForLoadState('networkidle');
-      // Дополнительное ожидание для React hydration
-      await page.waitForTimeout(500);
     });
 
-    await test.step('Проверить, что повторная регистрация заблокирована', async () => {
-      // Ждём заголовок события как индикатор загрузки страницы
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 10000 });
+    await test.step('Проверить отображение карточки билета вместо формы', async () => {
+      // Карточка билета должна быть видна
+      await expect(page.getByTestId('registration-ticket-card')).toBeVisible({ timeout: 10000 });
 
-      // Проверяем наличие формы регистрации
-      const form = page.getByTestId('registration-form');
-      const submitButton = page.getByTestId('registration-submit');
+      // Проверяем элементы карточки
+      await expect(page.getByText('Вы зарегистрированы')).toBeVisible();
+      await expect(page.getByTestId('ticket-confirmation-code')).toBeVisible();
+      await expect(page.getByTestId('ticket-type-name')).toBeVisible();
 
-      // Ждём появления формы (должна быть видна даже для зарегистрированных)
-      await expect(form).toBeVisible({ timeout: 10000 });
+      // Форма регистрации НЕ должна быть видна
+      await expect(page.getByTestId('registration-form')).not.toBeVisible();
+    });
+  });
 
-      // Выбираем тип билета
-      await page.getByTestId('ticket-type-card').first().click();
+  test('user can cancel registration from ticket card', async ({ page }) => {
+    // Создаём событие и регистрацию через API
+    let freshEvent: EventResponse;
 
-      // Отправляем форму
-      await submitButton.click();
+    await test.step('Создать событие через owner', async () => {
+      const context = page.context();
+      const ownerToken = await TestDataHelper.getAuthTokenWithOrganization(
+        context.request,
+        testUsers.owner.email,
+        testUsers.owner.password,
+        testOrganization.id
+      );
+      const ownerHelper = new TestDataHelper(context.request, ownerToken);
 
-      // После отправки должна появиться ошибка о дублирующей регистрации
-      // Или редирект на success page (если API вернул успех, что не должно произойти)
-      const errorMessage = page.getByText(/уже зарегистрированы|уже есть регистрация/i);
-      const successIndicator = page.getByText(/регистрация успешна/i);
+      freshEvent = await ownerHelper.createEvent(`E2E Cancel Reg ${Date.now()}`);
+      await ownerHelper.addTicketType(freshEvent.id, 'Standard', 50);
+      await ownerHelper.publishEvent(freshEvent.id);
+    });
 
-      // Ждём одного из двух: ошибку (ожидаемо) или успех (неожиданно)
-      await expect(errorMessage.or(successIndicator)).toBeVisible({ timeout: 15000 });
+    await test.step('Создать регистрацию от имени user', async () => {
+      const context = page.context();
+      const userToken = await TestDataHelper.getAuthToken(
+        context.request,
+        testUsers.user.email,
+        testUsers.user.password
+      );
+      const userHelper = new TestDataHelper(context.request, userToken);
 
-      // Проверяем, что появилась именно ошибка
-      const hasError = await errorMessage.isVisible();
-      expect(hasError).toBe(true);
+      const ticketTypesResponse = await context.request.get(
+        `http://localhost:8080/api/v1/public/events/${freshEvent.slug}/ticket-types`
+      );
+      const ticketTypes = await ticketTypesResponse.json();
+      await userHelper.createRegistration(freshEvent.slug, ticketTypes[0].id, {});
+    });
+
+    await test.step('Войти как user', async () => {
+      await login(page, testUsers.user);
+    });
+
+    await test.step('Открыть страницу события', async () => {
+      await page.goto(`/events/${freshEvent!.slug}`);
+      await page.waitForLoadState('networkidle');
+    });
+
+    await test.step('Отменить регистрацию через карточку билета', async () => {
+      // Проверяем наличие карточки билета
+      await expect(page.getByTestId('registration-ticket-card')).toBeVisible({ timeout: 10000 });
+
+      // Нажимаем "Отменить регистрацию"
+      await page.getByTestId('cancel-registration-show-button').click();
+
+      // Подтверждаем отмену
+      await expect(page.getByText(/Вы уверены/)).toBeVisible();
+      await page.getByTestId('cancel-registration-confirm-button').click();
+
+      // Проверяем toast сообщение об успехе
+      await expect(page.getByText('Регистрация отменена')).toBeVisible({ timeout: 10000 });
+
+      // Ждём обновления страницы
+      await page.waitForTimeout(1000);
+
+      // Форма регистрации должна вернуться
+      await expect(page.getByTestId('registration-form')).toBeVisible({ timeout: 10000 });
+
+      // Карточка билета должна исчезнуть
+      await expect(page.getByTestId('registration-ticket-card')).not.toBeVisible();
     });
   });
 

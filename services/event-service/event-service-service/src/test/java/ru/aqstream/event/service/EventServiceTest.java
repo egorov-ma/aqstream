@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static io.qameta.allure.SeverityLevel.CRITICAL;
+
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.Story;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -17,11 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import ru.aqstream.common.security.TenantContext;
+import ru.aqstream.common.test.UnitTest;
+import ru.aqstream.common.test.allure.AllureFeatures;
 import ru.aqstream.event.api.dto.CreateEventRequest;
 import ru.aqstream.event.api.dto.EventDto;
 import ru.aqstream.event.api.dto.EventStatus;
@@ -35,8 +40,10 @@ import ru.aqstream.common.messaging.EventPublisher;
 import ru.aqstream.event.db.entity.Event;
 import ru.aqstream.event.db.repository.EventRepository;
 import ru.aqstream.event.db.repository.RecurrenceRuleRepository;
+import ru.aqstream.event.db.repository.RegistrationRepository;
 
-@ExtendWith(MockitoExtension.class)
+@UnitTest
+@Feature(AllureFeatures.Features.EVENT_MANAGEMENT)
 @DisplayName("EventService")
 class EventServiceTest {
 
@@ -47,10 +54,16 @@ class EventServiceTest {
     private RecurrenceRuleRepository recurrenceRuleRepository;
 
     @Mock
+    private RegistrationRepository registrationRepository;
+
+    @Mock
     private EventMapper eventMapper;
 
     @Mock
     private RecurrenceRuleMapper recurrenceRuleMapper;
+
+    @Mock
+    private RegistrationMapper registrationMapper;
 
     @Mock
     private EventPublisher eventPublisher;
@@ -80,8 +93,10 @@ class EventServiceTest {
         service = new EventService(
             eventRepository,
             recurrenceRuleRepository,
+            registrationRepository,
             eventMapper,
             recurrenceRuleMapper,
+            registrationMapper,
             eventPublisher,
             eventAuditService,
             eventLifecycleService,
@@ -147,15 +162,18 @@ class EventServiceTest {
             null, // parentEventId
             null, // instanceDate
             Instant.now(),
-            Instant.now()
+            Instant.now(),
+            null  // userRegistration
         );
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("create()")
     class Create {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Создаёт событие в статусе DRAFT")
         void create_ValidRequest_ReturnsEventInDraftStatus() {
             // given
@@ -184,6 +202,7 @@ class EventServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Генерирует уникальный slug из title")
         void create_ValidTitle_GeneratesSlug() {
             // given
@@ -210,10 +229,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("getById()")
     class GetById {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Возвращает событие по ID")
         void getById_ExistingEvent_ReturnsEvent() {
             // given
@@ -229,6 +250,7 @@ class EventServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает EventNotFoundException если событие не найдено")
         void getById_NonExistingEvent_ThrowsException() {
             // given
@@ -241,10 +263,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("update()")
     class Update {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Обновляет название события")
         void update_ValidTitle_UpdatesTitle() {
             // given
@@ -267,6 +291,7 @@ class EventServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при редактировании отменённого события")
         void update_CancelledEvent_ThrowsException() {
             // given
@@ -284,6 +309,7 @@ class EventServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выбрасывает исключение при редактировании завершённого события")
         void update_CompletedEvent_ThrowsException() {
             // given
@@ -303,10 +329,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("delete()")
     class Delete {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Выполняет soft delete события")
         void delete_ExistingEvent_SoftDeletes() {
             // given
@@ -323,10 +351,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("publish()")
     class Publish {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Публикует событие в статусе DRAFT")
         void publish_DraftEvent_PublishesSuccessfully() {
             // given - lifecycle метод делегируется в EventLifecycleService
@@ -341,6 +371,7 @@ class EventServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Пробрасывает исключение от EventLifecycleService")
         void publish_LifecycleServiceThrows_PropagatesException() {
             // given
@@ -354,10 +385,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("unpublish()")
     class Unpublish {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Делегирует unpublish в EventLifecycleService")
         void unpublish_DelegatesSuccessfully() {
             // given
@@ -373,10 +406,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("cancel()")
     class Cancel {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Делегирует cancel в EventLifecycleService")
         void cancel_DelegatesSuccessfully() {
             // given
@@ -391,6 +426,7 @@ class EventServiceTest {
         }
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Делегирует cancel с reason в EventLifecycleService")
         void cancel_WithReason_DelegatesSuccessfully() {
             // given
@@ -407,10 +443,12 @@ class EventServiceTest {
     }
 
     @Nested
+    @Story(AllureFeatures.Stories.EVENT_CRUD)
     @DisplayName("complete()")
     class Complete {
 
         @Test
+        @Severity(CRITICAL)
         @DisplayName("Делегирует complete в EventLifecycleService")
         void complete_DelegatesSuccessfully() {
             // given

@@ -143,6 +143,9 @@ export function RegistrationForm({
         customFields: data.customFields as Record<string, string> | undefined,
       });
 
+      // Revalidate серверные данные (обновляет счетчики билетов и userRegistration)
+      router.refresh();
+
       // Вызываем callback или редиректим на success page
       if (onSuccess) {
         onSuccess(registration);
