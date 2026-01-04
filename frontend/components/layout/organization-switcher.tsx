@@ -20,7 +20,12 @@ import { useOrganizationStore } from '@/lib/store/organization-store';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
-export function OrganizationSwitcher() {
+interface OrganizationSwitcherProps {
+  /** Callback вызываемый после успешного переключения организации */
+  onSwitch?: () => void;
+}
+
+export function OrganizationSwitcher({ onSwitch }: OrganizationSwitcherProps = {}) {
   const { data: organizations, isLoading } = useOrganizations();
   const switchOrganization = useSwitchOrganization();
   const { currentOrganization, currentRole, setCurrentRole } = useOrganizationStore();
@@ -70,7 +75,11 @@ export function OrganizationSwitcher() {
 
   const handleSwitch = (organizationId: string) => {
     if (organizationId !== currentOrganization?.id) {
-      switchOrganization.mutate(organizationId);
+      switchOrganization.mutate(organizationId, {
+        onSuccess: () => {
+          onSwitch?.();
+        },
+      });
     }
   };
 

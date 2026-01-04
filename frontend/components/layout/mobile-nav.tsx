@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarNav } from './sidebar-nav';
+import { OrganizationSwitcher } from './organization-switcher';
 
 export function MobileNav() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
@@ -26,6 +30,13 @@ export function MobileNav() {
             <span>AqStream</span>
           </Link>
         </div>
+
+        {/* OrganizationSwitcher */}
+        <div className="border-b px-4 py-3" data-testid="mobile-nav-organization-switcher">
+          <OrganizationSwitcher onSwitch={() => setOpen(false)} />
+        </div>
+
+        {/* Навигация */}
         <div className="px-4 py-4">
           <SidebarNav />
         </div>

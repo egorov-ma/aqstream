@@ -17,7 +17,7 @@ export function PublicMobileNav() {
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="lg:hidden"
           data-testid="public-mobile-nav-trigger"
         >
           <Menu className="h-5 w-5" />

@@ -56,13 +56,18 @@ export function Notifications() {
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
-  const handleNotificationClick = (notification: UserNotification) => {
+  const handleNotificationClick = async (notification: UserNotification) => {
     // Отмечаем как прочитанное
     if (!notification.isRead) {
-      markAsRead.mutate(notification.id);
+      try {
+        await markAsRead.mutateAsync(notification.id);
+      } catch {
+        // Ошибка уже обработана в hook
+        return;
+      }
     }
 
-    // Навигация к связанной сущности
+    // Навигация к связанной сущности после успешного mark as read
     if (notification.linkedEntity) {
       const { entityType, entityId } = notification.linkedEntity;
       if (entityType === 'EVENT') {
@@ -98,7 +103,7 @@ export function Notifications() {
           <span className="sr-only">Уведомления</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
+      <DropdownMenuContent className="w-80 max-w-[calc(100vw-2rem)]" align="end">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Уведомления</span>
           {unreadCount > 0 && (
@@ -118,7 +123,7 @@ export function Notifications() {
         <DropdownMenuSeparator />
 
         {isNotificationsLoading ? (
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-3" aria-busy="true" aria-label="Загрузка уведомлений">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />

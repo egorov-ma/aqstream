@@ -9,24 +9,23 @@ import { Notifications } from './notifications';
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+    <header
+      className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6"
+      aria-label="Главная навигация"
+    >
       {/* Бургер слева на мобильных */}
       <MobileNav />
 
       {/* Название по центру на мобильных, организация на десктопе */}
-      <div className="flex-1 flex items-center gap-4">
-        {/* Название AqStream - центрировано на мобильных */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 font-semibold lg:hidden absolute left-1/2 -translate-x-1/2"
-        >
+      <div className="flex-1 flex justify-center lg:hidden">
+        <Link href="/" className="flex items-center gap-2 font-semibold">
           <span>AqStream</span>
         </Link>
+      </div>
 
-        {/* Переключатель организаций на десктопе */}
-        <div className="hidden md:block">
-          <OrganizationSwitcher />
-        </div>
+      {/* Переключатель организаций на десктопе */}
+      <div className="hidden lg:block lg:flex-1">
+        <OrganizationSwitcher />
       </div>
 
       {/* Меню справа */}

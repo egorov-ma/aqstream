@@ -3,31 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Notifications } from './notifications';
 import { UserNav } from './user-nav';
 import { ThemeToggle } from './theme-toggle';
 import { PublicMobileNav } from './public-mobile-nav';
-
-/**
- * Skeleton для хедера во время гидратации.
- */
-function HeaderSkeleton() {
-  return (
-    <header className="border-b">
-      <div className="container flex h-14 items-center justify-between">
-        <Link href="/" className="font-bold">
-          AqStream
-        </Link>
-        <nav className="flex items-center gap-2">
-          <Skeleton className="h-9 w-20" />
-          <Skeleton className="h-9 w-24" />
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 /**
  * Публичный хедер с условной навигацией.
@@ -38,20 +18,37 @@ function HeaderSkeleton() {
  */
 export function PublicHeader() {
   const { isAuthenticated } = useAuthStore();
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Ждём гидратации store из localStorage
   useEffect(() => {
-    setIsHydrated(true);
+    setMounted(true);
   }, []);
 
-  // Skeleton пока загружается состояние авторизации
-  if (!isHydrated) {
-    return <HeaderSkeleton />;
+  // SSR: показываем fallback (неавторизованное состояние)
+  if (!mounted) {
+    return (
+      <header className="border-b" aria-label="Главная навигация">
+        <div className="container flex h-14 items-center justify-between">
+          <Link href="/" className="font-bold">
+            AqStream
+          </Link>
+          <nav className="flex items-center gap-2" data-testid="public-header-nav">
+            <ThemeToggle />
+            <Button variant="ghost" asChild data-testid="header-login-button">
+              <Link href="/login">Войти</Link>
+            </Button>
+            <Button asChild data-testid="header-register-button">
+              <Link href="/register">Регистрация</Link>
+            </Button>
+          </nav>
+        </div>
+      </header>
+    );
   }
 
+  // CSR: показываем правильное состояние
   return (
-    <header className="border-b">
+    <header className="border-b" aria-label="Главная навигация">
       <div className="container flex h-14 items-center justify-between">
         <Link href="/" className="font-bold">
           AqStream
@@ -64,7 +61,7 @@ export function PublicHeader() {
               <PublicMobileNav />
 
               {/* Навигация для авторизованных (скрыта на mobile) */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                   <Link href="/events" data-testid="header-events-link">
                     События
