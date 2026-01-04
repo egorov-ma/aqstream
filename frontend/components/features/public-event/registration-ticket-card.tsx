@@ -12,8 +12,7 @@ import { toast } from 'sonner';
 
 import type { Registration, Event } from '@/lib/api/types';
 import { useCancelRegistration, useResendTicket } from '@/lib/hooks/use-registrations';
-// TODO: Restore when add-to-calendar-button is implemented
-// import { AddToCalendarButton } from './add-to-calendar-button';
+import { AddToCalendarButton } from './add-to-calendar';
 import { ROUTES } from '@/lib/routes';
 
 interface RegistrationTicketCardProps {
@@ -93,8 +92,10 @@ export function RegistrationTicketCard({ registration, event }: RegistrationTick
 
         {/* Actions */}
         <div className="space-y-2">
-          {/* TODO: Restore when add-to-calendar-button is implemented */}
-          {/* <AddToCalendarButton event={event} /> */}
+          <AddToCalendarButton
+            event={event}
+            confirmationCode={registration.confirmationCode}
+          />
 
           <Button
             variant="outline"

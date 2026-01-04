@@ -5,7 +5,7 @@
 | Поле | Значение |
 |------|----------|
 | Фаза | Phase 2: Core |
-| Статус | `backlog` |
+| Статус | `done` |
 | Приоритет | `medium` |
 | Связь с roadmap | [Roadmap - Frontend](../../business/roadmap.md#фаза-2-core) |
 
@@ -42,33 +42,33 @@
 
 ### Компонент AddToCalendarButton
 
-- [ ] Кнопка "Добавить в календарь" на success странице
-- [ ] Dropdown с выбором календаря:
-  - [ ] Google Calendar
-  - [ ] Apple Calendar (.ics файл)
-  - [ ] Outlook (.ics файл)
-- [ ] Generation .ics файла с:
-  - [ ] Название события
-  - [ ] Дата и время (старт, окончание)
-  - [ ] Описание
-  - [ ] Локация (если офлайн)
-  - [ ] Confirmation code (в описании)
+- [x] Кнопка "Добавить в календарь" на success странице
+- [x] Dropdown с выбором календаря:
+  - [x] Google Calendar
+  - [x] Apple Calendar (.ics файл)
+  - [x] Outlook (.ics файл)
+- [x] Generation .ics файла с:
+  - [x] Название события
+  - [x] Дата и время (старт, окончание)
+  - [x] Описание
+  - [x] Локация (если офлайн)
+  - [x] Confirmation code (в описании)
 
 ### UX
 
-- [ ] Иконка календаря рядом с текстом
-- [ ] Shadcn/ui DropdownMenu для выбора
-- [ ] data-testid для E2E тестов
-- [ ] Loading state во время generation
-- [ ] Toast уведомление при успехе/ошибке
+- [x] Иконка календаря рядом с текстом
+- [x] Shadcn/ui DropdownMenu для выбора
+- [x] data-testid для E2E тестов
+- [x] Loading state во время generation
+- [x] Toast уведомление при успехе/ошибке
 
 ### Технические требования
 
-- [ ] Использовать библиотеку для .ics generation (ics.js или аналог)
-- [ ] Google Calendar redirect через URL scheme
-- [ ] Download .ics для Apple/Outlook
-- [ ] Timezone handling (UTC → локальная зона)
-- [ ] Responsive design (работает на мобильных)
+- [x] Использовать библиотеку для .ics generation (ics.js или аналог)
+- [x] Google Calendar redirect через URL scheme
+- [x] Download .ics для Apple/Outlook
+- [x] Timezone handling (UTC → локальная зона)
+- [x] Responsive design (работает на мобильных)
 
 ## Технические детали
 
@@ -113,16 +113,16 @@ const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TE
 
 ## Definition of Done (DoD)
 
-- [ ] Компонент реализован в `frontend/components/features/public-event/add-to-calendar-button.tsx`
-- [ ] Раскомментирован импорт в `registration-ticket-card.tsx`
-- [ ] Работают все 3 календаря (Google, Apple, Outlook)
-- [ ] .ics файл корректного формата
-- [ ] Timezone правильно обрабатывается
-- [ ] Добавлены data-testid
-- [ ] E2E тест для кнопки
-- [ ] Responsive на всех размерах экрана
-- [ ] Production build проходит без ошибок
-- [ ] Code review пройден
+- [x] Компонент реализован в `frontend/components/features/public-event/add-to-calendar.tsx`
+- [x] Раскомментирован импорт в `registration-ticket-card.tsx`
+- [x] Работают все 3 календаря (Google, Apple, Outlook)
+- [x] .ics файл корректного формата
+- [x] Timezone правильно обрабатывается
+- [x] Добавлены data-testid
+- [x] E2E тест для кнопки
+- [x] Responsive на всех размерах экрана
+- [x] Production build проходит без ошибок
+- [x] Code review пройден
 
 ## Риски и ограничения
 

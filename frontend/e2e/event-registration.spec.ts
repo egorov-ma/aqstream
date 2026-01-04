@@ -136,6 +136,58 @@ test.describe('Event Registration (J2)', () => {
     });
   });
 
+  test('success page shows add to calendar button with dropdown', async ({ page }) => {
+    // Создаём событие для этого теста
+    let freshEvent: EventResponse;
+
+    await test.step('Создать событие для регистрации', async () => {
+      const context = page.context();
+      const token = await TestDataHelper.getAuthTokenWithOrganization(
+        context.request,
+        testUsers.owner.email,
+        testUsers.owner.password,
+        testOrganization.id
+      );
+      const helper = new TestDataHelper(context.request, token);
+
+      freshEvent = await helper.createEvent(`E2E Calendar Button ${Date.now()}`);
+      await helper.addTicketType(freshEvent.id, 'Standard', 50);
+      await helper.publishEvent(freshEvent.id);
+    });
+
+    await test.step('Войти как admin', async () => {
+      await login(page, testUsers.admin);
+    });
+
+    await test.step('Открыть страницу события', async () => {
+      await page.goto(`/events/${freshEvent!.slug}`);
+      await expect(page.getByTestId('registration-form')).toBeVisible();
+    });
+
+    await test.step('Выбрать тип билета и зарегистрироваться', async () => {
+      await page.getByTestId('ticket-type-card').first().click();
+      await page.getByTestId('registration-submit').click();
+    });
+
+    await test.step('Проверить success страницу', async () => {
+      await expect(page).toHaveURL(/\/success/, { timeout: 15000 });
+      await expect(page.getByTestId('registration-success-card')).toBeVisible();
+    });
+
+    await test.step('Проверить кнопку добавления в календарь', async () => {
+      await expect(page.getByTestId('add-to-calendar-button')).toBeVisible();
+    });
+
+    await test.step('Открыть dropdown и проверить опции календарей', async () => {
+      await page.getByTestId('add-to-calendar-button').click();
+
+      // Проверяем все три опции календарей
+      await expect(page.getByTestId('add-to-calendar-google')).toBeVisible();
+      await expect(page.getByTestId('add-to-calendar-apple')).toBeVisible();
+      await expect(page.getByTestId('add-to-calendar-outlook')).toBeVisible();
+    });
+  });
+
   test('unauthenticated user sees ticket list and login prompt', async ({ page }) => {
     await test.step('Открыть страницу события без авторизации', async () => {
       await page.goto(`/events/${testEvent.slug}`);

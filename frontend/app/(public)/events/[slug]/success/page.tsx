@@ -121,7 +121,7 @@ export default async function SuccessPage({ params, searchParams }: SuccessPageP
 
             {/* Actions */}
             <div className="space-y-3">
-              <AddToCalendarButton event={event} />
+              <AddToCalendarButton event={event} confirmationCode={code} />
 
               <Button variant="outline" className="w-full" asChild>
                 <Link href={ROUTES.EVENT(slug)}>

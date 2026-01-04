@@ -89,6 +89,41 @@ export function generateIcsContent(options: {
 }
 
 /**
+ * Генерирует URL для добавления события в Google Calendar
+ * @param options - параметры события
+ * @returns URL для Google Calendar
+ */
+export function generateGoogleCalendarUrl(options: {
+  title: string;
+  startsAt: string;
+  endsAt?: string | null;
+  description?: string | null;
+  location?: string | null;
+}): string {
+  const { title, startsAt, endsAt, description, location } = options;
+
+  // Формат дат для Google Calendar совпадает с ICS (YYYYMMDDTHHMMSSZ)
+  const startDate = formatIcsDate(startsAt);
+  const endDate = formatIcsDate(endsAt ?? startsAt);
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${startDate}/${endDate}`,
+  });
+
+  if (description) {
+    params.set('details', description.slice(0, 500));
+  }
+
+  if (location) {
+    params.set('location', location);
+  }
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/**
  * Скачивает файл с указанным содержимым
  * @param content - содержимое файла
  * @param filename - имя файла
